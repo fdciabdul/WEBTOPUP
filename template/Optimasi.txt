@@ -1,0 +1,5 @@
+Halaman Login (Rate Limitting)
+Limit Login: Menambahkan logika penghitung klik. Setiap klik tombol "Masuk" dihitung. Jika mencapai 5x dalam 60 detik terakhir, akses diblokir sementara.
+Limit Registrasi: Mengecek timestamp registrasi terakhir. Jika berhasil mendaftar, user harus menunggu 1 jam (3.600.000 ms) sebelum bisa mendaftar lagi.
+Limit Pemulihan (Sukses): Jika validasi benar dan kode "terkirim", timestamp disimpan. User harus menunggu 10 menit sebelum request lagi.
+Limit Pemulihan (Gagal): Jika user memasukkan format email/nomor yang salah, sistem menghitung percobaan gagal. Jika 3x salah dalam 1 menit, fitur pemulihan diblokir sementara.

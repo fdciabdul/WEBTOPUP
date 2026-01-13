@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cek Pesanan - Marspedia</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { DEFAULT: '#007AFF', dark: '#0056b3', light: '#e0f2fe' },
+                    },
+                    boxShadow: {
+                        'ios': '0 10px 40px -10px rgba(0, 122, 255, 0.3)',
+                        'card': '0 12px 35px -5px rgba(0, 0, 0, 0.06)',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'spring-up': 'springUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+                        springUp: { 
+                            '0%': { transform: 'scale(0.8) translateY(20px)', opacity: 0 }, 
+                            '100%': { transform: 'scale(1) translateY(0)', opacity: 1 } 
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: 0, transform: 'translateY(20px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F8FAFC;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(210,100%,96%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 100%, hsla(200,100%,96%,1) 0, transparent 50%);
+            background-attachment: fixed;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Toast Transition */
+        .toast-enter-active, .toast-leave-active { transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(-30px) scale(0.9); }
+        
+        /* List Transition */
+        .list-move,
+        .list-enter-active,
+        .list-leave-active { transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1); }
+        .list-enter-from,
+        .list-leave-to { opacity: 0; transform: translateY(30px); }
+    </style>
+</head>
+<body class="antialiased text-slate-800 min-h-screen flex items-center justify-center p-4 overflow-x-hidden relative">
+
+    <div id="app" class="w-full max-w-4xl flex flex-col items-center justify-center">
+
+        <transition name="toast">
+            <div v-if="notification.show" 
+                 class="fixed top-6 z-[100] px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 font-semibold text-sm border backdrop-blur-md transition-all duration-300 transform scale-100"
+                 :class="notification.type === 'error' ? 'bg-red-500/90 text-white border-red-600' : (notification.type === 'success' ? 'bg-green-600/90 text-white border-green-700' : 'bg-slate-800/90 text-white border-slate-900')">
+                <i class="fa-solid" :class="notification.type === 'error' ? 'fa-circle-exclamation' : (notification.type === 'success' ? 'fa-check-circle' : 'fa-circle-info')"></i>
+                {{ notification.message }}
+            </div>
+        </transition>
+
+        <div class="w-full flex flex-col items-center transition-all duration-700 ease-in-out animate-fade-in-up">
+
+            <a href="https://marspedia.id" class="group relative mb-8 animate-float select-none cursor-pointer">
+                <div class="absolute inset-0 bg-blue-500/30 rounded-[2.5rem] blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-500"></div>
+                
+                <div class="relative w-32 h-32 bg-white rounded-[2.5rem] shadow-ios flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-500 overflow-hidden">
+                    <img src="https://marspedia.id/storage/assets/logo/e9f5dd334125ee48029ede0de303b548.png" 
+                         alt="Marspedia Logo" 
+                         class="w-full h-full object-cover transition-transform duration-500">
+                </div>
+            </a>
+
+            <div class="text-center mb-8">
+                <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2 tracking-tight drop-shadow-sm">Cek Status Pesanan</h1>
+                <p class="text-slate-500 font-medium max-w-sm mx-auto">Masukan Kode Invoice untuk melacak.</p>
+            </div>
+
+            <div class="w-full max-w-xl relative group transition-all duration-300 hover:-translate-y-1">
+                <div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 group-focus-within:text-brand transition-colors text-lg"></i>
+                </div>
+                
+                <input 
+                    v-model="searchQuery" 
+                    @input="sanitizeInput"
+                    @keyup.enter="performSearch"
+                    type="text" 
+                    class="block w-full pl-14 pr-32 py-5 bg-white border-2 border-transparent focus:border-brand-light rounded-full text-lg font-medium text-slate-800 placeholder-slate-400 shadow-card focus:shadow-ios focus:outline-none focus:ring-4 focus:ring-brand-light/50 transition-all duration-300 uppercase transform focus:scale-[1.01]" 
+                    placeholder="MARSPEDIA/2026/xxx"
+                >
+                
+                <button 
+                    @click="performSearch"
+                    :disabled="loading"
+                    class="absolute right-2 top-2 bottom-2 bg-slate-900 hover:bg-brand text-white font-bold rounded-full px-8 transition-all duration-300 shadow-lg flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transform active:scale-95 hover:shadow-brand/50"
+                >
+                    <span v-if="loading"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                    <span v-else>Cek</span>
+                </button>
+            </div>
+            
+            <div class="mt-4 text-xs font-semibold text-slate-400 bg-white/80 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-sm border border-slate-100 animate-fade-in-up" style="animation-delay: 0.2s;">
+                <i class="fa-solid fa-shield-halved mr-1"></i> Sisa Kuota Pencarian: <span :class="limitRemaining < 3 ? 'text-red-500' : 'text-brand'">{{ limitRemaining }}</span>/10
+            </div>
+
+        </div>
+
+        <transition name="list">
+            <div v-if="results.length > 0" class="w-full max-w-3xl mt-12 pb-10">
+                
+                <div class="flex justify-between items-center mb-6 px-2 border-b border-slate-200 pb-2">
+                    <h3 class="text-xl font-bold text-slate-900">Riwayat Pesanan ({{ results.length }})</h3>
+                    <button @click="reset" class="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors bg-white px-3 py-1.5 rounded-lg shadow-sm border border-slate-100 hover:scale-105 active:scale-95">
+                        Reset Data
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <transition-group name="list" tag="div">
+                        <div v-for="(item, index) in visibleResults" :key="item.invoice" 
+                             @click="openDetail(item)"
+                             class="bg-white p-5 rounded-[1.5rem] shadow-card border border-transparent hover:border-brand-light hover:shadow-ios cursor-pointer transition-all duration-300 hover:-translate-y-1 active:scale-[0.98] group relative overflow-hidden mb-4">
+                            
+                            <div class="flex items-center gap-5">
+                                <div class="w-20 h-20 rounded-2xl bg-slate-50 flex-shrink-0 overflow-hidden border border-slate-100 relative group-hover:shadow-md transition-shadow">
+                                    <img v-if="item.image" :src="item.image" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500">
+                                    <div v-else class="w-full h-full flex items-center justify-center text-slate-300"><i class="fa-solid fa-image"></i></div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">{{ item.invoice }}</p>
+                                    <h4 class="text-lg font-bold text-slate-900 truncate">{{ item.productName }}</h4>
+                                    <p class="text-brand font-bold mt-1 text-lg">{{ formatRupiah(item.price) }}</p>
+                                </div>
+                                <div class="flex flex-col items-end justify-center gap-2 pl-2">
+                                    <span class="text-[10px] text-slate-400 font-medium">{{ item.date }}</span>
+                                    <div class="px-3 py-1.5 rounded-full text-xs font-bold border transform group-hover:scale-105 transition-transform" :class="statusClass(item.status)">
+                                        {{ item.status }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </transition-group>
+                </div>
+
+                <div v-if="visibleCount < results.length" class="mt-8 text-center">
+                    <button @click="loadMore" class="bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-8 rounded-full shadow-md border border-slate-100 transition-all active:scale-95 flex items-center gap-2 mx-auto hover:shadow-lg">
+                        Tampilkan Lainnya <i class="fa-solid fa-chevron-down text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </transition>
+
+        <transition name="toast">
+            <div v-if="selectedOrder" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div @click="closeDetail" class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"></div>
+                
+                <div class="bg-white w-full max-w-md rounded-[2rem] shadow-2xl relative z-10 flex flex-col overflow-hidden max-h-[90vh] animate-spring-up">
+                    
+                    <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/80 backdrop-blur-sm sticky top-0 z-20">
+                        <h2 class="text-lg font-bold text-slate-800">Detail Transaksi</h2>
+                        <button @click="closeDetail" class="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center hover:bg-slate-300 transition-colors active:scale-90">
+                            <i class="fa-solid fa-xmark text-slate-600"></i>
+                        </button>
+                    </div>
+
+                    <div class="overflow-y-auto p-6 space-y-6 bg-white">
+                        
+                        <div class="flex gap-5 items-center p-2 rounded-2xl hover:bg-slate-50 transition-colors">
+                            <div class="w-20 h-20 rounded-2xl bg-white p-0.5 border border-slate-200 shrink-0 shadow-sm">
+                                <img :src="selectedOrder.image" class="w-full h-full object-cover rounded-xl">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-bold text-slate-900 text-lg leading-snug truncate">{{ selectedOrder.productName }}</h3>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <p class="text-brand font-bold text-lg">{{ formatRupiah(selectedOrder.price) }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-blue-50 p-3 rounded-2xl border border-blue-100 text-center transform hover:scale-[1.02] transition-transform">
+                                <span class="text-[10px] uppercase text-brand font-bold">Status Pesanan</span>
+                                <p class="font-bold text-brand-dark text-sm">{{ selectedOrder.status }}</p>
+                            </div>
+                            <div class="bg-green-50 p-3 rounded-2xl border border-green-100 text-center transform hover:scale-[1.02] transition-transform">
+                                <span class="text-[10px] uppercase text-green-600 font-bold">Status Pembayaran</span>
+                                <p class="font-bold text-green-700 text-sm">LUNAS</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                            <h4 class="text-xs font-bold text-slate-900 uppercase mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">
+                                <i class="fa-solid fa-bag-shopping text-brand"></i> Data Pembelian
+                            </h4>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between border-b border-dashed border-slate-100 pb-2">
+                                    <span class="text-slate-500">No. Invoice</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-mono font-semibold text-slate-800">{{ selectedOrder.invoice }}</span>
+                                        <button @click="copyText(selectedOrder.invoice, 'Invoice')" class="text-slate-400 hover:text-brand transition-colors active:scale-90"><i class="fa-regular fa-copy"></i></button>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between border-b border-dashed border-slate-100 pb-2">
+                                    <span class="text-slate-500">Waktu Pembelian</span>
+                                    <span class="font-semibold text-slate-800">{{ selectedOrder.date }} • {{ selectedOrder.time }}</span>
+                                </div>
+                                <div class="flex justify-between border-b border-dashed border-slate-100 pb-2">
+                                    <span class="text-slate-500">Metode Pembayaran</span>
+                                    <span class="font-semibold text-slate-800">{{ selectedOrder.paymentMethod }}</span>
+                                </div>
+                                <div class="flex justify-between border-b border-dashed border-slate-100 pb-2">
+                                    <span class="text-slate-500">Produk</span>
+                                    <span class="font-semibold text-slate-800 text-right w-1/2 truncate">{{ selectedOrder.productName }}</span>
+                                </div>
+                                <div class="flex justify-between border-b border-dashed border-slate-100 pb-2">
+                                    <span class="text-slate-500">Harga</span>
+                                    <span class="font-bold text-brand">{{ formatRupiah(selectedOrder.price) }}</span>
+                                </div>
+                                <div class="flex justify-between items-start">
+                                    <span class="text-slate-500 shrink-0">Input Data</span>
+                                    <div class="flex items-center gap-2 max-w-[60%] justify-end">
+                                        <span class="font-mono font-semibold text-slate-800 text-right break-all">{{ selectedOrder.targetInput }}</span>
+                                        <button @click="copyText(selectedOrder.targetInput, 'Input Data')" class="text-slate-400 hover:text-brand transition-colors active:scale-90"><i class="fa-regular fa-copy"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                            <h4 class="text-xs font-bold text-slate-900 uppercase mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">
+                                <i class="fa-solid fa-user text-brand"></i> Data Pembeli
+                            </h4>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between border-b border-dashed border-slate-100 pb-2">
+                                    <span class="text-slate-500">Nama</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-slate-800">{{ selectedOrder.customerName }}</span>
+                                        <button @click="copyText(selectedOrder.customerName, 'Nama Pembeli')" class="text-slate-400 hover:text-brand transition-colors active:scale-90"><i class="fa-regular fa-copy"></i></button>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between border-b border-dashed border-slate-100 pb-2">
+                                    <span class="text-slate-500">Email</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-slate-800">{{ selectedOrder.buyerEmail }}</span>
+                                        <button @click="copyText(selectedOrder.buyerEmail, 'Email')" class="text-slate-400 hover:text-brand transition-colors active:scale-90"><i class="fa-regular fa-copy"></i></button>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-500">No. HP</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-slate-800">{{ selectedOrder.phone }}</span>
+                                        <button @click="copyText(selectedOrder.phone, 'No HP')" class="text-slate-400 hover:text-brand transition-colors active:scale-90"><i class="fa-regular fa-copy"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="p-5 border-t border-slate-100 bg-white">
+                        <a href="https://wa.me/6282210109289" target="_blank" class="block w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-brand transition-all hover:scale-[1.02] active:scale-[0.98] text-center">
+                            <i class="fa-brands fa-whatsapp text-lg mr-2"></i> Hubungi Admin
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    searchQuery: '',
+                    loading: false,
+                    results: [],
+                    visibleCount: 3,
+                    selectedOrder: null,
+                    timestamps: [], 
+                    notification: { show: false, message: '', type: 'info' },
+
+                    // DUMMY DATA LENGKAP
+                    database: [
+                        {
+                            invoice: 'MARSPEDIA/2026/001', productName: 'Netflix Premium 1 Bulan (UHD)', price: 35000, status: 'Selesai', 
+                            date: '12 Jan 2026', time: '14:30 WIB', paymentMethod: 'QRIS (GoPay)',
+                            customerName: 'Andi Saputra', image: 'https://upload.wikimedia.org/wikipedia/commons/7/75/Netflix_icon.svg',
+                            phone: '081234567890', buyerEmail: 'andi.saputra@gmail.com', targetInput: 'andi.saputra@gmail.com'
+                        },
+                        {
+                            invoice: 'MARSPEDIA/2026/002', productName: 'Mobile Legends 86 Diamonds', price: 22000, status: 'Selesai', 
+                            date: '12 Jan 2026', time: '10:15 WIB', paymentMethod: 'BCA Virtual Account',
+                            customerName: 'Budi Santoso', image: 'https://play-lh.googleusercontent.com/fM1J7tV4b4a6t3n4_t3y3n6w4g8z9o5p_k3r2s1t4u_v5w6x7y8z9a0b1c2d3e4f',
+                            phone: '085678901234', buyerEmail: 'budi.santoso@yahoo.com', targetInput: '12345678 (2001)'
+                        },
+                        {
+                            invoice: 'MARSPEDIA/2026/003', productName: 'Spotify Premium Individual', price: 15000, status: 'Proses', 
+                            date: '11 Jan 2026', time: '19:45 WIB', paymentMethod: 'DANA',
+                            customerName: 'Citra Lestari', image: 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg',
+                            phone: '081112223333', buyerEmail: 'citra.music@mail.com', targetInput: 'citra.music@mail.com'
+                        },
+                        {
+                            invoice: 'MARSPEDIA/2026/004', productName: 'Valorant Points 1000 VP', price: 110000, status: 'Menunggu', 
+                            date: '10 Jan 2026', time: '08:20 WIB', paymentMethod: 'OVO',
+                            customerName: 'Dimas Anggara', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Valorant_logo_-_pink_color_version.svg/1200px-Valorant_logo_-_pink_color_version.svg.png',
+                            phone: '089988776655', buyerEmail: 'dimas.valo@gmail.com', targetInput: 'JettMain#RIOT1'
+                        },
+                        {
+                            invoice: 'MARSPEDIA/2026/005', productName: 'Youtube Premium 4 Bulan', price: 25000, status: 'Selesai', 
+                            date: '09 Jan 2026', time: '13:00 WIB', paymentMethod: 'ShopeePay',
+                            customerName: 'Eka Wijaya', image: 'https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg',
+                            phone: '087712345678', buyerEmail: 'eka.youtube@gmail.com', targetInput: 'eka.youtube@gmail.com'
+                        },
+                        {
+                            invoice: 'MARSPEDIA/2026/006', productName: 'Genshin Impact Welkin Moon', price: 79000, status: 'Selesai', 
+                            date: '08 Jan 2026', time: '21:10 WIB', paymentMethod: 'Bank Mandiri',
+                            customerName: 'Fajar Nugraha', image: 'https://play-lh.googleusercontent.com/L13z422x3z5b3r6y7z8a9b0c1d2e3f4g5h6i7j8k9l0m1n2o3p4q5r6s7t8u9v0w',
+                            phone: '082121212121', buyerEmail: 'fajar.traveler@gmail.com', targetInput: '800555666 (Asia)'
+                        },
+                        {
+                            invoice: 'MARSPEDIA/2026/007', productName: 'Disney+ Hotstar 1 Tahun', price: 45000, status: 'Proses', 
+                            date: '08 Jan 2026', time: '09:30 WIB', paymentMethod: 'QRIS (BCA)',
+                            customerName: 'Gita Savitri', image: 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg',
+                            phone: '081345678901', buyerEmail: 'gita.savitri@edu.co.id', targetInput: '081345678901'
+                        },
+                        {
+                            invoice: 'MARSPEDIA/2026/008', productName: 'PUBG Mobile 600 UC', price: 135000, status: 'Selesai', 
+                            date: '07 Jan 2026', time: '16:50 WIB', paymentMethod: 'BRI Virtual Account',
+                            customerName: 'Hendra Setiawan', image: 'https://upload.wikimedia.org/wikipedia/en/thumb/0/03/PUBG_Mobile_Logo.svg/1200px-PUBG_Mobile_Logo.svg.png',
+                            phone: '081987654321', buyerEmail: 'hendra.pubg@gmail.com', targetInput: '555888999'
+                        },
+                        {
+                            invoice: 'MARSPEDIA/2026/009', productName: 'Canva Pro Lifetime', price: 10000, status: 'Selesai', 
+                            date: '05 Jan 2026', time: '11:11 WIB', paymentMethod: 'GoPay',
+                            customerName: 'Indah Permata', image: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Canva_icon_2021.svg',
+                            phone: '085233445566', buyerEmail: 'indah.design@mail.com', targetInput: 'indah.design@mail.com'
+                        },
+                        {
+                            invoice: 'MARSPEDIA/2026/010', productName: 'WeTV VIP 1 Bulan', price: 18000, status: 'Selesai', 
+                            date: '01 Jan 2026', time: '20:20 WIB', paymentMethod: 'DANA',
+                            customerName: 'Joko Anwar', image: 'https://play-lh.googleusercontent.com/M6k3n7o8p9q0r1s2t3u4v5w6x7y8z9a0b1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q',
+                            phone: '081511223344', buyerEmail: 'joko.movie@gmail.com', targetInput: 'joko.movie@gmail.com'
+                        }
+                    ]
+                }
+            },
+            mounted() {
+                const storedTimestamps = localStorage.getItem('searchTimestamps');
+                if (storedTimestamps) {
+                    try {
+                        const parsed = JSON.parse(storedTimestamps);
+                        const now = Date.now();
+                        this.timestamps = parsed.filter(t => now - t < 60000);
+                    } catch (e) {
+                        this.timestamps = [];
+                    }
+                }
+            },
+            computed: {
+                visibleResults() { return this.results.slice(0, this.visibleCount); },
+                limitRemaining() {
+                    const now = Date.now();
+                    const recentRequests = this.timestamps.filter(t => now - t < 60000).length;
+                    return Math.max(0, 10 - recentRequests);
+                }
+            },
+            methods: {
+                sanitizeInput() {
+                    this.searchQuery = this.searchQuery.replace(/[^a-zA-Z0-9\-/]/g, '');
+                },
+                
+                showNotify(msg, type = 'info') {
+                    this.notification = { show: true, message: msg, type: type };
+                    setTimeout(() => this.notification.show = false, 3000);
+                },
+
+                copyText(text, label) {
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            this.showNotify(`${label} berhasil disalin!`, 'success');
+                        }).catch(() => {
+                            this.showNotify('Gagal menyalin teks.', 'error');
+                        });
+                    } else {
+                        const textArea = document.createElement("textarea");
+                        textArea.value = text;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand("Copy");
+                        textArea.remove();
+                        this.showNotify(`${label} berhasil disalin!`, 'success');
+                    }
+                },
+
+                checkLimit() {
+                    const now = Date.now();
+                    this.timestamps = this.timestamps.filter(t => now - t < 60000);
+                    
+                    if (this.timestamps.length >= 10) {
+                        localStorage.setItem('searchTimestamps', JSON.stringify(this.timestamps));
+                        return false;
+                    }
+                    
+                    this.timestamps.push(now);
+                    localStorage.setItem('searchTimestamps', JSON.stringify(this.timestamps));
+                    return true;
+                },
+
+                performSearch() {
+                    if (!this.searchQuery.toUpperCase().startsWith('MARSPEDIA/')) {
+                        this.showNotify("Format wajib: MARSPEDIA/xxxx/xxx", "error");
+                        return;
+                    }
+                    
+                    if (!this.checkLimit()) {
+                        this.showNotify("Limit Habis! Tunggu sebentar lagi.", "error");
+                        return;
+                    }
+
+                    this.loading = true;
+                    this.results = [];
+                    
+                    setTimeout(() => {
+                        this.loading = false;
+                        if (this.searchQuery.toLowerCase().includes('gagal')) {
+                            this.showNotify("Pesanan tidak ditemukan.", "error");
+                        } else {
+                            this.results = [...this.database]; 
+                            this.showNotify("Data Ditemukan!", "success");
+                        }
+                    }, 1000);
+                },
+                loadMore() { this.visibleCount += 5; },
+                reset() { this.searchQuery = ''; this.results = []; this.visibleCount = 3; },
+                openDetail(item) { this.selectedOrder = item; },
+                closeDetail() { this.selectedOrder = null; },
+                formatRupiah(n) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n); },
+                statusClass(s) {
+                    if(s === 'Selesai') return 'bg-green-100 text-green-700 border-green-200';
+                    if(s === 'Proses') return 'bg-blue-100 text-blue-700 border-blue-200';
+                    return 'bg-amber-100 text-amber-700 border-amber-200';
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pembayaran - Marspedia</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        /* --- BRANDING & THEME --- */
+        :root {
+            --brand-primary: #005EB8; 
+            --brand-secondary: #004A94;
+            --brand-accent: #00C6FB; 
+            --bg-page: #F2F2F7;
+        }
+
+        body { font-family: 'Outfit', sans-serif; background-color: var(--bg-page); color: #1C1C1E; -webkit-tap-highlight-color: transparent; }
+        h1, h2, h3, h4, .font-heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+        [x-cloak] { display: none !important; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes slideInUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .slide-up { animation: slideInUp 0.5s ease-out forwards; }
+
+        @keyframes scanLine { 0% { top: 0%; opacity: 0; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        .scan-line { position: absolute; left: 0; width: 100%; height: 4px; background: #ef4444; box-shadow: 0 0 20px #ef4444; animation: scanLine 2.5s infinite; z-index: 10; }
+
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .animate-shimmer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%); animation: shimmer 2s infinite; pointer-events: none; }
+        
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .animate-shake { animation: shake 0.3s ease-in-out; border-color: #ef4444 !important; color: #ef4444 !important; }
+
+        /* UTILITIES */
+        .card-glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+        .bg-pattern { background-image: radial-gradient(#005EB8 0.5px, transparent 0.5px), radial-gradient(#005EB8 0.5px, #F2F2F7 0.5px); background-size: 24px 24px; opacity: 0.05; }
+        
+        .touch-effect { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .touch-effect:active { transform: scale(0.96); }
+        
+        /* Accordion Transition */
+        .accordion-content { transition: max-height 0.3s ease-out, opacity 0.3s ease-out; max-height: 0; opacity: 0; overflow: hidden; }
+        .accordion-content.active { max-height: 1000px; opacity: 1; }
+
+        /* Custom Scrollbar */
+        .invoice-scroll::-webkit-scrollbar { width: 6px; }
+        .invoice-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
+        .invoice-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .invoice-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { brand: { primary: '#005EB8', secondary: '#004A94', accent: '#00C6FB' } } } } }
+    </script>
+</head>
+<body class="min-h-screen flex flex-col items-center relative overflow-x-hidden selection:bg-brand-primary/20">
+
+    <div class="absolute inset-0 bg-pattern z-0 pointer-events-none"></div>
+
+    <header class="w-full max-w-[1080px] bg-brand-primary/95 backdrop-blur-xl lg:rounded-b-[36px] shadow-lg sticky top-0 z-50 transition-all duration-300 border-b border-white/10 animate-enter">
+        <div class="px-5 py-3 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 text-white touch-effect group">
+                <div class="w-10 h-10 bg-white/15 rounded-full flex items-center justify-center group-active:bg-white/25 transition border border-white/10 backdrop-blur-md">
+                    <i class="fa-solid fa-arrow-left text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-heading font-bold leading-tight uppercase tracking-wider">MARSPEDIA</h1>
+                    <p class="text-xs text-white/80 font-medium tracking-wide">Official Store</p>
+                </div>
+            </a>
+            <div class="flex items-center gap-2">
+                <a href="https://wa.me/6282210109289" target="_blank" class="w-10 h-10 rounded-full flex items-center justify-center text-white hover:bg-white/10 touch-effect transition relative">
+                    <i class="fa-solid fa-headset text-lg"></i> 
+                    <span class="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-brand-primary animate-pulse"></span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div x-data="paymentLogic()" x-init="initPayment()" class="w-full max-w-[1080px] px-4 lg:px-0 py-6 relative z-10 pb-32">
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+
+            <div class="lg:col-span-7 order-1 space-y-6">
+                
+                <div x-show="status === 'pending'" class="bg-gradient-to-r from-blue-600 to-brand-secondary rounded-[24px] p-5 shadow-lg shadow-blue-500/30 slide-up relative overflow-hidden text-white" style="animation-delay: 0.1s;">
+                    <div class="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                    <div class="flex flex-row items-center justify-between gap-4 relative z-10">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20">
+                                <i class="fa-regular fa-clock text-xl animate-[pulse_2s_infinite]"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-blue-100 uppercase tracking-wide opacity-80">Sisa Waktu Pembayaran</p>
+                                <p class="text-3xl font-mono font-bold tracking-tight tabular-nums" x-text="formatTime(timeLeft)"></p>
+                            </div>
+                        </div>
+                        <div class="bg-white/10 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/10">
+                            <span class="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-red-400 animate-ping"></span>
+                                Menunggu
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-glass rounded-[32px] p-6 lg:p-8 slide-up relative overflow-hidden shadow-xl" style="animation-delay: 0.2s;">
+                    
+                    <div x-show="status === 'paid'" class="text-center py-8" x-cloak>
+                        <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                            <div class="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-20"></div>
+                            <i class="fa-solid fa-check text-4xl text-green-600"></i>
+                        </div>
+                        <h2 class="font-heading font-extrabold text-3xl text-slate-800 mb-2">Pembayaran Sukses!</h2>
+                        <p class="text-slate-500 mb-8 max-w-sm mx-auto">Terima kasih. Pesanan Anda telah dikonfirmasi dan invoice siap diunduh.</p>
+                        <div class="space-y-3">
+                            <button @click="showInvoice = true" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-xl hover:bg-slate-800 transition flex items-center justify-center gap-2 touch-effect group">
+                                <i class="fa-solid fa-file-invoice group-hover:scale-110 transition-transform"></i> Lihat & Download Invoice
+                            </button>
+                        </div>
+                    </div>
+
+                    <div x-show="status === 'pending'">
+                        
+                        <div class="flex items-center justify-between mb-8 border-b border-gray-100 pb-6">
+                            <div class="flex items-center gap-4">
+                                <div class="p-3 border border-gray-100 rounded-2xl bg-white shadow-sm">
+                                    <img :src="getMethodLogo(paymentMethod)" class="h-8 w-auto object-contain">
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Metode Pembayaran</span>
+                                    <span class="text-xl font-bold text-slate-800 leading-none" x-text="getMethodName(paymentMethod)"></span>
+                                </div>
+                            </div>
+                            <button @click="showGuide = true" x-show="paymentMethod !== 'saldo'" class="text-brand-primary text-xs font-bold hover:underline">Lihat Cara Bayar</button>
+                        </div>
+
+                        <div x-show="paymentMethod === 'qris'" x-cloak>
+                            <div class="flex flex-col items-center">
+                                <div class="relative group cursor-pointer w-full max-w-[280px] mx-auto mb-4" @click="toggleZoomQR()">
+                                    <div class="bg-white p-4 rounded-[32px] border-[3px] border-slate-100 shadow-2xl shadow-slate-200/50 relative overflow-hidden">
+                                        <div class="scan-line"></div> 
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" 
+                                             class="w-full h-auto object-contain block mx-auto rounded-xl" 
+                                             alt="QRIS Code">
+                                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            <div class="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">
+                                                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a2/Logo_QRIS.svg" class="h-5 w-auto">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button @click="downloadQR" class="w-full max-w-sm flex items-center justify-center gap-2 bg-slate-50 text-slate-700 px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-100 transition shadow-sm touch-effect border border-slate-200 mb-1">
+                                    <i class="fa-solid fa-download text-brand-primary"></i> Download QRIS
+                                </button>
+                                <p class="text-[10px] text-slate-400 mb-3">Jika download gagal, screenshot layar ini.</p>
+                            </div>
+                        </div>
+
+                        <div x-show="['bca','bri','bni','mandiri','permata'].includes(paymentMethod)" class="space-y-6" x-cloak>
+                            <div class="bg-slate-50 rounded-[24px] p-6 border border-slate-200 relative group transition hover:border-brand-primary/50 text-center">
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Nomor Virtual Account</p>
+                                <div class="flex items-center justify-center gap-3 mb-2">
+                                    <p class="text-3xl font-heading font-extrabold text-slate-800 tracking-wide font-mono">8801234567890</p>
+                                    <button @click="copyText('8801234567890')" class="text-brand-primary bg-white p-2.5 rounded-xl shadow-sm hover:scale-110 transition border border-slate-200 touch-effect"><i class="fa-regular fa-copy"></i></button>
+                                </div>
+                                <p class="text-xs text-slate-400">Dicek Otomatis</p>
+                            </div>
+
+                            <div class="bg-white rounded-[24px] p-5 border border-gray-100 flex items-center justify-between shadow-sm">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Tagihan</p>
+                                    <p class="text-xl font-bold text-brand-primary" x-text="formatRupiah(totalPrice)"></p>
+                                </div>
+                                <button @click="copyText(totalPrice)" class="text-slate-500 hover:text-brand-primary transition font-bold text-xs bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-200 touch-effect">Salin Jumlah</button>
+                            </div>
+                        </div>
+
+                        <div x-show="paymentMethod === 'saldo'" x-cloak>
+                            <p class="text-sm text-slate-600 mb-6 text-center font-medium">Masukan 6 digit PIN keamanan akun Anda.</p>
+                            <div class="flex justify-center gap-2 sm:gap-4 mb-2">
+                                <template x-for="i in 6">
+                                    <input type="password" maxlength="1" 
+                                           class="w-12 h-14 rounded-2xl border-2 border-gray-200 bg-white text-center text-2xl font-bold focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/20 outline-none transition-all shadow-sm text-slate-800"
+                                           :class="pinError ? 'animate-shake' : ''"
+                                           @input="handlePinInput($event, i)"
+                                           @keydown.backspace="handleBackspace($event, i)"
+                                           :id="'pin-' + i"
+                                           :disabled="isLoading">
+                                </template>
+                            </div>
+                            <p x-show="pinError" class="text-center text-red-500 text-xs font-bold mt-2 animate-pulse" x-transition>PIN Salah / Belum Lengkap!</p>
+                        </div>
+
+                        <div class="mt-0 pt-3 border-t border-gray-100">
+                            <button @click="simulatePayment()" 
+                                    :disabled="isLoading"
+                                    class="w-full bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-bold py-4 rounded-2xl shadow-xl shadow-brand-primary/40 hover:shadow-brand-primary/60 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group touch-effect disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none">
+                                
+                                <div class="animate-shimmer" x-show="!isLoading"></div>
+                                
+                                <span class="relative z-10 flex items-center justify-center gap-2 text-lg">
+                                    <template x-if="isLoading">
+                                        <span class="flex items-center gap-3">
+                                            <i class="fa-solid fa-spinner fa-spin text-xl"></i>
+                                            <span>Mengecek Pembayaran...</span>
+                                        </span>
+                                    </template>
+                                    
+                                    <template x-if="!isLoading">
+                                        <span class="flex items-center gap-2">
+                                            <span x-text="paymentMethod === 'saldo' ? 'Konfirmasi PIN' : 'Cek Status Pembayaran'"></span>
+                                            <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                                        </span>
+                                    </template>
+                                </span>
+                            </button>
+                            <p class="text-[10px] text-center text-slate-400 mt-3 font-medium flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-shield-halved text-green-500"></i> Transaksi Aman & Terenkripsi SSL
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 order-2">
+                <div class="sticky top-24 space-y-4">
+                    
+                    <div x-data="{ summaryOpen: false }" class="bg-white rounded-[24px] shadow-lg shadow-slate-200/50 overflow-hidden slide-up border border-slate-100" style="animation-delay: 0.3s;">
+                        
+                        <div @click="summaryOpen = !summaryOpen" class="p-4 cursor-pointer hover:bg-slate-50 transition relative group select-none">
+                            <div class="flex items-center gap-4">
+                                <div class="w-16 h-16 bg-white rounded-xl p-2 shadow-sm border border-slate-100 flex items-center justify-center shrink-0">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/214/214305.png" class="w-full h-full object-contain">
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-heading font-bold text-slate-800 text-sm leading-tight mb-0.5" x-text="productName"></h3>
+                                    <p class="font-extrabold text-brand-primary text-lg leading-tight" x-text="formatRupiah(totalPrice)"></p>
+                                    <p class="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                                        Lihat Detail Pesanan <i class="fa-solid fa-chevron-down transition-transform duration-300" :class="summaryOpen ? 'rotate-180' : ''"></i>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-content bg-slate-50 border-t border-slate-100" :class="summaryOpen ? 'active' : ''">
+                            <div class="p-5 space-y-4">
+
+                                <div class="flex justify-between items-center text-xs group py-1 border-b border-dashed border-gray-200">
+                                    <span class="text-slate-500 font-medium">No. Pesanan</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800 font-mono" x-text="'#'+orderId"></span>
+                                        <button @click.stop="copyText('#'+orderId)" class="text-brand-primary hover:text-brand-secondary transition"><i class="fa-regular fa-copy"></i></button>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between items-center text-xs group py-1 border-b border-dashed border-gray-200">
+                                    <span class="text-slate-500 font-medium">Waktu Transaksi</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800 text-right" x-text="transactionTime"></span>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between items-center text-xs group py-1 border-b border-dashed border-gray-200">
+                                    <span class="text-slate-500 font-medium">Data Pembelian</span>
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-right">
+                                            <span class="font-bold text-slate-800 block" x-text="userId"></span>
+                                            <span class="text-[10px] text-slate-400 block" x-text="'Zone: '+zoneId"></span>
+                                        </div>
+                                        <button @click.stop="copyText(userId + ' ' + zoneId)" class="text-brand-primary hover:text-brand-secondary transition"><i class="fa-regular fa-copy"></i></button>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between items-center text-xs group py-1 border-b border-dashed border-gray-200">
+                                    <span class="text-slate-500 font-medium">Email Pembeli</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800" x-text="userEmail"></span>
+                                        <button @click.stop="copyText(userEmail)" class="text-brand-primary hover:text-brand-secondary transition"><i class="fa-regular fa-copy"></i></button>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between items-center text-xs group py-1">
+                                    <span class="text-slate-500 font-medium">WhatsApp</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-slate-800" x-text="userPhone"></span>
+                                        <button @click.stop="copyText(userPhone)" class="text-brand-primary hover:text-brand-secondary transition"><i class="fa-regular fa-copy"></i></button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="https://wa.me/6282210109289" target="_blank" class="block bg-gradient-to-br from-brand-secondary to-brand-primary rounded-[24px] p-5 text-white shadow-lg relative overflow-hidden group cursor-pointer touch-effect">
+                        <div class="absolute right-0 top-0 w-24 h-24 bg-white/10 rounded-full blur-xl -mr-8 -mt-8 group-hover:bg-white/20 transition"></div>
+                        <div class="flex items-center gap-4 relative z-10">
+                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
+                                <i class="fa-solid fa-headset text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-blue-100 font-medium">Butuh Bantuan?</p>
+                                <p class="text-sm font-bold">Hubungi CS Marspedia</p>
+                            </div>
+                            <i class="fa-solid fa-arrow-up-right-from-square ml-auto text-white/50 group-hover:text-white transition"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="showToast" 
+             x-transition:enter="transition ease-out duration-300" 
+             x-transition:enter-start="opacity-0 translate-y-10 scale-95" 
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100" 
+             x-transition:leave="transition ease-in duration-200" 
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100" 
+             x-transition:leave-end="opacity-0 translate-y-10 scale-95" 
+             class="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[100] w-auto max-w-[90%]" x-cloak>
+            <div class="bg-slate-900/95 backdrop-blur-md text-white pl-4 pr-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-white/10 ring-2 ring-white/20">
+                <div class="rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-lg animate-bounce" :class="toastType === 'error' ? 'bg-red-500 shadow-red-500/30' : 'bg-emerald-500 shadow-emerald-500/30'">
+                    <i class="fa-solid" :class="toastType === 'error' ? 'fa-xmark' : 'fa-check'"></i>
+                </div>
+                <span class="font-bold text-sm tracking-wide" x-text="toastMessage">Berhasil disalin!</span>
+            </div>
+        </div>
+
+        <div x-show="showGuide" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" x-cloak>
+            <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" @click="showGuide = false" x-transition.opacity></div>
+            <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[80vh]" x-transition.scale.origin.bottom>
+                <div class="p-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <h3 class="font-bold text-slate-700">Cara Pembayaran</h3>
+                    <button @click="showGuide = false" class="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="overflow-y-auto p-5">
+                    
+                    <div x-show="paymentMethod === 'qris'">
+                        <ol class="space-y-4 relative border-l-2 border-brand-primary/20 ml-2 pl-6">
+                            <li class="relative"><span class="absolute -left-[31px] bg-brand-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span><p class="text-sm text-slate-700 font-bold">Buka E-Wallet / M-Banking</p></li>
+                            <li class="relative"><span class="absolute -left-[31px] bg-brand-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span><p class="text-sm text-slate-700 font-bold">Scan & Konfirmasi</p></li>
+                            <li class="relative"><span class="absolute -left-[31px] bg-brand-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span><p class="text-sm text-slate-700 font-bold">Selesai</p></li>
+                        </ol>
+                    </div>
+
+                    <div x-show="['bca','bri','bni','mandiri','permata'].includes(paymentMethod)">
+                        <ol class="space-y-4 relative border-l-2 border-brand-primary/20 ml-2 pl-6">
+                            <li class="relative"><span class="absolute -left-[31px] bg-brand-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span><p class="text-sm text-slate-700 font-bold">Login Mobile Banking</p></li>
+                            <li class="relative"><span class="absolute -left-[31px] bg-brand-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span><p class="text-sm text-slate-700 font-bold">Pilih Menu Pembayaran</p><p class="text-xs text-slate-500 mt-1">Pilih menu Virtual Account / VA.</p></li>
+                            <li class="relative"><span class="absolute -left-[31px] bg-brand-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span><p class="text-sm text-slate-700 font-bold">Masukkan Nomor VA</p><p class="text-xs text-slate-500 mt-1">Input: <b class="text-black">8801234567890</b></p></li>
+                            <li class="relative"><span class="absolute -left-[31px] bg-brand-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">4</span><p class="text-sm text-slate-700 font-bold">Konfirmasi</p></li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="showInvoice" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center" x-cloak>
+            <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" @click="showInvoice = false" x-transition.opacity></div>
+            
+            <div class="w-full h-full sm:h-auto sm:max-h-[85vh] sm:w-[800px] relative z-10 flex flex-col bg-white sm:rounded-2xl shadow-2xl overflow-hidden transition-all transform">
+                
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white shrink-0 z-20">
+                    <h3 class="font-heading font-bold text-slate-800 text-lg">Preview Invoice</h3>
+                    
+                    <div class="hidden sm:flex items-center gap-3">
+                        <button @click="downloadInvoice" class="bg-brand-primary hover:bg-brand-secondary text-white text-xs font-bold py-2.5 px-5 rounded-full transition shadow-md hover:shadow-lg flex items-center gap-2 transform active:scale-95">
+                            <i class="fa-solid fa-download"></i> Download Invoice
+                        </button>
+                        <button @click="showInvoice = false" class="text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition w-9 h-9 flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    </div>
+
+                    <button @click="showInvoice = false" class="sm:hidden text-slate-500 p-2 bg-slate-100 rounded-full w-9 h-9 flex items-center justify-center"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto bg-slate-50 relative invoice-scroll pb-24 sm:pb-0"> 
+                    
+                    <div id="invoice-capture" class="bg-white shadow-sm relative text-slate-800 mx-auto w-full max-w-[800px]" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+                        
+                        <div class="h-2 w-full bg-brand-primary"></div>
+
+                        <div class="p-6 sm:p-12">
+                            <div class="flex flex-col sm:flex-row justify-between items-start mb-8 sm:mb-12 border-b border-gray-100 pb-8 gap-6">
+                                <div class="w-full sm:w-auto">
+                                    <div class="flex items-center gap-3 mb-4">
+                                        <div class="w-10 h-10 bg-brand-primary rounded text-white flex items-center justify-center font-bold text-xl">M</div>
+                                        <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">MARSPEDIA</h1>
+                                    </div>
+                                    <div class="text-xs text-slate-500 font-medium leading-relaxed">
+                                        <p class="font-bold text-slate-700">PT Marspedia Digital Indonesia</p>
+                                        <p>Menara Mandiri, Jl. Jenderal Sudirman No.54</p>
+                                        <p>Jakarta Selatan, DKI Jakarta</p>
+                                        <div class="mt-2 space-y-1">
+                                            <p><i class="fa-solid fa-phone w-4 text-center mr-1"></i> 0822-1010-9289</p>
+                                            <p><i class="fa-solid fa-envelope w-4 text-center mr-1"></i> finance@marspedia.id</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="w-full sm:w-auto text-left sm:text-right">
+                                    <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-200 uppercase tracking-widest leading-none mb-2">INVOICE</h2>
+                                    <p class="text-sm font-bold text-slate-800">No: <span class="font-mono" x-text="'#'+orderId"></span></p>
+                                    <p class="text-xs text-slate-500" x-text="transactionTime"></p>
+                                    <div class="mt-4 bg-green-50 text-green-700 px-3 py-1 rounded inline-block text-xs font-bold border border-green-100 uppercase tracking-wide">
+                                        LUNAS / PAID
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-8 sm:mb-10">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Ditagihkan Kepada:</h3>
+                                <div class="bg-gray-50 rounded-lg p-5 border border-gray-100">
+                                    <table class="w-full text-sm">
+                                        <tbody>
+                                            <tr>
+                                                <td class="text-slate-500 w-20 py-1 font-medium">Nama</td>
+                                                <td class="text-slate-400 w-4 px-2">:</td>
+                                                <td class="font-bold text-slate-800">Guest Customer</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-slate-500 w-20 py-1 font-medium">Email</td>
+                                                <td class="text-slate-400 w-4 px-2">:</td>
+                                                <td class="font-bold text-slate-800 break-all" x-text="userEmail"></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-slate-500 w-20 py-1 font-medium">No HP</td>
+                                                <td class="text-slate-400 w-4 px-2">:</td>
+                                                <td class="font-bold text-slate-800" x-text="userPhone"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="mb-8 overflow-x-auto">
+                                <table class="w-full text-sm min-w-[500px] sm:min-w-0">
+                                    <thead>
+                                        <tr class="bg-brand-primary text-white text-xs uppercase tracking-wider">
+                                            <th class="py-3 px-4 text-left font-bold sm:rounded-l-lg">Deskripsi Item</th>
+                                            <th class="py-3 px-4 text-center font-bold w-16">Qty</th>
+                                            <th class="py-3 px-4 text-right font-bold w-28">Harga</th>
+                                            <th class="py-3 px-4 text-right font-bold w-28 sm:rounded-r-lg">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-slate-700">
+                                        <tr class="border-b border-gray-100">
+                                            <td class="py-4 px-4 align-top">
+                                                <p class="font-bold text-slate-900" x-text="productName"></p>
+                                                <p class="text-xs text-slate-500 mt-1">Varian: Instant Top Up</p>
+                                                <p class="text-[10px] text-slate-400 mt-1 font-mono" x-text="'UserID: '+userId+' ('+zoneId+')'"></p>
+                                            </td>
+                                            <td class="py-4 px-4 text-center align-top font-medium">1</td>
+                                            <td class="py-4 px-4 text-right align-top" x-text="formatRupiah(price)"></td>
+                                            <td class="py-4 px-4 text-right align-top font-bold text-slate-900" x-text="formatRupiah(price)"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row gap-8 items-start mb-12">
+                                <div class="w-full sm:w-1/2 order-2 sm:order-1">
+                                    <div class="bg-slate-50 rounded-lg p-4 border border-slate-100">
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Terbilang:</p>
+                                        <p class="text-sm font-serif italic text-slate-800 capitalize leading-relaxed font-medium">
+                                            "<span x-text="terbilang(totalPrice)"></span> Rupiah"
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="w-full sm:w-1/2 order-1 sm:order-2">
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between text-xs text-slate-600">
+                                            <span class="font-medium">Sub Total</span>
+                                            <span x-text="formatRupiah(price)"></span>
+                                        </div>
+                                        <div class="flex justify-between text-xs text-slate-600">
+                                            <span class="font-medium">Kode Unik</span>
+                                            <span x-text="formatRupiah(uniqueCode)"></span>
+                                        </div>
+                                        <div class="flex justify-between text-xs text-slate-600">
+                                            <span class="font-medium">Biaya Admin</span>
+                                            <span x-text="formatRupiah(adminFee)"></span>
+                                        </div>
+                                        <div class="flex justify-between text-xs text-slate-600">
+                                            <span class="font-medium">Biaya Layanan</span>
+                                            <span x-text="formatRupiah(serviceFee)"></span>
+                                        </div>
+                                        <div class="flex justify-between text-xs text-green-600">
+                                            <span class="font-bold">Diskon</span>
+                                            <span class="font-bold" x-text="'- ' + formatRupiah(discount)"></span>
+                                        </div>
+                                        <div class="h-px bg-slate-200 w-full my-2"></div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-extrabold text-slate-900 text-sm uppercase">TOTAL PEMBAYARAN</span>
+                                            <span class="font-extrabold text-2xl text-brand-primary" x-text="formatRupiah(totalPrice)"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="border-t-2 border-slate-100 pt-6">
+                                <div class="flex flex-col sm:flex-row justify-between items-end gap-6">
+                                    <div class="w-full sm:w-2/3">
+                                        <p class="font-bold text-xs text-slate-800 mb-1">CATATAN PENTING:</p>
+                                        <p class="text-[10px] text-slate-500 leading-relaxed mb-4">
+                                            Barang yang sudah dibeli tidak dapat ditukar atau dikembalikan. Mohon simpan invoice ini sebagai bukti pembelian yang sah.
+                                        </p>
+                                        <p class="text-[10px] text-slate-400">
+                                            Terima kasih atas kepercayaan Anda kepada Marspedia.<br>
+                                            Dokumen ini diterbitkan secara digital oleh sistem Marspedia Finance.
+                                        </p>
+                                    </div>
+                                    <div class="text-center w-full sm:w-auto min-w-[150px]">
+                                        <div class="h-16 w-full flex items-center justify-center mb-2">
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e4/Signature_sample.svg" class="h-12 opacity-40 grayscale" alt="Signature">
+                                        </div>
+                                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest border-t border-slate-200 pt-1">Authorized Signature</p>
+                                        <p class="text-[9px] text-brand-primary font-bold mt-0.5">Marspedia Finance Dept.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="h-2 w-full bg-slate-100"></div>
+                    </div>
+                </div>
+
+                <div class="block sm:hidden absolute bottom-0 left-0 w-full bg-white border-t border-gray-100 p-4 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-30">
+                    <button @click="downloadInvoice" class="w-full bg-brand-primary text-white py-3.5 rounded-xl font-bold shadow-lg shadow-brand-primary/20 flex items-center justify-center gap-2 active:scale-95 transition">
+                        <i class="fa-solid fa-download"></i> Download Invoice (JPG)
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function paymentLogic() {
+            return {
+                status: 'pending',
+                isLoading: false, 
+                timeLeft: 900,
+                paymentMethod: 'qris', 
+                productName: 'Wait...',
+                price: 0, 
+                adminFee: 0, 
+                serviceFee: 0, 
+                uniqueCode: 123, 
+                discount: 0, 
+                totalPrice: 0,
+                userId: '', 
+                zoneId: '',
+                userEmail: '',
+                userPhone: '',
+                orderId: Math.floor(100000 + Math.random() * 900000),
+                transactionTime: new Date().toLocaleString('id-ID', {day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'}) + ' WIB',
+                transactionTimeShort: new Date().toLocaleString('id-ID', {day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'}),
+                showInvoice: false, 
+                showGuide: false,
+                showToast: false, 
+                toastMessage: '',
+                toastType: 'success', 
+                timerInterval: null,
+                pinError: false,
+
+                initPayment() {
+                    const storedUser = JSON.parse(localStorage.getItem('mlbb_user_ios')) || { userId: '12345678', serverId: '2025' };
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const methodParam = urlParams.get('method'); 
+                    
+                    this.userId = storedUser.userId; 
+                    this.zoneId = storedUser.serverId;
+                    this.userEmail = 'customer@email.com'; 
+                    this.userPhone = '0812-3456-7890'; 
+                    
+                    this.productName = "85 Diamonds"; 
+                    this.price = 24000;
+                    this.serviceFee = 500; 
+                    
+                    if(methodParam) this.paymentMethod = methodParam;
+                    else {
+                        const demos = ['qris', 'bca', 'saldo']; 
+                        this.paymentMethod = demos[Math.floor(Math.random() * demos.length)];
+                    }
+
+                    if(this.paymentMethod === 'qris') this.adminFee = Math.ceil(this.price * 0.007);
+                    else if(this.paymentMethod === 'saldo') this.adminFee = 0;
+                    else this.adminFee = 4000; 
+                    
+                    this.totalPrice = this.price + this.adminFee + this.serviceFee + this.uniqueCode - this.discount;
+                    this.startTimer();
+                },
+
+                startTimer() {
+                    this.timerInterval = setInterval(() => {
+                        if (this.timeLeft > 0) this.timeLeft--;
+                        else { 
+                            clearInterval(this.timerInterval); 
+                            alert('Waktu pembayaran habis!'); 
+                            window.location.reload(); 
+                        }
+                    }, 1000);
+                },
+
+                simulatePayment() {
+                    if (this.paymentMethod === 'saldo') {
+                        let currentPin = '';
+                        for(let i=1; i<=6; i++) {
+                            const val = document.getElementById('pin-'+i).value;
+                            if(val) currentPin += val;
+                        }
+                        if (currentPin.length < 6) {
+                            this.triggerPinError();
+                            return; 
+                        }
+                    }
+
+                    this.isLoading = true;
+                    setTimeout(() => {
+                        this.isLoading = false; 
+                        this.status = 'paid'; 
+                        clearInterval(this.timerInterval);
+                        this.triggerConfetti();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }, 2000);
+                },
+
+                downloadInvoice() {
+                    const invoiceElement = document.getElementById('invoice-capture');
+                    // Setup html2canvas options specifically for a clean capture
+                    html2canvas(invoiceElement, {
+                        scale: 2, 
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        windowWidth: 1000 // Force width to ensure desktop layout capture even on mobile
+                    }).then(canvas => {
+                        const link = document.createElement('a');
+                        link.download = 'Invoice-Marspedia-' + this.orderId + '.jpg';
+                        link.href = canvas.toDataURL('image/jpeg', 0.9);
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        this.copyText("Invoice berhasil didownload", true);
+                    }).catch(err => {
+                        console.error(err);
+                        this.toastType = 'error';
+                        this.copyText("Gagal download invoice", true);
+                    });
+                },
+
+                handlePinInput(e, index) {
+                    this.pinError = false;
+                    if (e.target.value.length === 1 && index < 6) {
+                        document.getElementById('pin-' + (index + 1)).focus();
+                    }
+                    if (index === 6 && e.target.value !== '') {
+                        let enteredPin = '';
+                        for(let i=1; i<=6; i++) enteredPin += document.getElementById('pin-'+i).value;
+                        if(enteredPin === '111111') {
+                            this.triggerPinError();
+                        } else {
+                            setTimeout(() => { this.simulatePayment(); }, 300);
+                        }
+                    }
+                },
+                
+                triggerPinError() {
+                    this.pinError = true;
+                    this.toastType = 'error';
+                    this.toastMessage = 'PIN Salah / Belum Lengkap!';
+                    this.showToast = true;
+                    setTimeout(() => this.showToast = false, 2500);
+                    if(this.paymentMethod === 'saldo' && document.getElementById('pin-6').value !== '') {
+                         setTimeout(() => {
+                            for(let i=1; i<=6; i++) document.getElementById('pin-'+i).value = '';
+                            document.getElementById('pin-1').focus();
+                            this.pinError = false;
+                        }, 500);
+                    }
+                },
+
+                handleBackspace(e, index) {
+                    if (e.target.value === '' && index > 1) {
+                        document.getElementById('pin-' + (index - 1)).focus();
+                    }
+                },
+
+                formatTime(seconds) {
+                    const m = Math.floor(seconds / 60); const s = seconds % 60;
+                    return `${m}:${s < 10 ? '0' : ''}${s}`;
+                },
+                formatRupiah(number) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number); },
+                
+                getMethodName(code) {
+                    const names = { 'qris': 'QRIS', 'saldo': 'Saldo Marspedia', 'bca': 'BCA Virtual Account', 'bri': 'BRI Virtual Account', 'mandiri': 'Mandiri Virtual Account', 'bni': 'BNI Virtual Account', 'permata': 'Permata Virtual Account' };
+                    return names[code] || code.toUpperCase();
+                },
+                getMethodLogo(code) {
+                    if(code === 'qris') return 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Logo_QRIS.svg';
+                    if(code === 'saldo') return 'https://cdn-icons-png.flaticon.com/512/2382/2382461.png';
+                    if(code === 'bca') return 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg';
+                    return 'https://cdn-icons-png.flaticon.com/512/2830/2830284.png';
+                },
+
+                toggleZoomQR() { },
+                
+                async downloadQR() {
+                    try {
+                        const imageUrl = 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg';
+                        const response = await fetch(imageUrl);
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'QRIS-Marspedia.svg';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                        
+                        this.copyText('QRIS Berhasil Diunduh!', true);
+                    } catch (e) {
+                        const link = document.createElement('a');
+                        link.href = 'https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg';
+                        link.download = 'QRIS-Marspedia.svg';
+                        link.target = '_blank';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                },
+
+                copyText(text, isMsg = false) { 
+                    if(!isMsg) navigator.clipboard.writeText(text);
+                    this.toastType = 'success';
+                    this.toastMessage = isMsg ? text : 'Berhasil disalin!';
+                    this.showToast = true;
+                    setTimeout(() => this.showToast = false, 2500);
+                },
+
+                terbilang(nilai) {
+                    const angka = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+                    if (nilai < 12) return " " + angka[Math.floor(nilai)];
+                    if (nilai < 20) return this.terbilang(nilai - 10) + " Belas";
+                    if (nilai < 100) return this.terbilang(nilai / 10) + " Puluh" + this.terbilang(nilai % 10);
+                    if (nilai < 200) return " Seratus" + this.terbilang(nilai - 100);
+                    if (nilai < 1000) return this.terbilang(nilai / 100) + " Ratus" + this.terbilang(nilai % 100);
+                    if (nilai < 2000) return " Seribu" + this.terbilang(nilai - 1000);
+                    if (nilai < 1000000) return this.terbilang(nilai / 1000) + " Ribu" + this.terbilang(nilai % 1000);
+                    if (nilai < 1000000000) return this.terbilang(nilai / 1000000) + " Juta" + this.terbilang(nilai % 1000000);
+                    return "";
+                },
+
+                triggerConfetti() {
+                    var duration = 3 * 1000; var animationEnd = Date.now() + duration; var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+                    var random = function(min, max) { return Math.random() * (max - min) + min; };
+                    var interval = setInterval(function() {
+                        var timeLeft = animationEnd - Date.now(); if (timeLeft <= 0) return clearInterval(interval);
+                        var particleCount = 50 * (timeLeft / duration);
+                        confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.1, 0.3), y: Math.random() - 0.2 } }));
+                        confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.7, 0.9), y: Math.random() - 0.2 } }));
+                    }, 250);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

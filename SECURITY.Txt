@@ -1,0 +1,56 @@
+SOP Keamanan Website Top Up Game (Laravel 12)
+Dokumen ini berisi panduan LENGKAP proteksi website top up game & akun premium menggunakan Laravel 12.
+
+Recommended
+Register Cloudflare FREE = Aktifkan layanannya yg FREE demi keamanan
+Proteksikan dari
+- SQL Injection, XSS, CSRF
+
+1. Konfigurasi Dasar Produksi
+- APP_ENV=production
+- APP_DEBUG=false
+- Cache config, route, view
+
+2. Anti Reverse Engineering
+- Semua logic transaksi di backend
+- Jangan expose harga, signature, fee di frontend
+- Gunakan Sanctum + rate limit
+- Obfuscate JS frontend
+
+3. Proteksi API
+- Token-based auth
+- Rate limiting
+- IP filtering
+- Logging request mencurigakan
+
+4. Anti Double Transaksi
+- Status transaksi immutable
+- Unique constraint order_id & payment_reference
+- Database transaction + lockForUpdate
+- Queue job untuk proses top up
+
+5. Anti Fake Payment Gateway
+- Validasi signature webhook
+- IP whitelist gateway
+- Cross-check ke API gateway
+- Validasi nominal pembayaran
+- Webhook idempotent
+
+6. Proteksi Saldo & Refund
+- Saldo update hanya via transaction
+- Refund satu kali (unique refund_id)
+- Audit log saldo & refund
+- Role & permission ketat
+
+7. Server & Deployment
+- HTTPS + SSL
+- Permission file aman
+- Disable directory listing
+- Backup database harian
+
+8. Checklist Wajib Sebelum Go Live
+- Signature aktif
+- DB constraint aktif
+- Queue berjalan
+- Logging aktif
+- Backup & monitoring

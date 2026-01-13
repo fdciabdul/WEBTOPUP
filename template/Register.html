@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Secured Portal</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* --- 1. DESIGN SYSTEM --- */
+        :root {
+            --primary: #0F62FE;
+            --primary-dark: #0043CE;
+            --success: #25D366;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --bg-body: #F1F5F9;
+            --surface: #FFFFFF;
+            --text-main: #1E293B;
+            --text-sub: #64748B;
+            --border: #E2E8F0;
+            
+            --card-width: 480px;
+            --input-height: 52px;
+            --radius: 24px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-body);
+            background: linear-gradient(-45deg, #F1F5F9, #E2E8F0, #F8FAFC, #FFFFFF);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: var(--text-main);
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- 2. MAIN CARD --- */
+        .card {
+            background: var(--surface);
+            width: 100%;
+            max-width: var(--card-width);
+            border-radius: var(--radius);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
+            padding: 40px 35px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+            animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- 3. HEADER (LOGO JUMBO) --- */
+        .header-section {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .logo-modern {
+            font-size: 100px;
+            background: linear-gradient(135deg, var(--primary), #60A5FA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 4px 6px rgba(15, 98, 254, 0.2));
+            animation: pulseLogo 4s ease-in-out infinite;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .logo-modern:hover { transform: scale(1.05); }
+
+        @keyframes pulseLogo {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 4px 6px rgba(15, 98, 254, 0.2)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 8px 12px rgba(15, 98, 254, 0.3)); }
+        }
+
+        /* --- 4. TABS --- */
+        .nav-tabs {
+            display: flex;
+            background: #F8FAFC;
+            padding: 5px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-sub);
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item.active {
+            background: var(--surface);
+            color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            font-weight: 700;
+            transform: scale(1.02);
+        }
+
+        /* --- 5. FORMS WRAPPER --- */
+        .forms-wrapper {
+            position: relative;
+            width: 100%;
+            transition: height 0.4s ease;
+            margin-bottom: 15px;
+        }
+
+        .form-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .form-view.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+            position: relative;
+        }
+
+        /* --- 6. INPUT STYLES --- */
+        .input-group { margin-bottom: 16px; position: relative; }
+        
+        .input-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text-main);
+            transition: color 0.2s;
+        }
+
+        .input-wrapper { position: relative; }
+
+        .form-input {
+            width: 100%;
+            height: var(--input-height);
+            padding: 0 15px 0 46px;
+            border: 2px solid #F1F5F9;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+            background: #F8FAFC;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: #FFFFFF;
+            box-shadow: 0 0 0 4px rgba(15, 98, 254, 0.1);
+        }
+
+        .input-group:focus-within .input-label { color: var(--primary); }
+        .input-group:focus-within .icon-left { color: var(--primary); }
+
+        .icon-left {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94A3B8;
+            font-size: 18px;
+            transition: 0.3s;
+        }
+
+        .toggle-pass {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94A3B8;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .toggle-pass:hover { color: var(--text-main); }
+
+        .note {
+            font-size: 11px;
+            color: var(--text-sub);
+            margin-top: 4px;
+            margin-left: 2px;
+            opacity: 0.8;
+        }
+
+        /* --- 7. PASSWORD STRENGTH METER --- */
+        .strength-container {
+            margin-top: 8px;
+            display: none; /* Hidden by default */
+        }
+        .strength-bar-bg {
+            width: 100%;
+            height: 4px;
+            background: #E2E8F0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .strength-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--danger);
+            transition: width 0.3s ease, background 0.3s ease;
+        }
+        .strength-text {
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 4px;
+            text-align: right;
+            color: var(--text-sub);
+        }
+
+        /* --- 8. RECOVERY TOGGLE --- */
+        .recovery-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .recovery-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #F8FAFC;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .recovery-btn.selected {
+            border-color: var(--primary);
+            background: rgba(15, 98, 254, 0.08);
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* --- 9. BUTTONS --- */
+        .btn {
+            width: 100%;
+            height: var(--input-height);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:active { transform: scale(0.98); }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            margin-top: 5px;
+            box-shadow: 0 4px 12px rgba(15, 98, 254, 0.25);
+        }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 98, 254, 0.35);
+        }
+
+        /* --- 10. CHECKBOX GROUP --- */
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 20px;
+            margin-top: 10px;
+            padding: 0 2px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-top: 3px;
+            min-width: 16px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--primary);
+            border-radius: 4px;
+        }
+
+        .checkbox-group label {
+            font-size: 12px;
+            color: var(--text-sub);
+            line-height: 1.5;
+            cursor: pointer;
+            font-weight: 500;
+            user-select: none;
+        }
+
+        .checkbox-group label:hover {
+            color: var(--text-main);
+        }
+
+        /* --- 11. STATIC FOOTER --- */
+        .static-footer {
+            margin-top: 0px; 
+            padding-top: 20px;
+            border-top: 1px dashed #E2E8F0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .btn-wa {
+            background: var(--success);
+            color: white;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2);
+            width: 100%; 
+        }
+        .btn-wa:hover {
+            background: #1ebc57;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3);
+        }
+
+        /* IP MONITOR */
+        .ip-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .monitor-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748B;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .monitor-header i { color: var(--primary); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+
+        .ip-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ip-label-text {
+            color: #64748B;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .ip-pill-box {
+            background-color: #E2E8F0;
+            padding: 6px 14px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s;
+        }
+        .ip-pill-box:hover { transform: scale(1.02); }
+
+        .flag-img {
+            width: 20px;
+            height: auto;
+            border-radius: 2px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .ip-number {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 14px;
+            color: #1E293B;
+        }
+
+        .monitor-disclaimer {
+            font-size: 11px;
+            color: #94A3B8;
+            margin-top: 2px;
+        }
+
+        /* --- 12. POPUP CUSTOMIZATION --- */
+        .swal-custom-popup {
+            border-radius: 20px !important;
+            padding: 30px !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+        }
+        .swal-custom-title {
+            color: var(--text-main) !important;
+            font-size: 22px !important;
+            font-weight: 700 !important;
+        }
+        .swal-custom-btn {
+            background-color: var(--primary) !important;
+            color: #fff !important;
+            border-radius: 12px !important;
+            padding: 14px 40px !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            box-shadow: 0 4px 15px rgba(15, 98, 254, 0.25) !important;
+            border: none !important;
+            outline: none !important;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="header-section">
+            <a href="https://marspedia.id" title="Ke Homepage" style="text-decoration: none;">
+                <i class="fas fa-fingerprint logo-modern"></i>
+            </a>
+        </div>
+
+        <div class="nav-tabs">
+            <div class="nav-item active" onclick="switchTab('login', this)">Masuk</div>
+            <div class="nav-item" onclick="switchTab('register', this)">Daftar</div>
+            <div class="nav-item" onclick="switchTab('forgot', this)">Pemulihan</div>
+        </div>
+
+        <div class="forms-wrapper" id="smartWrapper">
+            
+            <div id="form-login" class="form-view active">
+                <form onsubmit="handleLogin(event)">
+                    <div class="input-group">
+                        <label class="input-label">Email</label>
+                        <div class="input-wrapper">
+                            <input type="text" class="form-input" placeholder="username@email.com" maxlength="40" oninput="validateEmail(this)" required>
+                            <i class="fas fa-envelope icon-left"></i>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="login-pass" class="form-input" placeholder="••••••••" required>
+                            <i class="fas fa-lock icon-left"></i>
+                            <i class="fas fa-eye toggle-pass" onclick="togglePass('login-pass', this)"></i>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary">Masuk Dashboard</button>
+                </form>
+            </div>
+
+            <div id="form-register" class="form-view">
+                <form onsubmit="handleRegister(event)">
+                    <div class="input-group">
+                        <label class="input-label">Nama Lengkap</label>
+                        <div class="input-wrapper">
+                            <input type="text" class="form-input" oninput="validateName(this)" maxlength="25" placeholder="Nama Lengkap" required>
+                            <i class="fas fa-user icon-left"></i>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Email Aktif</label>
+                        <div class="input-wrapper">
+                            <input type="text" class="form-input" oninput="validateEmail(this)" maxlength="40" placeholder="username@email.com" required>
+                            <i class="fas fa-envelope icon-left"></i>
+                        </div>
+                        <div class="note"></div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">No Whatsapp</label>
+                        <div class="input-wrapper">
+                            <input type="tel" id="reg-wa" class="form-input" oninput="validateWA(this)" maxlength="15" placeholder="08xxxxxxxx" required>
+                            <i class="fab fa-whatsapp icon-left"></i>
+                        </div>
+                        <div class="note"></div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Password Baru</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="reg-pass" class="form-input" maxlength="20" placeholder="Kombinasi Kuat" oninput="checkStrength(this.value)" required>
+                            <i class="fas fa-key icon-left"></i>
+                            <i class="fas fa-eye toggle-pass" onclick="togglePass('reg-pass', this)"></i>
+                        </div>
+                        <div class="strength-container" id="strength-box">
+                            <div class="strength-bar-bg">
+                                <div class="strength-bar-fill" id="strength-fill"></div>
+                            </div>
+                            <div class="strength-text" id="strength-text"></div>
+                        </div>
+                        <div class="note">*8-20 Karakter (Huruf + Angka + Simbol)</div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="reg-terms">
+                        <label for="reg-terms">Dengan mendaftar saya telah setuju dengan segala <a href="https://marspedia.id/" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 700;">syarat dan ketentuan</a> yg berlaku di website ini.</label>
+                    </div>
+
+                    <button class="btn btn-primary">Daftar Sekarang</button>
+                </form>
+            </div>
+
+            <div id="form-forgot" class="form-view">
+                <form onsubmit="handleForgot(event)">
+                    <label class="input-label" style="text-align:center; margin-bottom:10px;">Metode Pemulihan:</label>
+                    <div class="recovery-options">
+                        <div class="recovery-btn selected" id="opt-email" onclick="setRecovery('email')">
+                            <i class="fas fa-envelope"></i> Email
+                        </div>
+                        <div class="recovery-btn" id="opt-wa" onclick="setRecovery('wa')">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <div class="input-wrapper">
+                            <input type="text" id="forgot-input" class="form-input" oninput="validateEmail(this)" maxlength="40" placeholder="nama@email.com" required>
+                            <i class="fas fa-envelope icon-left" id="forgot-icon"></i>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary">Kirim Kode Akses</button>
+                </form>
+            </div>
+
+        </div> <div class="static-footer">
+            <a href="https://wa.me/62812345" target="_blank" class="btn btn-wa">
+                <i class="fab fa-whatsapp" style="font-size: 18px;"></i> Hubungi Admin
+            </a>
+
+            <div class="ip-container">
+                <div class="monitor-header">
+                    <i class="fas fa-shield-alt"></i> Secured System Monitor
+                </div>
+                <div class="ip-row">
+                    <span class="ip-label-text">Your IP Address:</span>
+                    <div class="ip-pill-box">
+                        <img id="flag-icon" class="flag-img" src="" alt="" style="display:none; margin-right:5px;">
+                        <span class="ip-number" id="user-ip">Scanning...</span>
+                    </div>
+                </div>
+                <div class="monitor-disclaimer">
+                    All activities are logged for security purposes.
+                </div>
+            </div>
+        </div>
+
+    </div> <script>
+        // --- 1. SMART HEIGHT ---
+        function updateHeight() {
+            const wrapper = document.getElementById('smartWrapper');
+            const activeForm = document.querySelector('.form-view.active');
+            if(activeForm) wrapper.style.height = activeForm.offsetHeight + 'px';
+        }
+        window.addEventListener('load', updateHeight);
+        window.addEventListener('resize', updateHeight);
+
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.form-view').forEach(el => el.classList.remove('active'));
+            document.getElementById('form-' + tabName).classList.add('active');
+            updateHeight();
+        }
+
+        // --- 2. RECOVERY TOGGLE ---
+        let currentRecovery = 'email';
+        function setRecovery(method) {
+            currentRecovery = method;
+            const input = document.getElementById('forgot-input');
+            const icon = document.getElementById('forgot-icon');
+            const btnEmail = document.getElementById('opt-email');
+            const btnWa = document.getElementById('opt-wa');
+
+            input.value = '';
+
+            if (method === 'email') {
+                btnEmail.classList.add('selected');
+                btnWa.classList.remove('selected');
+                input.placeholder = 'nama@email.com';
+                input.type = 'text';
+                input.setAttribute('oninput', 'validateEmail(this)');
+                input.setAttribute('maxlength', '40'); // Max 40
+                icon.className = 'fas fa-envelope icon-left';
+            } else {
+                btnWa.classList.add('selected');
+                btnEmail.classList.remove('selected');
+                input.placeholder = '08xxxxxxxx';
+                input.type = 'tel';
+                input.setAttribute('oninput', 'validateWA(this)');
+                input.setAttribute('maxlength', '15'); // Max 15
+                icon.className = 'fab fa-whatsapp icon-left';
+            }
+        }
+
+        // --- 3. VALIDATION FUNCTIONS ---
+        
+        // Nama: Huruf Saja, Max 25 (sudah di HTML attribute)
+        function validateName(i) { 
+            i.value = i.value.replace(/[^a-zA-Z\s]/g, ''); 
+        }
+        
+        // WA: Angka Saja, Max 15 (HTML attribute)
+        function validateWA(i) { 
+            i.value = i.value.replace(/[^0-9]/g, ''); 
+        }
+        
+        // Email: Max 40 (HTML), Valid Char, 1 '@'
+        function validateEmail(i) { 
+            // Hapus karakter non-email
+            let v = i.value.replace(/[^a-zA-Z0-9@._-]/g, '');
+            // Pastikan @ cuma 1
+            const atCount = (v.match(/@/g)||[]).length;
+            if(atCount > 1) { v = v.slice(0, -1); }
+            i.value = v; 
+        }
+
+        // --- 4. PASSWORD STRENGTH METER (OPTIMIZED) ---
+        function checkStrength(password) {
+            const meter = document.getElementById('strength-box');
+            const fill = document.getElementById('strength-fill');
+            const text = document.getElementById('strength-text');
+
+            if (password.length === 0) {
+                meter.style.display = 'none';
+                return;
+            }
+            
+            meter.style.display = 'block';
+            updateHeight(); // Refresh height saat meter muncul
+
+            // Logic Deteksi
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (password.match(/[a-z]+/)) strength++; // Huruf
+            if (password.match(/[0-9]+/)) strength++; // Angka
+            if (password.match(/[\W_]+/)) strength++; // Any Symbol (Optimized)
+
+            if (password.length < 8) {
+                // < 8 karakter = Rendah
+                fill.style.width = '30%';
+                fill.style.background = '#EF4444'; // Merah
+                text.innerText = 'Rendah';
+                text.style.color = '#EF4444';
+            } else if (password.length >= 8 && strength < 4) {
+                // 8 karakter tapi belum lengkap (huruf/angka/simbol) = Sedang
+                fill.style.width = '60%';
+                fill.style.background = '#F59E0B'; // Kuning
+                text.innerText = 'Sedang';
+                text.style.color = '#F59E0B';
+            } else {
+                // Lengkap & Panjang = Kuat
+                fill.style.width = '100%';
+                fill.style.background = '#10B981'; // Hijau
+                text.innerText = 'Kuat';
+                text.style.color = '#10B981';
+            }
+        }
+
+        // --- 5. UTILS ---
+        function togglePass(id, icon) {
+            const input = document.getElementById(id);
+            if(input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
+            else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
+        }
+
+        // --- 6. REAL IP & FLAG DETECTION (UPDATED: NO DUMMY DATA) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Menggunakan ipwho.is untuk data real-time
+            fetch('https://ipwho.is/')
+                .then(response => response.json())
+                .then(data => {
+                    const ipSpan = document.getElementById('user-ip');
+                    const flagImg = document.getElementById('flag-icon');
+
+                    if(data.success) {
+                        // 1. Set IP Asli
+                        ipSpan.innerText = data.ip;
+
+                        // 2. Set Bendera Asli (jika ada country code)
+                        if(data.country_code) {
+                            flagImg.src = `https://flagcdn.com/w40/${data.country_code.toLowerCase()}.png`;
+                            flagImg.alt = data.country;
+                            flagImg.style.display = 'block'; // Munculkan gambar setelah source valid
+                        }
+                    } else {
+                        ipSpan.innerText = "Unavailable";
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('user-ip').innerText = "Error";
+                    console.error('IP Fetch Error:', error);
+                });
+        });
+
+        // --- 7. POPUP ---
+        function showPopup(icon, title, text) {
+            Swal.fire({
+                icon: icon,
+                title: title,
+                text: text,
+                confirmButtonText: 'OKE, MENGERTI',
+                buttonsStyling: false,
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title',
+                    htmlContainer: 'swal-custom-content',
+                    confirmButton: 'swal-custom-btn'
+                },
+                showClass: { popup: 'animate__animated animate__fadeInUp' },
+                hideClass: { popup: 'animate__animated animate__fadeOutDown' }
+            });
+        }
+
+        // --- 8. SUBMIT HANDLERS (VALIDASI OPTIMAL) ---
+        function handleRegister(e) {
+            e.preventDefault();
+            const wa = document.getElementById('reg-wa').value;
+            const pass = document.getElementById('reg-pass').value;
+            const email = document.querySelector('#form-register input[type="text"][placeholder="username@email.com"]').value;
+            const terms = document.getElementById('reg-terms');
+
+            // 1. Email Validasi (Format + Max 40)
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (email.length > 40) {
+                 showPopup('error', 'Email Terlalu Panjang', 'Maksimal 40 karakter.');
+                 return;
+            }
+            if (!emailRegex.test(email)) {
+                showPopup('error', 'Email Tidak Valid', 'Mohon masukan email yg valid.');
+                return;
+            }
+
+            // 2. WA Validasi (9-15)
+            if(wa.length < 9) { 
+                showPopup('error', 'Nomor Tidak Valid', 'Mohon masukan nomor yg aktif.'); 
+                return; 
+            }
+
+            // 3. Password Validasi (Min 8, Max 20, Kombinasi Flexible)
+            const passRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{8,20}$/;
+            
+            if(pass.length < 8) {
+                showPopup('warning', 'Password Lemah', 'Minimal 8 karakter.');
+                return;
+            }
+            if(!passRegex.test(pass)) {
+                showPopup('warning', 'Password Lemah', 'Password wajib berisikan : Huruf + Angka + Simbol.');
+                return;
+            }
+
+            // 4. Validasi Terms Checklist
+            if (!terms.checked) {
+                showPopup('warning', 'Persetujuan Diperlukan', 'Anda wajib menyetujui Syarat & Ketentuan untuk mendaftar.');
+                return;
+            }
+
+            showPopup('success', 'Registrasi Sukses', 'Silakan cek WhatsApp/Email Anda.');
+        }
+
+        function handleLogin(e) { 
+            e.preventDefault(); 
+            // Terapkan validasi dasar juga di login agar konsisten
+            const email = document.querySelector('#form-login input[type="text"]').value;
+            const pass = document.querySelector('#login-pass').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!emailRegex.test(email)) {
+                showPopup('error', 'Akses Ditolak', 'Masukan email yg valid.');
+                return;
+            }
+            if(pass.length < 8) {
+                showPopup('error', 'Password Salah', 'Panjang karakter tidak sesuai.');
+                return;
+            }
+
+            showPopup('success', 'Login Berhasil', 'Selamat datang kembali.'); 
+        }
+
+        function handleForgot(e) { 
+            e.preventDefault(); 
+            const input = document.getElementById('forgot-input').value;
+            
+            if(currentRecovery === 'email') {
+                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                 if (!emailRegex.test(input) || input.length > 40) {
+                    showPopup('error', 'Email Tidak Valid', 'Mohon masukan email yg benar.');
+                    return;
+                 }
+            } else {
+                if(input.length < 9) {
+                    showPopup('error', 'Nomor Tidak Valid', 'Mohon masukan nomor yg aktif.');
+                    return;
+                }
+            }
+            
+            showPopup('info', 'Kode Terkirim', `Instruksi dikirim via ${currentRecovery === 'email' ? 'Email' : 'WhatsApp'}.`); 
+        }
+
+    </script>
+</body>
+</html>
