@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Member - Dashboard Pro</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+                    },
+                    animation: {
+                        'blob': 'blob 10s infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'slide-up-fade': 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' }
+                        },
+                        slideUpFade: {
+                            '0%': { opacity: 0, transform: 'translateY(30px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F8FAFC; overflow-x: hidden; }
+        .bg-blobs { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #F8FAFC; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        }
+
+        /* CARD BOUNCY (OPTIMASI: Efek Timbul & Memantul) */
+        .card-bounce {
+            /* Menggunakan cubic-bezier untuk efek pegas (spring) */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer; /* Indikasi bisa diklik */
+        }
+        .card-bounce:hover {
+            transform: translateY(-8px) scale(1.05); /* Naik dan membesar */
+            z-index: 10;
+            /* Bayangan lebih dalam untuk efek timbul 3D */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
+        }
+        .card-bounce:active {
+            transform: scale(0.95); /* Efek ditekan */
+            box-shadow: 0 5px 10px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* IMG BOUNCY (Khusus Gambar Produk) */
+        .img-bounce {
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+        }
+        .img-bounce:hover {
+            transform: scale(1.25) rotate(2deg);
+            z-index: 20;
+            position: relative;
+        }
+
+        /* NAV STYLES */
+        .nav-item {
+            display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 1rem;
+            border-radius: 0.8rem; font-weight: 600; font-size: 0.9rem;
+            color: #64748b; margin-bottom: 0.2rem;
+            transition: all 0.3s;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.8); color: #2563eb; transform: translateX(5px); }
+        .nav-active {
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+            color: white !important; box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+        }
+        .nav-section {
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            color: #94a3b8; margin-top: 1.5rem; margin-bottom: 0.5rem; padding-left: 0.5rem;
+        }
+
+        /* TABLE & SCROLLBAR */
+        .table-header-gradient { background: linear-gradient(to right, #2563eb, #3b82f6); color: white; }
+        .table-header-sortable { cursor: pointer; user-select: none; transition: background 0.2s; }
+        .table-header-sortable:hover { background: rgba(255,255,255,0.1); }
+        
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
+
+        /* TOAST ANIMATION */
+        .toast-enter-active, .toast-leave-active { transition: all 0.5s ease; }
+        .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(20px); }
+        
+        .copy-hover:hover { color: #2563eb; cursor: pointer; text-decoration: underline; }
+        
+        /* Form Inputs */
+        .form-input { 
+            border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.4rem 0.8rem; font-size: 0.8rem; outline: none; transition: all 0.2s;
+        }
+        .form-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
+
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+    </style>
+</head>
+<body class="antialiased selection:bg-brand-600 selection:text-white text-slate-800">
+
+<div class="bg-blobs">
+    <div class="blob bg-blue-200 w-[500px] h-[500px] top-[-10%] left-[-10%] animate-blob"></div>
+    <div class="blob bg-purple-200 w-[400px] h-[400px] bottom-[-10%] right-[-10%] animate-blob" style="animation-delay: 2s"></div>
+    <div class="blob bg-pink-200 w-[300px] h-[300px] top-[40%] left-[40%] animate-blob" style="animation-delay: 4s"></div>
+</div>
+
+<div id="app" class="flex h-screen overflow-hidden w-full font-sans">
+
+    <transition name="toast">
+        <div v-if="toast.show" class="fixed bottom-6 right-6 z-[100] bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3">
+            <i class="ri-checkbox-circle-fill text-green-400 text-xl"></i>
+            <div>
+                <h4 class="font-bold text-sm">Berhasil Disalin!</h4>
+                <p class="text-xs text-slate-400">{{ toast.message }}</p>
+            </div>
+        </div>
+    </transition>
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 glass-panel transition-transform duration-300 lg:translate-x-0 flex flex-col flex-shrink-0 z-50 h-full border-r border-white/50">
+        <div class="h-24 flex items-center px-8 flex-shrink-0 border-b border-slate-100/50">
+            <div class="flex items-center gap-3 animate-slide-up-fade">
+                <div class="w-10 h-10 bg-gradient-to-tr from-brand-600 to-cyan-400 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/40 animate-float">
+                    <i class="ri-rocket-2-fill text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Marspedia</h1>
+                    <span class="text-[10px] font-bold text-white bg-orange-500 px-2 py-0.5 rounded shadow-sm">MEMBER AREA</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar flex flex-col pb-20">
+            <p class="nav-section animate-slide-up-fade">Utama</p>
+            <a href="#" @click.prevent class="nav-item nav-active animate-slide-up-fade delay-100">
+                <i class="ri-layout-grid-fill text-lg"></i> Dashboard
+            </a>
+            <a href="#" @click.prevent class="nav-item animate-slide-up-fade delay-100">
+                <i class="ri-shopping-cart-2-line text-lg"></i> Order Baru
+            </a>
+            <a href="#" @click.prevent class="nav-item animate-slide-up-fade delay-100">
+                <i class="ri-history-line text-lg"></i> Riwayat Transaksi
+            </a>
+            <a href="#" @click.prevent class="nav-item animate-slide-up-fade delay-100">
+                <i class="ri-wallet-3-line text-lg"></i> Deposit Saldo
+            </a>
+            <a href="#" @click.prevent class="nav-item animate-slide-up-fade delay-100">
+                <i class="ri-folder-shield-2-line text-lg"></i> File Manager
+            </a>
+
+            <p class="nav-section animate-slide-up-fade delay-200">Pengaturan</p>
+            <a href="#" @click.prevent class="nav-item animate-slide-up-fade delay-200">
+                <i class="ri-user-settings-line text-lg"></i> Profile Akun
+            </a>
+            <a href="#" @click.prevent class="nav-item animate-slide-up-fade delay-200">
+                <i class="ri-customer-service-2-line text-lg"></i> Bantuan / CS
+            </a>
+
+            <div class="mt-8 mb-4 border-t border-slate-200/60 pt-4 animate-slide-up-fade delay-300">
+                <a href="#" @click.prevent class="nav-item text-red-500 hover:text-red-600 hover:bg-red-50">
+                    <i class="ri-logout-box-line text-lg"></i> Logout
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden w-full">
+        
+        <header class="h-24 glass-panel px-8 flex items-center justify-between sticky top-0 z-30 flex-shrink-0 m-4 rounded-3xl border-none">
+            <div class="flex items-center gap-4">
+                <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"><i class="ri-menu-2-line text-xl"></i></button>
+                <div class="hidden md:block animate-slide-up-fade">
+                    <h2 class="font-bold text-lg text-slate-800">Selamat Datang, <span class="text-brand-600">Member!</span> 👋</h2>
+                    <p class="text-xs text-slate-400 font-bold">Dashboard Overview</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-4 animate-slide-up-fade delay-100">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-xs font-bold text-slate-500">Saldo Anda</p>
+                        <p class="text-sm font-black text-emerald-600">{{ formatRupiah(stats.balance) }}</p>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=Member+Marspedia&background=random&color=fff" class="w-11 h-11 rounded-full shadow-md border-2 border-white cursor-pointer hover:scale-110 transition-transform">
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 pt-0 space-y-8 scroll-smooth custom-scrollbar">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="card-bounce rounded-[2rem] p-6 bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30 animate-slide-up-fade">
+                    <div class="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4"><i class="ri-wallet-3-fill text-9xl"></i></div>
+                    <div class="relative z-10">
+                        <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-4"><i class="ri-wallet-3-fill text-2xl"></i></div>
+                        <p class="text-emerald-100 text-xs font-bold uppercase tracking-wider mb-1">Total Saldo Aktif</p>
+                        <h3 class="text-2xl font-extrabold tracking-tight counter">{{ formatRupiah(stats.balance) }}</h3>
+                        <button class="mt-3 text-[10px] font-bold bg-white text-emerald-600 px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-50 transition"><i class="ri-add-circle-line"></i> Top Up</button>
+                    </div>
+                </div>
+
+                <div class="card-bounce rounded-[2rem] p-6 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 animate-slide-up-fade delay-100">
+                    <div class="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4"><i class="ri-store-2-fill text-9xl"></i></div>
+                    <div class="relative z-10">
+                        <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-4"><i class="ri-store-2-fill text-2xl"></i></div>
+                        <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Total Produk</p>
+                        <h3 class="text-2xl font-extrabold tracking-tight counter">{{ stats.products }}</h3>
+                        <div class="mt-3 inline-flex items-center gap-1 bg-white/20 backdrop-blur px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm"><i class="ri-check-line"></i> Ready</div>
+                    </div>
+                </div>
+
+                <div class="card-bounce rounded-[2rem] p-6 bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-lg shadow-purple-500/30 animate-slide-up-fade delay-200">
+                    <div class="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4"><i class="ri-file-list-3-fill text-9xl"></i></div>
+                    <div class="relative z-10">
+                        <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-4"><i class="ri-shopping-bag-3-fill text-2xl"></i></div>
+                        <p class="text-violet-100 text-xs font-bold uppercase tracking-wider mb-1">Total Transaksi</p>
+                        <h3 class="text-2xl font-extrabold tracking-tight counter">{{ stats.totalTransactions }}</h3>
+                        <div class="mt-3 inline-flex items-center gap-1 bg-white/20 backdrop-blur px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm"><i class="ri-history-line"></i> Lifetime</div>
+                    </div>
+                </div>
+
+                <div class="card-bounce rounded-[2rem] p-6 bg-gradient-to-br from-orange-400 to-red-500 text-white shadow-lg shadow-orange-500/30 animate-slide-up-fade delay-300">
+                    <div class="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4"><i class="ri-coins-fill text-9xl"></i></div>
+                    <div class="relative z-10">
+                        <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-4"><i class="ri-exchange-dollar-line text-2xl"></i></div>
+                        <p class="text-orange-100 text-xs font-bold uppercase tracking-wider mb-1">Pengeluaran</p>
+                        <h3 class="text-2xl font-extrabold tracking-tight counter">{{ formatRupiah(stats.totalSpent) }}</h3>
+                        <div class="mt-3 inline-flex items-center gap-1 bg-white/20 backdrop-blur px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm"><i class="ri-vip-crown-line"></i> Member</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                
+                <div class="xl:col-span-2 glass-panel rounded-[2rem] p-6 flex flex-col animate-slide-up-fade delay-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ri-fire-fill text-orange-500 animate-pulse"></i> Produk Best Seller</h3>
+                        <div class="text-[10px] text-slate-400">*Klik Header untuk Sortir</div>
+                    </div>
+                    
+                    <div class="w-full rounded-xl">
+                        <table class="w-full text-left">
+                            <thead class="hidden md:table-header-group table-header-gradient">
+                                <tr class="text-[10px] uppercase font-bold tracking-wider">
+                                    <th class="px-4 py-4 rounded-tl-xl table-header-sortable" @click="sortBy('products', 'idx')"># <i class="ri-arrow-up-down-line ml-1"></i></th>
+                                    <th class="px-4 py-4 table-header-sortable" @click="sortBy('products', 'name')">Produk <i class="ri-arrow-up-down-line ml-1"></i></th>
+                                    <th class="px-4 py-4 text-right table-header-sortable" @click="sortBy('products', 'price')">Harga <i class="ri-arrow-up-down-line ml-1"></i></th>
+                                    <th class="px-4 py-4 text-center rounded-tr-xl">Aksi</th>
+                                </tr>
+                            </thead>
+                            
+                            <tbody class="block md:table-row-group text-sm bg-transparent md:bg-white/50 space-y-4 md:space-y-2 p-0 md:p-2">
+                                <tr v-for="(prod, idx) in sortedTopProducts.slice(0,5)" :key="idx" class="group flex flex-col md:table-row bg-white md:bg-transparent rounded-2xl p-4 md:p-0 border border-slate-100 md:border-b md:border-transparent hover:bg-white/60 transition-colors shadow-sm md:shadow-none relative">
+                                    
+                                    <td class="order-1 md:order-none block md:table-cell px-0 md:px-4 py-0 md:py-4 mb-3 md:mb-0 border-b border-slate-50 md:border-none pb-3 md:pb-0">
+                                       <div class="flex justify-between items-center md:block">
+                                          <span class="font-black text-slate-300 text-lg md:text-base group-hover:text-brand-600 transition-colors">#{{ idx+1 }}</span>
+                                          <span class="md:hidden font-bold text-slate-600 text-sm">{{ formatRupiah(prod.price) }}</span>
+                                       </div>
+                                    </td>
+
+                                    <td class="order-2 md:order-none block md:table-cell px-0 md:px-4 py-0 md:py-4">
+                                        <div class="flex items-center gap-3">
+                                            <img :src="prod.img" class="img-bounce w-12 h-12 md:w-10 md:h-10 rounded-lg object-cover shadow-sm bg-slate-50">
+                                            <div>
+                                                <p class="font-bold text-slate-800 text-sm line-clamp-1 group-hover:text-brand-600 transition-colors copy-hover" @click="copyToClipboard(prod.name)" title="Klik untuk Salin">{{ prod.name }}</p>
+                                                <p class="text-[10px] text-slate-500 font-bold bg-slate-100 w-fit px-1.5 py-0.5 rounded mt-1">{{ prod.category }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td class="hidden md:table-cell px-4 py-4 text-right font-bold text-slate-600 text-sm">{{ formatRupiah(prod.price) }}</td>
+
+                                    <td class="order-3 md:order-none block md:table-cell px-0 md:px-4 py-0 md:py-4 text-center mt-3 md:mt-0 pt-3 md:pt-0 border-t border-slate-50 md:border-none">
+                                        <button class="w-full md:w-auto md:mx-auto text-xs bg-brand-600 text-white px-3 py-2.5 md:py-1.5 rounded-xl md:rounded-lg font-bold hover:bg-brand-700 hover:shadow-lg hover:shadow-brand-500/30 transition-all active:scale-95 flex items-center justify-center gap-2">
+                                            <i class="ri-shopping-cart-fill md:hidden"></i> Beli <span class="md:hidden">Sekarang</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-[2rem] p-6 flex flex-col animate-slide-up-fade delay-300">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ri-thumb-up-fill text-brand-600"></i> Recommended</h3>
+                        <button @click="shuffleRecommended" class="text-slate-400 hover:text-brand-600 transition"><i class="ri-refresh-line"></i></button>
+                    </div>
+                    <div class="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar max-h-[400px]">
+                        <div v-for="(item, idx) in recommendedProducts" :key="idx" class="group bg-white p-3 rounded-2xl border border-slate-100 hover:border-brand-200 shadow-sm transition-all flex items-center gap-3 cursor-pointer hover:shadow-md">
+                            <div class="relative overflow-hidden rounded-xl w-14 h-14 flex-shrink-0">
+                                <img :src="item.img" class="img-bounce w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-slate-800 text-xs line-clamp-1 group-hover:text-brand-600 transition copy-hover" @click.stop="copyToClipboard(item.name)">{{ item.name }}</h4>
+                                <div class="flex items-center gap-1 mt-1">
+                                    <i class="ri-star-fill text-yellow-400 text-[10px]"></i>
+                                    <span class="text-[10px] font-bold text-slate-500">4.{{ Math.floor(Math.random() * 5) + 5 }}</span>
+                                </div>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="font-bold text-brand-600 text-xs">{{ formatRupiah(item.price) }}</span>
+                                    <button class="w-6 h-6 rounded-full bg-slate-100 text-slate-400 hover:bg-brand-600 hover:text-white transition flex items-center justify-center"><i class="ri-add-line"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-slide-up-fade delay-400">
+                
+                <div class="xl:col-span-2 glass-panel rounded-[2rem] p-6 flex flex-col">
+                    <div class="mb-6 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ri-history-fill text-slate-500"></i> Riwayat Transaksi</h3>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-3 justify-between bg-white/50 backdrop-blur p-3 rounded-xl border border-slate-100 shadow-sm">
+                            <div class="relative flex-1">
+                                <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input v-model="filters.search" type="text" placeholder="Cari ID Invoice / Produk..." class="form-input w-full pl-8 bg-white placeholder:text-slate-400">
+                            </div>
+                            
+                            <div class="flex gap-2 items-center flex-wrap">
+                                <select v-model="filters.status" class="form-input bg-white text-brand-600 font-bold cursor-pointer">
+                                    <option value="all">Semua Status</option>
+                                    <option value="Paid">Paid</option>
+                                    <option value="Proses">Proses</option>
+                                    <option value="Done">Done</option>
+                                    <option value="Unpaid">Unpaid</option>
+                                    <option value="Cancel">Cancel</option>
+                                </select>
+
+                                <select v-model="filters.dateType" class="form-input bg-white text-slate-600 font-bold cursor-pointer">
+                                    <option value="all">All Time</option>
+                                    <option value="today">Daily (Today)</option>
+                                    <option value="week">Weekly</option>
+                                    <option value="month">Monthly</option>
+                                    <option value="year">Yearly</option>
+                                    <option value="custom">Custom Date</option>
+                                </select>
+
+                                <div v-if="filters.dateType === 'custom'" class="flex gap-2">
+                                    <input type="date" v-model="filters.startDate" class="form-input bg-white text-xs">
+                                    <span class="text-slate-300">-</span>
+                                    <input type="date" v-model="filters.endDate" class="form-input bg-white text-xs">
+                                </div>
+
+                                <select v-model.number="pagination.rowsPerPage" class="form-input bg-white text-slate-600 font-bold cursor-pointer w-16">
+                                    <option value="5">5</option>
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 flex flex-col">
+                        
+                        <div class="w-full rounded-xl flex-1 pb-2">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="hidden md:table-header-group table-header-gradient text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-6 py-4 font-extrabold w-24 text-center rounded-tl-xl table-header-sortable" @click="sortBy('trx', 'status')">Status <i class="ri-arrow-up-down-line"></i></th>
+                                        <th class="px-6 py-4 font-extrabold table-header-sortable" @click="sortBy('trx', 'date')">Invoice & Tgl <i class="ri-arrow-up-down-line"></i></th>
+                                        <th class="px-6 py-4 font-extrabold table-header-sortable" @click="sortBy('trx', 'product')">Produk <i class="ri-arrow-up-down-line"></i></th>
+                                        <th class="px-6 py-4 font-extrabold text-right table-header-sortable" @click="sortBy('trx', 'total')">Total & Metode <i class="ri-arrow-up-down-line"></i></th>
+                                        <th class="px-6 py-4 font-extrabold text-center rounded-tr-xl">Aksi</th>
+                                    </tr>
+                                </thead>
+                                
+                                <tbody class="block md:table-row-group text-sm font-medium text-slate-600 space-y-4 md:space-y-0">
+                                    
+                                    <tr v-if="paginatedTransactions.length === 0" class="block md:table-row w-full">
+                                        <td colspan="5" class="block md:table-cell px-6 py-8 text-center text-slate-400 text-xs font-bold bg-white rounded-xl">Tidak ada data ditemukan.</td>
+                                    </tr>
+
+                                    <tr v-for="(trx, idx) in paginatedTransactions" :key="trx.id" class="group flex flex-col md:table-row bg-white rounded-2xl p-4 border border-slate-100 shadow-sm md:shadow-none md:bg-white md:border-b md:border-transparent md:rounded-none md:p-0 md:hover:bg-slate-50 transition-all duration-300 relative overflow-hidden">
+                                        
+                                        <td class="order-1 md:order-none block md:table-cell md:px-6 md:py-4 md:text-center w-full md:w-auto">
+                                            <div class="flex justify-between items-center md:justify-center md:block mb-3 md:mb-0 pb-3 md:pb-0 border-b border-slate-50 md:border-none">
+                                                <div class="md:hidden flex flex-col">
+                                                    <span class="font-mono font-bold text-xs text-brand-600 copy-hover" @click="copyToClipboard(trx.id)">{{ trx.id }} <i class="ri-file-copy-line ml-1"></i></span>
+                                                    <span class="text-[10px] text-slate-400 font-bold mt-0.5">{{ formatDate(trx.date) }}</span>
+                                                </div>
+                                                
+                                                <span :class="getStatusBtnClass(trx.status)" class="w-auto px-3 md:w-24 py-1 md:py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wide inline-block shadow-sm">
+                                                    {{ trx.status }}
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        <td class="hidden md:table-cell md:px-6 md:py-4">
+                                            <div class="font-mono font-bold text-xs text-brand-600 copy-hover" @click="copyToClipboard(trx.id)" title="Salin No Invoice">{{ trx.id }} <i class="ri-file-copy-line ml-1 opacity-0 group-hover:opacity-100"></i></div>
+                                            <div class="text-[10px] text-slate-400 font-bold mt-1">{{ formatDate(trx.date) }}</div>
+                                        </td>
+
+                                        <td class="order-2 md:order-none block md:table-cell md:px-6 md:py-4 w-full md:w-auto">
+                                            <div class="flex items-center gap-3 bg-slate-50 md:bg-transparent p-2 md:p-0 rounded-xl md:rounded-none">
+                                                <img :src="trx.img" class="img-bounce w-10 h-10 md:w-8 md:h-8 rounded-lg md:rounded object-cover shadow-sm bg-white">
+                                                <div class="min-w-0">
+                                                    <div class="font-bold text-slate-800 text-xs line-clamp-1 copy-hover" @click="copyToClipboard(trx.product)">{{ trx.product }}</div>
+                                                    <span class="text-[9px] text-slate-400 font-medium block mt-0.5">{{ trx.category }}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td class="order-3 md:order-none block md:table-cell md:px-6 md:py-4 md:text-right w-full md:w-auto mt-2 md:mt-0">
+                                            <div class="flex justify-between items-center md:block">
+                                                <span class="md:hidden text-xs font-bold text-slate-400">Total Tagihan</span>
+                                                <div class="text-right">
+                                                    <div class="font-extrabold text-slate-800 text-sm">{{ formatRupiah(trx.total) }}</div>
+                                                    <div class="mt-1 flex justify-end items-center gap-1">
+                                                        <span class="md:hidden text-[9px] text-slate-400 mr-1">via</span>
+                                                        <img :src="getPaymentLogo(trx.method)" class="h-5 md:h-6 w-auto object-contain rounded opacity-90 group-hover:opacity-100 transition shadow-sm border border-slate-100 bg-white p-0.5">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td class="order-4 md:order-none block md:table-cell md:px-6 md:py-4 md:text-center w-full md:w-auto mt-3 md:mt-0 pt-3 md:pt-0 border-t border-slate-50 md:border-none">
+                                            <button @click="viewTrx(trx)" class="w-full md:w-auto md:mx-auto text-xs bg-slate-100 text-slate-500 px-3 py-2 md:py-1.5 rounded-xl md:rounded-lg font-bold hover:bg-brand-600 hover:text-white transition shadow-sm flex items-center justify-center gap-2">
+                                                <i class="ri-file-list-3-line md:hidden"></i> Detail Transaksi
+                                            </button>
+                                        </td>
+
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 pt-4 border-t border-slate-100">
+                            <div class="text-xs font-bold text-slate-500">
+                                {{ paginatedTransactions.length > 0 ? (pagination.page - 1) * pagination.rowsPerPage + 1 : 0 }} - {{ Math.min(pagination.page * pagination.rowsPerPage, filteredTransactions.length) }} dari {{ filteredTransactions.length }} Data
+                            </div>
+                            
+                            <div class="flex items-center gap-2">
+                                <button @click="changePage(1)" :disabled="pagination.page === 1" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white disabled:opacity-50 transition shadow-sm"><i class="ri-skip-back-line"></i></button>
+                                <button @click="changePage(pagination.page - 1)" :disabled="pagination.page === 1" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white disabled:opacity-50 transition shadow-sm"><i class="ri-arrow-left-s-line"></i></button>
+                                
+                                <div class="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 h-8 shadow-sm">
+                                    <span class="text-xs font-bold text-slate-500">Hal</span>
+                                    <input type="number" v-model.number="inputPage" @change="jumpToPage" class="w-8 h-5 text-center text-xs font-bold text-brand-600 outline-none bg-transparent">
+                                    <span class="text-xs font-bold text-slate-400">/ {{ totalPages }}</span>
+                                </div>
+
+                                <button @click="changePage(pagination.page + 1)" :disabled="pagination.page === totalPages" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white disabled:opacity-50 transition shadow-sm"><i class="ri-arrow-right-s-line"></i></button>
+                                <button @click="changePage(totalPages)" :disabled="pagination.page === totalPages" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white disabled:opacity-50 transition shadow-sm"><i class="ri-skip-forward-line"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-[2rem] p-6 flex flex-col bg-white">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ri-megaphone-fill text-brand-600"></i> Pusat Informasi</h3>
+                        <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                    </div>
+                    <div class="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar max-h-[400px]">
+                        <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100 hover:bg-blue-50 transition">
+                            <div class="flex gap-2 items-start">
+                                <i class="ri-information-fill text-blue-500 mt-0.5"></i>
+                                <div>
+                                    <h5 class="text-xs font-bold text-slate-800">Maintenance Server</h5>
+                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">Server akan mengalami pemeliharaan pada tgl 20 Jan pukul 00:00 - 02:00 WIB.</p>
+                                    <span class="text-[9px] font-bold text-blue-400 mt-2 block">1 Jam lalu</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 hover:bg-emerald-50 transition">
+                            <div class="flex gap-2 items-start">
+                                <i class="ri-gift-fill text-emerald-500 mt-0.5"></i>
+                                <div>
+                                    <h5 class="text-xs font-bold text-slate-800">Promo Deposit 5%</h5>
+                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">Dapatkan bonus saldo 5% untuk deposit via QRIS minimal 100rb.</p>
+                                    <span class="text-[9px] font-bold text-emerald-400 mt-2 block">Hari ini</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:bg-slate-100 transition">
+                            <div class="flex gap-2 items-start">
+                                <i class="ri-article-line text-slate-500 mt-0.5"></i>
+                                <div>
+                                    <h5 class="text-xs font-bold text-slate-800">Update Produk Laravel</h5>
+                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">Source code Marspedia Pro v2 telah rilis. Silahkan cek menu download.</p>
+                                    <span class="text-[9px] font-bold text-slate-400 mt-2 block">Kemarin</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div v-if="modal.trx" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="modal.trx = null"></div>
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-md relative overflow-hidden animate-slide-up-fade">
+            <div class="bg-slate-50/80 backdrop-blur border-b border-slate-100 p-6 flex justify-between items-center">
+                <div><h3 class="font-bold text-lg text-slate-800">Detail Invoice</h3><p class="text-xs text-slate-500 font-mono font-bold copy-hover" @click="copyToClipboard(modal.trx.id)">{{ modal.trx.id }} <i class="ri-file-copy-line"></i></p></div>
+                <button @click="modal.trx = null" class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-800 transition-colors shadow-sm"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="p-6 space-y-5">
+                <div class="flex justify-between items-center">
+                    <span :class="getStatusBtnClass(modal.trx.status)" class="px-3 py-1 rounded-full text-xs font-bold uppercase shadow-sm border border-black/5 text-white">{{ modal.trx.status }}</span>
+                    <span class="text-xs text-slate-400 font-medium">{{ formatDate(modal.trx.date) }}</span>
+                </div>
+                <div class="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+                    <img :src="modal.trx.img" class="w-12 h-12 rounded-xl object-cover shadow-sm flex-shrink-0">
+                    <div><h4 class="font-bold text-slate-800 text-sm line-clamp-2">{{ modal.trx.product }}</h4><p class="text-xs text-slate-500 mt-1 font-medium bg-white px-2 py-0.5 rounded w-fit border border-slate-100 shadow-sm">{{ modal.trx.category }}</p></div>
+                </div>
+                <div class="space-y-3 pt-2">
+                    <div class="flex justify-between text-sm items-center">
+                        <span class="text-slate-500">Metode Pembayaran</span>
+                        <img :src="getPaymentLogo(modal.trx.method)" class="h-6 w-auto object-contain bg-white p-0.5 rounded border border-slate-200">
+                    </div>
+                    <div class="flex justify-between text-sm pt-4 border-t border-slate-100"><span class="font-bold text-slate-800">Total Dibayar</span><span class="font-black text-xl text-brand-600">{{ formatRupiah(modal.trx.total) }}</span></div>
+                </div>
+                <button @click="modal.trx = null" class="w-full py-3.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 active:scale-95">Download Invoice</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                modal: { trx: null },
+                toast: { show: false, message: '' },
+                
+                sort: {
+                    trx: { key: 'date', order: 'desc' },
+                    products: { key: 'sold', order: 'desc' }
+                },
+
+                filters: {
+                    search: '',
+                    status: 'all', 
+                    dateType: 'all',
+                    startDate: '',
+                    endDate: ''
+                },
+
+                pagination: {
+                    page: 1,
+                    rowsPerPage: 5 
+                },
+                inputPage: 1,
+                
+                stats: { balance: 0, products: 0, totalTransactions: 0, totalSpent: 0 },
+                topProducts: [],
+                recommendedProducts: [],
+                transactions: []
+            }
+        },
+        computed: {
+            filteredTransactions() {
+                let data = this.transactions;
+
+                if (this.filters.search) {
+                    const q = this.filters.search.toLowerCase();
+                    data = data.filter(t => 
+                        t.id.toLowerCase().includes(q) || 
+                        t.product.toLowerCase().includes(q)
+                    );
+                }
+
+                if (this.filters.status !== 'all') {
+                    data = data.filter(t => t.status === this.filters.status);
+                }
+
+                const now = new Date();
+                if (this.filters.dateType !== 'all') {
+                    data = data.filter(t => {
+                        const d = new Date(t.date);
+                        if (this.filters.dateType === 'today') return d.toDateString() === now.toDateString();
+                        if (this.filters.dateType === 'week') return d >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        if (this.filters.dateType === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                        if (this.filters.dateType === 'year') return d.getFullYear() === now.getFullYear();
+                        if (this.filters.dateType === 'custom' && this.filters.startDate && this.filters.endDate) {
+                            const start = new Date(this.filters.startDate);
+                            const end = new Date(this.filters.endDate);
+                            end.setHours(23,59,59);
+                            return d >= start && d <= end;
+                        }
+                        return true;
+                    });
+                }
+
+                return data.sort((a, b) => {
+                    let modifier = this.sort.trx.order === 'desc' ? -1 : 1;
+                    let valA = a[this.sort.trx.key];
+                    let valB = b[this.sort.trx.key];
+                    if (this.sort.trx.key === 'date') { valA = new Date(valA); valB = new Date(valB); }
+                    if (valA < valB) return -1 * modifier;
+                    if (valA > valB) return 1 * modifier;
+                    return 0;
+                });
+            },
+
+            totalPages() { return Math.ceil(this.filteredTransactions.length / this.pagination.rowsPerPage) || 1; },
+            paginatedTransactions() {
+                const start = (this.pagination.page - 1) * this.pagination.rowsPerPage;
+                const end = start + this.pagination.rowsPerPage;
+                return this.filteredTransactions.slice(start, end);
+            },
+            
+            sortedTopProducts() {
+                return this.topProducts.sort((a, b) => {
+                    let modifier = this.sort.products.order === 'desc' ? -1 : 1;
+                    if (a[this.sort.products.key] < b[this.sort.products.key]) return -1 * modifier;
+                    if (a[this.sort.products.key] > b[this.sort.products.key]) return 1 * modifier;
+                    return 0;
+                });
+            }
+        },
+        watch: {
+            'filters.search'() { this.pagination.page = 1; this.inputPage = 1; },
+            'filters.status'() { this.pagination.page = 1; this.inputPage = 1; },
+            'filters.dateType'() { this.pagination.page = 1; this.inputPage = 1; },
+            'pagination.rowsPerPage'() { this.pagination.page = 1; this.inputPage = 1; }
+        },
+        methods: {
+            viewTrx(trx) { this.modal.trx = trx; },
+
+            copyToClipboard(text) {
+                if(!text) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    this.toast.message = text;
+                    this.toast.show = true;
+                    setTimeout(() => { this.toast.show = false; }, 3000);
+                });
+            },
+
+            sortBy(table, key) {
+                if (this.sort[table].key === key) {
+                    this.sort[table].order = this.sort[table].order === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sort[table].key = key;
+                    this.sort[table].order = 'desc'; 
+                }
+            },
+
+            changePage(newPage) {
+                if (newPage >= 1 && newPage <= this.totalPages) {
+                    this.pagination.page = newPage;
+                    this.inputPage = newPage;
+                }
+            },
+            jumpToPage() {
+                let p = this.inputPage;
+                if (p < 1) p = 1;
+                if (p > this.totalPages) p = this.totalPages;
+                this.changePage(p);
+            },
+
+            // OPTIMASI: GENERATOR LOGO (REAL IMAGE)
+            getPaymentLogo(method) {
+                // Menggunakan URL Logo Publik yang stabil
+                const logos = {
+                    'BCA': 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg',
+                    'QRIS': 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Logo_QRIS.svg',
+                    'GoPay': 'https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg',
+                    'DANA': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_DANA.png',
+                    'Saldo': 'https://cdn-icons-png.flaticon.com/512/2331/2331941.png'
+                };
+                
+                // Fallback jika logo tidak ditemukan
+                return logos[method] || `https://placehold.co/80x30/e2e8f0/64748b?text=${method}`;
+            },
+
+            formatNumber(num) { return new Intl.NumberFormat('id-ID').format(num); },
+            formatRupiah(num) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num); },
+            formatDate(iso) { return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' }); },
+            
+            getStatusBtnClass(status) {
+                const map = {
+                    'Paid': 'bg-emerald-500 text-white',
+                    'Proses': 'bg-yellow-500 text-white',
+                    'Done': 'bg-blue-600 text-white',
+                    'Cancel': 'bg-rose-600 text-white',
+                    'Unpaid': 'bg-slate-500 text-white'
+                };
+                return map[status] || 'bg-slate-500';
+            },
+
+            shuffleRecommended() {
+                this.recommendedProducts.sort(() => Math.random() - 0.5);
+            },
+
+            generateData() {
+                const rInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+                const rArr = (arr) => arr[Math.floor(Math.random() * arr.length)];
+                
+                this.stats = {
+                    balance: rInt(50000, 5000000), 
+                    products: 452, 
+                    totalTransactions: rInt(10, 150), 
+                    totalSpent: rInt(1000000, 15000000) 
+                };
+
+                const prodList = [
+                    {n: 'MLBB 86 Diamonds', c: 'Game Topup', img: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Source Code Web Berita', c: 'Source Code', img: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Followers IG 1000', c: 'SMM Panel', img: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Netflix 1 Bulan 4K', c: 'Premium Acc', img: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Jasa Landing Page', c: 'Services', img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'POS Kasir VueJS', c: 'Source Code', img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Pubg UC 600', c: 'Game Topup', img: 'https://images.unsplash.com/photo-1593305841991-05c297bb45ec?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Canva Pro Lifetime', c: 'Premium Acc', img: 'https://images.unsplash.com/photo-1611162616475-46b635cb6868?auto=format&fit=crop&q=80&w=100'}
+                ];
+                
+                this.topProducts = Array.from({length: 8}, (_,i) => {
+                      const p = prodList[i % prodList.length];
+                      return { name: p.n, category: p.c, img: p.img, price: rInt(50, 500) * 1000, sold: rInt(100, 1000) };
+                });
+
+                this.recommendedProducts = Array.from({length: 6}, (_,i) => {
+                      const p = rArr(prodList);
+                      return { name: p.n, category: p.c, img: p.img, price: rInt(20, 300) * 1000 };
+                });
+
+                const methods = ['BCA', 'QRIS', 'GoPay', 'DANA', 'Saldo'];
+                const statuses = ['Paid', 'Paid', 'Proses', 'Done', 'Unpaid', 'Cancel'];
+
+                this.transactions = Array.from({length: 150}, (_,i) => {
+                    const p = rArr(prodList);
+                    const date = new Date(Date.now() - rInt(0, 365 * 24 * 60 * 60 * 1000));
+                    return {
+                        id: `INV-${rInt(10000,99999)}`,
+                        product: p.n, category: p.c, img: p.img,
+                        total: rInt(20, 300) * 1000,
+                        status: rArr(statuses),
+                        method: rArr(methods),
+                        date: date.toISOString()
+                    };
+                });
+                
+                this.$nextTick(() => {
+                    gsap.from(".counter", { textContent: 0, duration: 2, ease: "power1.out", snap: { textContent: 1 }, stagger: 0.1 });
+                });
+            }
+        },
+        mounted() { this.generateData(); }
+    }).mount('#app');
+</script>
+</body>
+</html>

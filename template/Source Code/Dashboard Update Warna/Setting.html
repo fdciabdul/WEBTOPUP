@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Pro - System Settings</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: '#0033AA', // Warna Utama: Biru Tegas
+                            light: '#1E4DB7',
+                            dark: '#002288',
+                            50: '#F0F4FF', // Backgrounds sangat muda
+                            100: '#E0E7FF',
+                            200: '#C7D2FE',
+                            900: '#001144',
+                        }
+                    },
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    animation: {
+                        'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pop': 'pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'shimmer': 'shimmer 2s infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        slideUp: {
+                            '0%': { transform: 'translateY(30px)', opacity: 0 },
+                            '100%': { transform: 'translateY(0)', opacity: 1 },
+                        },
+                        pop: {
+                            '0%': { transform: 'scale(0.9)', opacity: 0 },
+                            '100%': { transform: 'scale(1)', opacity: 1 },
+                        },
+                        shimmer: {
+                            '100%': { transform: 'translateX(100%)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Background Utama Clean */
+        body { background-color: #F8FAFC; overflow-x: hidden; }
+        
+        /* Glass Components */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 51, 170, 0.1); /* Border halus biru */
+        }
+
+        /* Card Style - Clean White */
+        .ios-card {
+            background: #FFFFFF;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 51, 170, 0.05), 0 2px 4px -1px rgba(0, 51, 170, 0.03);
+            border: 1px solid #E2E8F0;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .ios-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 51, 170, 0.1), 0 10px 10px -5px rgba(0, 51, 170, 0.04);
+            border-color: #C7D2FE;
+        }
+
+        /* Inputs - Clean, No Flicker */
+        .input-group {
+            background: #F8FAFC;
+            border: 2px solid #E2E8F0;
+            border-radius: 1rem;
+            transition: all 0.2s ease;
+        }
+        .input-group:focus-within {
+            background: #FFFFFF;
+            border-color: #0033AA; /* Focus Border Brand Color */
+            box-shadow: 0 0 0 4px rgba(0, 51, 170, 0.1); 
+        }
+        
+        /* UNIFIED GRADIENTS - Menghilangkan warna warni */
+        /* Semua header class dipaksa menggunakan warna brand #0033AA */
+        .header-blue, .header-pink, .header-purple, 
+        .header-orange, .header-teal, .header-slate { 
+            background: linear-gradient(135deg, #0033AA, #002288); 
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0033AA; }
+    </style>
+</head>
+<body class="antialiased text-slate-800 font-sans selection:bg-brand selection:text-white">
+
+<div id="app" class="flex h-screen w-full relative">
+
+    <transition name="pop">
+        <div v-if="toast.show" class="fixed top-8 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
+            <div class="glass-panel px-6 py-3 rounded-full flex items-center gap-3 pointer-events-auto shadow-lg shadow-brand/20 border-brand/20">
+                <i class="ri-checkbox-circle-fill text-brand text-xl"></i>
+                <span class="font-bold text-sm text-brand-dark">{{ toast.message }}</span>
+            </div>
+        </div>
+    </transition>
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 glass-panel transition-transform duration-300 lg:translate-x-0 flex flex-col h-full border-r border-slate-200">
+        <div class="h-24 flex items-center px-8">
+            <div class="flex items-center gap-3 animate-float">
+                <div class="w-10 h-10 bg-brand rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand/30">
+                    <i class="ri-settings-3-fill text-xl"></i>
+                </div>
+                <h1 class="font-extrabold text-xl tracking-tight text-slate-800">System<span class="text-brand">Pro</span></h1>
+            </div>
+        </div>
+        <nav class="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-brand-50 hover:text-brand transition font-bold text-sm">
+                <i class="ri-dashboard-line text-lg"></i> Dashboard
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-brand text-white shadow-lg shadow-brand/30 transition font-bold text-sm">
+                <i class="ri-settings-4-fill text-lg"></i> Pengaturan
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-brand-50 hover:text-brand transition font-bold text-sm">
+                <i class="ri-shield-keyhole-line text-lg"></i> Admin Access
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden">
+        
+        <header class="h-20 px-6 md:px-8 flex items-center justify-between bg-brand shadow-lg shadow-brand/20 z-40 sticky top-0 text-white">
+            <div class="flex items-center gap-4">
+                <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden w-10 h-10 bg-white/20 backdrop-blur rounded-xl text-white hover:bg-white/30 transition"><i class="ri-menu-2-line"></i></button>
+                <div>
+                    <h2 class="text-xl font-black">Konfigurasi Website</h2>
+                    <p class="text-xs font-bold text-blue-200 hidden md:block">Atur semua parameter bisnis Marspedia disini.</p>
+                </div>
+            </div>
+            <button @click="confirmSave" class="relative group overflow-hidden px-6 py-2.5 rounded-xl bg-white text-brand font-bold shadow-xl active:scale-95 transition hover:bg-blue-50">
+                <div class="absolute inset-0 bg-blue-50 group-hover:animate-shimmer -translate-x-full"></div>
+                <span class="relative flex items-center gap-2"><i class="ri-save-3-fill"></i> Simpan</span>
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 pb-32 custom-scrollbar">
+            <div class="max-w-7xl mx-auto space-y-8">
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    
+                    <section class="lg:col-span-8 ios-card animate-slide-up" style="animation-delay: 0.1s;">
+                        <div class="header-blue p-5 flex items-center gap-3 text-white">
+                            <div class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center"><i class="ri-layout-masonry-fill text-xl"></i></div>
+                            <div>
+                                <h3 class="font-bold text-lg leading-tight">Identitas Umum</h3>
+                                <p class="text-xs text-blue-200 font-medium">Judul, Deskripsi & Kontak Utama</p>
+                            </div>
+                        </div>
+                        <div class="p-6 md:p-8 space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block ml-1">Judul Website</label>
+                                    <div class="input-group flex items-center px-4 py-3 gap-3">
+                                        <i class="ri-t-box-line text-slate-400"></i>
+                                        <input v-model="settings.general.title" type="text" class="bg-transparent w-full outline-none font-bold text-slate-700 text-sm" placeholder="Marspedia Store">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block ml-1">No. WhatsApp Utama</label>
+                                    <div class="input-group flex items-center px-4 py-3 gap-3">
+                                        <i class="ri-whatsapp-fill text-brand"></i> <input v-model="settings.general.wa" type="text" class="bg-transparent w-full outline-none font-bold text-slate-700 text-sm" placeholder="62812xxx">
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block ml-1">Deskripsi SEO</label>
+                                <div class="input-group px-4 py-3">
+                                    <textarea v-model="settings.general.desc" class="bg-transparent w-full outline-none font-bold text-slate-700 text-sm h-20 resize-none" placeholder="Deskripsi singkat website..."></textarea>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block ml-1">Keywords</label>
+                                <div class="input-group px-4 py-3 flex items-center gap-3">
+                                    <i class="ri-hashtag text-slate-400"></i>
+                                    <input v-model="settings.general.keywords" type="text" class="bg-transparent w-full outline-none font-bold text-slate-700 text-sm" placeholder="topup, game, voucher...">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-400 uppercase mb-2 block ml-1">Footer Text</label>
+                                <div class="input-group px-4 py-3 flex items-start gap-3">
+                                    <i class="ri-copyright-line text-slate-400 mt-1"></i>
+                                    <textarea v-model="settings.general.footer" class="bg-transparent w-full outline-none font-bold text-slate-700 text-sm h-24 resize-none" placeholder="© 2026 Marspedia&#10;All Rights Reserved"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="lg:col-span-4 ios-card animate-slide-up h-full" style="animation-delay: 0.2s;">
+                        <div class="header-purple p-5 flex items-center gap-3 text-white">
+                            <div class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center"><i class="ri-image-2-fill text-xl"></i></div>
+                            <div>
+                                <h3 class="font-bold text-lg leading-tight">Logo Website</h3>
+                                <p class="text-xs text-blue-200 font-medium">Tampilan Visual Brand</p>
+                            </div>
+                        </div>
+                        <div class="p-6 md:p-8 flex flex-col items-center justify-center h-[calc(100%-80px)]">
+                            <div class="relative w-48 h-48 rounded-[2rem] bg-slate-50 border-4 border-dashed border-slate-200 hover:border-brand hover:bg-brand-50 transition group cursor-pointer flex items-center justify-center overflow-hidden" @click="$refs.logoInput.click()">
+                                <img v-if="settings.general.logo" :src="settings.general.logo" class="w-full h-full object-contain p-4 group-hover:scale-110 transition duration-500">
+                                <div v-else class="text-center p-4">
+                                    <i class="ri-upload-cloud-fill text-4xl text-slate-300 group-hover:text-brand transition mb-2 block"></i>
+                                    <span class="text-xs font-bold text-slate-400 group-hover:text-brand">Klik Upload</span>
+                                </div>
+                                <div class="absolute inset-0 bg-brand/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition backdrop-blur-sm">
+                                    <span class="text-white font-bold text-xs bg-white/20 px-4 py-2 rounded-full border border-white/50">Ganti</span>
+                                </div>
+                            </div>
+                            <input type="file" ref="logoInput" class="hidden" @change="handleLogo" accept="image/*">
+                            <p class="text-xs font-bold text-slate-400 mt-4">Max: 2MB (PNG/JPG)</p>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="ios-card animate-slide-up" style="animation-delay: 0.3s;">
+                    <div class="header-pink p-5 flex items-center gap-3 text-white justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center"><i class="ri-share-forward-fill text-xl"></i></div>
+                            <div>
+                                <h3 class="font-bold text-lg leading-tight">Social Media URL</h3>
+                                <p class="text-xs text-blue-200 font-medium">Link Komunitas & Kontak</p>
+                            </div>
+                        </div>
+                        <i class="ri-links-line text-4xl text-white/20"></i>
+                    </div>
+                    <div class="p-6 md:p-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div v-for="(url, key) in settings.social" :key="key" class="group">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-1.5 block ml-1">{{ key }}</label>
+                                <div class="input-group px-3 py-2.5 flex items-center gap-3 bg-white border border-slate-200 group-hover:border-brand-200">
+                                    <i :class="getSocialIcon(key)" class="text-xl"></i>
+                                    <input v-model="settings.social[key]" type="text" class="bg-transparent w-full outline-none font-bold text-slate-700 text-xs truncate" :placeholder="'Link ' + key">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <section class="ios-card animate-slide-up h-full" style="animation-delay: 0.4s;">
+                        <div class="header-orange p-5 flex items-center justify-between text-white">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center"><i class="ri-flashlight-fill text-xl"></i></div>
+                                <div>
+                                    <h3 class="font-bold text-lg leading-tight">Digiflazz</h3>
+                                    <p class="text-xs text-blue-200 font-medium">Profit PPOB (%)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-5 space-y-4">
+                            <div v-for="(val, role) in settings.profit.digiflazz" :key="role" class="flex items-center justify-between group">
+                                <span class="text-xs font-bold text-slate-500 uppercase w-24 group-hover:text-brand transition truncate">{{ role }}</span>
+                                <div class="input-group flex-1 flex items-center px-3 py-2 bg-slate-50 border-slate-100">
+                                    <input v-model="settings.profit.digiflazz[role]" type="number" class="bg-transparent w-full outline-none font-bold text-slate-800 text-right text-sm" placeholder="0">
+                                    <span class="text-slate-400 font-bold ml-1 text-xs">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="ios-card animate-slide-up h-full" style="animation-delay: 0.5s;">
+                        <div class="header-teal p-5 flex items-center justify-between text-white">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center"><i class="ri-gamepad-fill text-xl"></i></div>
+                                <div>
+                                    <h3 class="font-bold text-lg leading-tight">API Games</h3>
+                                    <p class="text-xs text-blue-200 font-medium">Profit Game (%)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-5 space-y-4">
+                            <div v-for="(val, role) in settings.profit.apigames" :key="role" class="flex items-center justify-between group">
+                                <span class="text-xs font-bold text-slate-500 uppercase w-24 group-hover:text-brand transition truncate">{{ role }}</span>
+                                <div class="input-group flex-1 flex items-center px-3 py-2 bg-slate-50 border-slate-100">
+                                    <input v-model="settings.profit.apigames[role]" type="number" class="bg-transparent w-full outline-none font-bold text-slate-800 text-right text-sm" placeholder="0">
+                                    <span class="text-slate-400 font-bold ml-1 text-xs">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="ios-card animate-slide-up h-full" style="animation-delay: 0.6s;">
+                        <div class="header-slate p-5 flex items-center justify-between text-white">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center"><i class="ri-coins-line text-xl"></i></div>
+                                <div>
+                                    <h3 class="font-bold text-lg leading-tight">Biaya</h3>
+                                    <p class="text-xs text-blue-200 font-medium">Layanan & Admin</p>
+                                </div>
+                            </div>
+                            <button @click="addFee" class="bg-white/10 hover:bg-white/20 text-white w-8 h-8 rounded-lg flex items-center justify-center transition">
+                                <i class="ri-add-line"></i>
+                            </button>
+                        </div>
+                        <div class="p-3 overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="text-[10px] text-slate-400 uppercase bg-slate-50/50">
+                                    <tr>
+                                        <th class="px-3 py-2 font-bold rounded-l-lg">Nama</th>
+                                        <th class="px-3 py-2 font-bold text-right">Rp</th>
+                                        <th class="px-2 py-2 font-bold rounded-r-lg"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr v-for="(fee, index) in settings.fees" :key="index" class="group hover:bg-slate-50/50 transition">
+                                        <td class="px-2 py-2">
+                                            <input v-model="fee.name" type="text" class="bg-transparent w-full outline-none font-bold text-slate-700 text-xs border-b border-transparent focus:border-brand transition" placeholder="Nama">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input v-model="fee.amount" type="number" class="bg-transparent w-full outline-none font-bold text-slate-700 text-xs text-right border-b border-transparent focus:border-brand transition" placeholder="0">
+                                        </td>
+                                        <td class="px-2 py-2 text-right">
+                                            <button @click="removeFee(index)" class="text-slate-300 hover:text-red-600 transition">
+                                                <i class="ri-close-circle-fill"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div v-if="settings.fees.length === 0" class="text-center py-8 text-slate-400 font-bold text-xs">
+                                Kosong.
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+
+                <section class="ios-card animate-slide-up" style="animation-delay: 0.7s;">
+                    <div class="bg-gradient-to-r from-slate-800 to-slate-900 p-5 flex items-center justify-between text-white">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center"><i class="ri-file-code-line text-xl"></i></div>
+                            <div>
+                                <h3 class="font-bold text-lg leading-tight">System Files</h3>
+                                <p class="text-xs text-gray-400 font-medium">SEO Technical Configuration</p>
+                            </div>
+                        </div>
+                        <div class="bg-black/30 p-1 rounded-lg flex gap-1">
+                            <button @click="activeFile = 'robots'" :class="activeFile === 'robots' ? 'bg-brand text-white shadow' : 'text-gray-500 hover:text-gray-300'" class="px-3 py-1.5 rounded-md text-xs font-bold transition">Robots.txt</button>
+                            <button @click="activeFile = 'sitemap'" :class="activeFile === 'sitemap' ? 'bg-brand text-white shadow' : 'text-gray-500 hover:text-gray-300'" class="px-3 py-1.5 rounded-md text-xs font-bold transition">Sitemap.xml</button>
+                        </div>
+                    </div>
+                    <div class="relative bg-[#0F172A] group border-t border-slate-700">
+                        <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
+                            <span class="text-[10px] text-gray-500 font-mono">Editable Mode</span>
+                        </div>
+                        <textarea v-if="activeFile === 'robots'" v-model="settings.files.robots" class="w-full h-64 p-6 bg-transparent text-emerald-400 font-mono text-sm outline-none resize-none leading-relaxed" spellcheck="false"></textarea>
+                        <textarea v-if="activeFile === 'sitemap'" v-model="settings.files.sitemap" class="w-full h-64 p-6 bg-transparent text-blue-300 font-mono text-sm outline-none resize-none leading-relaxed" spellcheck="false"></textarea>
+                    </div>
+                </section>
+
+                <section class="animate-slide-up" style="animation-delay: 0.8s;">
+                    <button @click="confirmSave" class="w-full py-4 rounded-2xl bg-brand hover:bg-brand-dark text-white font-bold text-lg shadow-xl shadow-brand/20 transition-all transform hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-3">
+                        <i class="ri-save-3-fill text-2xl"></i> Simpan Semua Pengaturan
+                    </button>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <div v-if="showModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl animate-pop text-center relative border border-white/40">
+            <div class="w-20 h-20 bg-brand rounded-full flex items-center justify-center text-white mx-auto mb-6 shadow-xl shadow-brand/30">
+                <i class="ri-save-3-line text-3xl"></i>
+            </div>
+            <h3 class="font-black text-2xl text-slate-800 mb-2">Simpan Perubahan?</h3>
+            <p class="text-sm text-slate-500 mb-8 font-medium">Semua konfigurasi website akan diperbarui secara real-time.</p>
+            <div class="space-y-3">
+                <button @click="processSave" class="w-full py-3.5 bg-brand text-white rounded-xl font-bold hover:bg-brand-dark transition shadow-lg">Ya, Simpan</button>
+                <button @click="showModal = false" class="w-full py-3.5 bg-slate-100 text-slate-500 rounded-xl font-bold hover:bg-slate-200 transition">Batal</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                showModal: false,
+                activeFile: 'robots',
+                toast: { show: false, message: '' },
+                
+                settings: {
+                    general: {
+                        title: 'Marspedia Store',
+                        desc: 'Platform Topup termurah dan terpercaya.',
+                        keywords: 'topup, game, voucher, murah',
+                        footer: '© 2026 Marspedia Nusantara\nAll Rights Reserved.',
+                        wa: '628123456789',
+                        logo: 'https://cdn-icons-png.flaticon.com/512/2586/2586703.png'
+                    },
+                    social: {
+                        whatsapp: 'https://wa.me/628123...',
+                        facebook: 'https://facebook.com/marspedia',
+                        instagram: 'https://instagram.com/marspedia',
+                        tiktok: 'https://tiktok.com/@marspedia',
+                        telegram: 'https://t.me/marspedia',
+                        email: 'admin@marspedia.com',
+                        threads: 'https://threads.net/@marspedia',
+                        youtube: 'https://youtube.com/@marspedia'
+                    },
+                    fees: [
+                        { name: 'Biaya Layanan', amount: 500 },
+                        { name: 'Admin QRIS', amount: 750 }
+                    ],
+                    profit: {
+                        digiflazz: { Visitor: 5, Reseller: 4, 'Reseller VIP': 3, 'Reseller VVIP': 2 },
+                        apigames: { Visitor: 10, Reseller: 8, 'Reseller VIP': 6, 'Reseller VVIP': 4 }
+                    },
+                    files: {
+                        robots: "User-agent: *\nDisallow: /admin\nAllow: /",
+                        sitemap: "<urlset>\n  <url>\n    <loc>https://marspedia.com</loc>\n  </url>\n</urlset>"
+                    }
+                }
+            }
+        },
+        methods: {
+            handleLogo(e) {
+                const file = e.target.files[0];
+                if(file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => this.settings.general.logo = e.target.result;
+                    reader.readAsDataURL(file);
+                }
+            },
+            addFee() {
+                this.settings.fees.push({ name: '', amount: 0 });
+            },
+            removeFee(idx) {
+                this.settings.fees.splice(idx, 1);
+            },
+            confirmSave() {
+                this.showModal = true;
+            },
+            processSave() {
+                this.showModal = false;
+                this.toast.message = "Pengaturan Berhasil Disimpan!";
+                this.toast.show = true;
+                setTimeout(() => this.toast.show = false, 3000);
+            },
+            getSocialIcon(key) {
+                // Modified to use Uniform Blue Brand Color for inputs
+                // Unless functionality requires specific branding, but we are prioritizing "Clean Blue"
+                const map = {
+                    whatsapp: 'ri-whatsapp-fill text-brand',
+                    facebook: 'ri-facebook-circle-fill text-brand',
+                    instagram: 'ri-instagram-fill text-brand',
+                    tiktok: 'ri-tiktok-fill text-brand',
+                    telegram: 'ri-telegram-fill text-brand',
+                    email: 'ri-mail-fill text-brand',
+                    threads: 'ri-threads-fill text-brand',
+                    youtube: 'ri-youtube-fill text-brand'
+                };
+                return map[key] || 'ri-link text-brand';
+            }
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>

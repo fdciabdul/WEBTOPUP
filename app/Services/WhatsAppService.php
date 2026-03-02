@@ -142,4 +142,25 @@ class WhatsAppService
 
         return $this->send($data['phone'], $message);
     }
+
+    public function sendOrderDelivered(array $data): bool
+    {
+        $message = "🚀 *PESANAN DIKIRIM*\n\n";
+        $message .= "Order ID: {$data['order_id']}\n";
+        $message .= "Produk: {$data['product_name']}\n\n";
+
+        if (!empty($data['delivery_data']) && is_array($data['delivery_data'])) {
+            $message .= "*Detail Akun:*\n";
+            foreach ($data['delivery_data'] as $key => $val) {
+                $label = ucfirst(str_replace('_', ' ', $key));
+                $message .= "- {$label}: {$val}\n";
+            }
+            $message .= "\n";
+        }
+
+        $message .= "⚠️ _Dilarang mengubah Email & Password akun. Garansi hangus jika melanggar._\n\n";
+        $message .= "Terima kasih telah berbelanja! 🙏";
+
+        return $this->send($data['phone'], $message);
+    }
 }

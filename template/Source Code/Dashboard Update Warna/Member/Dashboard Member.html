@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Member - Dashboard Pro (Blue Series)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        // REVISI: Menggunakan Palet #0033AA sebagai Brand Color utama
+                        brand: { 
+                            50: '#EEF2FF', 
+                            100: '#E0E7FF', 
+                            200: '#C7D2FE',
+                            500: '#0044CC', 
+                            600: '#0033AA', // MAIN COLOR (Biru Tegas)
+                            700: '#002B96', // Darker Hover
+                            800: '#002280', 
+                            900: '#001A60' 
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'slide-up-fade': 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' }
+                        },
+                        slideUpFade: {
+                            '0%': { opacity: 0, transform: 'translateY(30px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F8FAFC; overflow-x: hidden; }
+        
+        /* Background Blobs yang lebih tenang (Biru/Abu) */
+        .bg-blobs { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #F8FAFC; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.4; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* CARD STYLE CLEAN */
+        .card-bounce {
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+        }
+        .card-bounce:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 51, 170, 0.15); /* Shadow Biru Halus */
+            border-color: #0033AA;
+        }
+
+        /* IMG BOUNCY */
+        .img-bounce { transition: transform 0.4s ease; cursor: pointer; }
+        .img-bounce:hover { transform: scale(1.1); }
+
+        /* NAV STYLES */
+        .nav-item {
+            display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 1rem;
+            border-radius: 0.8rem; font-weight: 600; font-size: 0.9rem;
+            color: #64748b; margin-bottom: 0.4rem;
+            transition: all 0.2s;
+        }
+        .nav-item:hover { background: #EEF2FF; color: #0033AA; transform: translateX(4px); }
+        
+        /* REVISI: Nav Active menjadi Solid #0033AA */
+        .nav-active {
+            background-color: #0033AA !important;
+            color: white !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 51, 170, 0.3);
+        }
+
+        .nav-section {
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            color: #94a3b8; margin-top: 1.5rem; margin-bottom: 0.5rem; padding-left: 0.5rem;
+        }
+
+        /* REVISI: Table Header Solid #0033AA */
+        .table-header-solid { background-color: #0033AA; color: white; }
+        .table-header-sortable { cursor: pointer; user-select: none; transition: background 0.2s; }
+        .table-header-sortable:hover { background: rgba(255,255,255,0.15); }
+        
+        /* Scrollbar Biru */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0033AA; }
+
+        /* Utilities */
+        .copy-hover:hover { color: #0033AA; cursor: pointer; text-decoration: underline; }
+        
+        .form-input { 
+            border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.5rem 0.8rem; font-size: 0.85rem; outline: none; transition: all 0.2s;
+        }
+        .form-input:focus { border-color: #0033AA; box-shadow: 0 0 0 2px rgba(0, 51, 170, 0.1); }
+
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+    </style>
+</head>
+<body class="antialiased selection:bg-[#0033AA] selection:text-white text-slate-800">
+
+<div class="bg-blobs">
+    <div class="blob bg-blue-100 w-[600px] h-[600px] top-[-10%] left-[-10%]"></div>
+    <div class="blob bg-slate-200 w-[500px] h-[500px] bottom-[-10%] right-[-10%]"></div>
+</div>
+
+<div id="app" class="flex h-screen overflow-hidden w-full font-sans">
+
+    <transition name="toast">
+        <div v-if="toast.show" class="fixed bottom-6 right-6 z-[100] bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border-l-4 border-[#0033AA]">
+            <i class="ri-checkbox-circle-fill text-[#0033AA] text-xl"></i>
+            <div>
+                <h4 class="font-bold text-sm">Berhasil Disalin!</h4>
+                <p class="text-xs text-slate-300">{{ toast.message }}</p>
+            </div>
+        </div>
+    </transition>
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white/95 backdrop-blur border-r border-slate-200 transition-transform duration-300 lg:translate-x-0 flex flex-col flex-shrink-0 h-full shadow-xl lg:shadow-none">
+        <div class="h-24 flex items-center px-8 flex-shrink-0 border-b border-slate-100">
+            <div class="flex items-center gap-3 animate-slide-up-fade">
+                <div class="w-10 h-10 bg-[#0033AA] rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20 animate-float">
+                    <i class="ri-rocket-2-fill text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Marspedia</h1>
+                    <span class="text-[10px] font-bold text-[#0033AA] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded shadow-sm">MEMBER AREA</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar flex flex-col pb-20">
+            <p class="nav-section animate-slide-up-fade">Utama</p>
+            <a href="#" @click.prevent class="nav-item nav-active animate-slide-up-fade delay-100">
+                <i class="ri-layout-grid-fill text-lg"></i> Dashboard
+            </a>
+            <a href="#" @click.prevent class="nav-item animate-slide-up-fade delay-100">
+                <i class="ri-shopping-cart-2-line text-lg"></i> Order Baru
+            </a>
+            <a href="#" @click.prevent class="nav-item animate-slide-up-fade delay-100">
+                <i class="ri-history-line text-lg"></i> Riwayat Transaksi
+            </a>
+            <a href="#" @click.prevent class="nav-item animate-slide-up-fade delay-100">
+                <i class="ri-wallet-3-line text-lg"></i> Deposit Saldo
+            </a>
+            <a href="#" @click.prevent class="nav-item animate-slide-up-fade delay-100">
+                <i class="ri-folder-shield-2-line text-lg"></i> File Manager
+            </a>
+
+            <p class="nav-section animate-slide-up-fade delay-200">Pengaturan</p>
+            <a href="#" @click.prevent class="nav-item animate-slide-up-fade delay-200">
+                <i class="ri-user-settings-line text-lg"></i> Profile Akun
+            </a>
+            <a href="#" @click.prevent class="nav-item animate-slide-up-fade delay-200">
+                <i class="ri-customer-service-2-line text-lg"></i> Bantuan / CS
+            </a>
+
+            <div class="mt-8 mb-4 border-t border-slate-100 pt-4 animate-slide-up-fade delay-300">
+                <a href="#" @click.prevent class="nav-item text-red-500 hover:text-red-600 hover:bg-red-50">
+                    <i class="ri-logout-box-line text-lg"></i> Logout
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden w-full bg-[#F8FAFC]">
+        
+        <header class="h-24 bg-[#0033AA] px-8 flex items-center justify-between sticky top-0 z-30 flex-shrink-0 m-4 rounded-3xl shadow-xl shadow-blue-900/10 text-white">
+            <div class="flex items-center gap-4">
+                <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 text-white/80 hover:bg-white/10 rounded-xl transition-colors"><i class="ri-menu-2-line text-xl"></i></button>
+                <div class="hidden md:block animate-slide-up-fade">
+                    <h2 class="font-bold text-lg text-white">Selamat Datang, <span class="text-blue-200">Member!</span> 👋</h2>
+                    <p class="text-xs text-blue-100/70 font-medium">Dashboard Overview</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-4 animate-slide-up-fade delay-100">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-xs font-medium text-blue-200">Saldo Anda</p>
+                        <p class="text-lg font-black text-white tracking-wide">{{ formatRupiah(stats.balance) }}</p>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=Member+Marspedia&background=EEF2FF&color=0033AA" class="w-11 h-11 rounded-full shadow-md border-2 border-[#0044CC] cursor-pointer hover:scale-110 transition-transform bg-white">
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 pt-0 space-y-8 scroll-smooth custom-scrollbar">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <div class="card-bounce rounded-[2rem] p-6 bg-[#0033AA] text-white shadow-lg shadow-blue-900/20 animate-slide-up-fade border-none">
+                    <div class="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4"><i class="ri-wallet-3-fill text-9xl"></i></div>
+                    <div class="relative z-10">
+                        <div class="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-4"><i class="ri-wallet-3-fill text-2xl"></i></div>
+                        <p class="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Total Saldo Aktif</p>
+                        <h3 class="text-2xl font-extrabold tracking-tight counter">{{ formatRupiah(stats.balance) }}</h3>
+                        <button class="mt-4 text-[10px] font-bold bg-white text-[#0033AA] px-4 py-2 rounded-xl shadow-sm hover:bg-blue-50 transition w-full">
+                            <i class="ri-add-circle-line mr-1"></i> Top Up Saldo
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-bounce rounded-[2rem] p-6 bg-white text-slate-800 shadow-sm animate-slide-up-fade delay-100">
+                    <div class="relative z-10">
+                        <div class="w-12 h-12 bg-blue-50 text-[#0033AA] rounded-2xl flex items-center justify-center mb-4"><i class="ri-store-2-fill text-2xl"></i></div>
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Produk</p>
+                        <h3 class="text-2xl font-extrabold tracking-tight text-slate-800 counter">{{ stats.products }}</h3>
+                        <div class="mt-3 inline-flex items-center gap-1 bg-green-50 text-green-600 px-2.5 py-1 rounded-lg text-xs font-bold border border-green-100">
+                            <i class="ri-check-line"></i> Ready Stock
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-bounce rounded-[2rem] p-6 bg-white text-slate-800 shadow-sm animate-slide-up-fade delay-200">
+                    <div class="relative z-10">
+                        <div class="w-12 h-12 bg-blue-50 text-[#0033AA] rounded-2xl flex items-center justify-center mb-4"><i class="ri-shopping-bag-3-fill text-2xl"></i></div>
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Transaksi</p>
+                        <h3 class="text-2xl font-extrabold tracking-tight text-slate-800 counter">{{ stats.totalTransactions }}</h3>
+                        <div class="mt-3 inline-flex items-center gap-1 bg-blue-50 text-[#0033AA] px-2.5 py-1 rounded-lg text-xs font-bold border border-blue-100">
+                            <i class="ri-history-line"></i> Lifetime
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-bounce rounded-[2rem] p-6 bg-white text-slate-800 shadow-sm animate-slide-up-fade delay-300">
+                    <div class="relative z-10">
+                        <div class="w-12 h-12 bg-blue-50 text-[#0033AA] rounded-2xl flex items-center justify-center mb-4"><i class="ri-exchange-dollar-line text-2xl"></i></div>
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Pengeluaran</p>
+                        <h3 class="text-2xl font-extrabold tracking-tight text-slate-800 counter">{{ formatRupiah(stats.totalSpent) }}</h3>
+                        <div class="mt-3 inline-flex items-center gap-1 bg-orange-50 text-orange-600 px-2.5 py-1 rounded-lg text-xs font-bold border border-orange-100">
+                            <i class="ri-vip-crown-line"></i> Member VIP
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                
+                <div class="xl:col-span-2 bg-white border border-slate-200 rounded-[2rem] p-6 flex flex-col animate-slide-up-fade delay-200 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2 text-lg">
+                            <i class="ri-fire-fill text-[#0033AA]"></i> Produk Best Seller
+                        </h3>
+                        <div class="text-[10px] text-slate-400 font-bold bg-slate-50 px-2 py-1 rounded">*Klik Header untuk Sortir</div>
+                    </div>
+                    
+                    <div class="w-full rounded-xl overflow-hidden border border-slate-100">
+                        <table class="w-full text-left">
+                            <thead class="hidden md:table-header-group table-header-solid">
+                                <tr class="text-[11px] uppercase font-bold tracking-wider">
+                                    <th class="px-4 py-4 table-header-sortable" @click="sortBy('products', 'idx')">#</th>
+                                    <th class="px-4 py-4 table-header-sortable" @click="sortBy('products', 'name')">Produk <i class="ri-arrow-up-down-line ml-1 opacity-50"></i></th>
+                                    <th class="px-4 py-4 text-right table-header-sortable" @click="sortBy('products', 'price')">Harga <i class="ri-arrow-up-down-line ml-1 opacity-50"></i></th>
+                                    <th class="px-4 py-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            
+                            <tbody class="block md:table-row-group text-sm divide-y divide-slate-50">
+                                <tr v-for="(prod, idx) in sortedTopProducts.slice(0,5)" :key="idx" class="group flex flex-col md:table-row bg-white hover:bg-slate-50 transition-colors relative p-4 md:p-0">
+                                    <td class="order-1 md:order-none block md:table-cell px-0 md:px-4 py-0 md:py-4">
+                                       <span class="font-bold text-[#0033AA]/50 text-sm">#{{ idx+1 }}</span>
+                                    </td>
+
+                                    <td class="order-2 md:order-none block md:table-cell px-0 md:px-4 py-0 md:py-4">
+                                        <div class="flex items-center gap-3">
+                                            <img :src="prod.img" class="img-bounce w-12 h-12 md:w-10 md:h-10 rounded-lg object-cover shadow-sm bg-slate-50 border border-slate-100">
+                                            <div>
+                                                <p class="font-bold text-slate-800 text-sm line-clamp-1 group-hover:text-[#0033AA] transition-colors copy-hover" @click="copyToClipboard(prod.name)">{{ prod.name }}</p>
+                                                <p class="text-[10px] text-slate-500 font-bold bg-slate-100 w-fit px-1.5 py-0.5 rounded mt-1 border border-slate-200">{{ prod.category }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td class="hidden md:table-cell px-4 py-4 text-right font-bold text-slate-700 text-sm">{{ formatRupiah(prod.price) }}</td>
+
+                                    <td class="order-3 md:order-none block md:table-cell px-0 md:px-4 py-2 md:py-4 text-center mt-2 md:mt-0">
+                                        <button class="w-full md:w-auto md:mx-auto text-xs bg-[#0033AA] text-white px-4 py-2 md:py-1.5 rounded-xl md:rounded-lg font-bold hover:bg-[#002B96] hover:shadow-lg hover:shadow-blue-900/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+                                            <i class="ri-shopping-cart-fill"></i> Beli
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-[2rem] p-6 flex flex-col animate-slide-up-fade delay-300 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ri-thumb-up-fill text-[#0033AA]"></i> Recommended</h3>
+                        <button @click="shuffleRecommended" class="text-slate-400 hover:text-[#0033AA] transition"><i class="ri-refresh-line"></i></button>
+                    </div>
+                    <div class="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar max-h-[400px]">
+                        <div v-for="(item, idx) in recommendedProducts" :key="idx" class="group bg-slate-50 p-3 rounded-2xl border border-slate-100 hover:border-blue-200 hover:bg-white shadow-sm transition-all flex items-center gap-3 cursor-pointer hover:shadow-md">
+                            <div class="relative overflow-hidden rounded-xl w-14 h-14 flex-shrink-0 border border-slate-200">
+                                <img :src="item.img" class="img-bounce w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-slate-800 text-xs line-clamp-1 group-hover:text-[#0033AA] transition copy-hover" @click.stop="copyToClipboard(item.name)">{{ item.name }}</h4>
+                                <div class="flex items-center gap-1 mt-1">
+                                    <i class="ri-star-fill text-yellow-400 text-[10px]"></i>
+                                    <span class="text-[10px] font-bold text-slate-500">4.{{ Math.floor(Math.random() * 5) + 5 }}</span>
+                                </div>
+                                <div class="flex justify-between items-center mt-2">
+                                    <span class="font-bold text-[#0033AA] text-xs">{{ formatRupiah(item.price) }}</span>
+                                    <button class="w-7 h-7 rounded-full bg-white text-slate-400 border border-slate-200 hover:bg-[#0033AA] hover:text-white hover:border-[#0033AA] transition flex items-center justify-center shadow-sm"><i class="ri-add-line"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-slide-up-fade delay-400">
+                <div class="xl:col-span-2 bg-white border border-slate-200 rounded-[2rem] p-6 flex flex-col shadow-sm">
+                    <div class="mb-6 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ri-history-fill text-[#0033AA]"></i> Riwayat Transaksi</h3>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-3 justify-between bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <div class="relative flex-1">
+                                <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input v-model="filters.search" type="text" placeholder="Cari ID Invoice / Produk..." class="form-input w-full pl-9 bg-white placeholder:text-slate-400">
+                            </div>
+                            
+                            <div class="flex gap-2 items-center flex-wrap">
+                                <select v-model="filters.status" class="form-input bg-white text-[#0033AA] font-bold cursor-pointer">
+                                    <option value="all">Semua Status</option>
+                                    <option value="Paid">Paid</option>
+                                    <option value="Proses">Proses</option>
+                                    <option value="Done">Done</option>
+                                    <option value="Unpaid">Unpaid</option>
+                                </select>
+                                <select v-model.number="pagination.rowsPerPage" class="form-input bg-white text-slate-600 font-bold cursor-pointer w-16">
+                                    <option value="5">5</option>
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 flex flex-col">
+                        <div class="w-full rounded-xl flex-1 pb-2 overflow-hidden border border-slate-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="hidden md:table-header-group table-header-solid text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-6 py-4 font-extrabold w-24 text-center table-header-sortable" @click="sortBy('trx', 'status')">Status</th>
+                                        <th class="px-6 py-4 font-extrabold table-header-sortable" @click="sortBy('trx', 'date')">Invoice & Tgl</th>
+                                        <th class="px-6 py-4 font-extrabold table-header-sortable" @click="sortBy('trx', 'product')">Produk</th>
+                                        <th class="px-6 py-4 font-extrabold text-right table-header-sortable" @click="sortBy('trx', 'total')">Total</th>
+                                        <th class="px-6 py-4 font-extrabold text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                
+                                <tbody class="block md:table-row-group text-sm font-medium text-slate-600 divide-y divide-slate-50">
+                                    <tr v-if="paginatedTransactions.length === 0" class="block md:table-row w-full">
+                                        <td colspan="5" class="block md:table-cell px-6 py-8 text-center text-slate-400 text-xs font-bold">Tidak ada data ditemukan.</td>
+                                    </tr>
+
+                                    <tr v-for="(trx, idx) in paginatedTransactions" :key="trx.id" class="group flex flex-col md:table-row bg-white p-4 md:p-0 md:hover:bg-slate-50 transition-all duration-300 relative">
+                                        
+                                        <td class="order-1 md:order-none block md:table-cell md:px-6 md:py-4 md:text-center w-full md:w-auto">
+                                            <div class="flex justify-between items-center md:justify-center md:block mb-3 md:mb-0 pb-3 md:pb-0 border-b border-slate-50 md:border-none">
+                                                <div class="md:hidden flex flex-col">
+                                                    <span class="font-mono font-bold text-xs text-[#0033AA]">{{ trx.id }}</span>
+                                                </div>
+                                                <span :class="getStatusBtnClass(trx.status)" class="w-auto px-3 md:w-24 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide inline-block shadow-sm">
+                                                    {{ trx.status }}
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        <td class="hidden md:table-cell md:px-6 md:py-4">
+                                            <div class="font-mono font-bold text-xs text-[#0033AA] copy-hover" @click="copyToClipboard(trx.id)">{{ trx.id }} <i class="ri-file-copy-line ml-1 opacity-0 group-hover:opacity-100"></i></div>
+                                            <div class="text-[10px] text-slate-400 font-bold mt-1">{{ formatDate(trx.date) }}</div>
+                                        </td>
+
+                                        <td class="order-2 md:order-none block md:table-cell md:px-6 md:py-4 w-full md:w-auto">
+                                            <div class="flex items-center gap-3">
+                                                <img :src="trx.img" class="img-bounce w-10 h-10 md:w-8 md:h-8 rounded-lg object-cover shadow-sm bg-white border border-slate-200">
+                                                <div class="min-w-0">
+                                                    <div class="font-bold text-slate-800 text-xs line-clamp-1 copy-hover" @click="copyToClipboard(trx.product)">{{ trx.product }}</div>
+                                                    <span class="text-[9px] text-slate-400 font-medium block mt-0.5">{{ trx.category }}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td class="order-3 md:order-none block md:table-cell md:px-6 md:py-4 md:text-right w-full md:w-auto mt-2 md:mt-0">
+                                            <div class="flex justify-between items-center md:block">
+                                                <span class="md:hidden text-xs font-bold text-slate-400">Total</span>
+                                                <div class="font-extrabold text-slate-800 text-sm">{{ formatRupiah(trx.total) }}</div>
+                                            </div>
+                                        </td>
+
+                                        <td class="order-4 md:order-none block md:table-cell md:px-6 md:py-4 md:text-center w-full md:w-auto mt-3 md:mt-0 pt-3 md:pt-0 border-t border-slate-50 md:border-none">
+                                            <button @click="viewTrx(trx)" class="w-full md:w-auto md:mx-auto text-xs bg-[#0033AA] text-white px-3 py-2 md:py-1.5 rounded-xl md:rounded-lg font-bold hover:bg-[#002B96] transition shadow-sm flex items-center justify-center gap-2">
+                                                <i class="ri-file-list-3-line"></i> <span class="md:hidden">Detail</span>
+                                            </button>
+                                        </td>
+
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 pt-4 border-t border-slate-100">
+                            <div class="text-xs font-bold text-slate-500">
+                                {{ paginatedTransactions.length > 0 ? (pagination.page - 1) * pagination.rowsPerPage + 1 : 0 }} - {{ Math.min(pagination.page * pagination.rowsPerPage, filteredTransactions.length) }} dari {{ filteredTransactions.length }} Data
+                            </div>
+                            
+                            <div class="flex items-center gap-2">
+                                <button @click="changePage(pagination.page - 1)" :disabled="pagination.page === 1" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-[#0033AA] hover:text-white disabled:opacity-50 transition shadow-sm"><i class="ri-arrow-left-s-line"></i></button>
+                                
+                                <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 h-8">
+                                    <span class="text-xs font-bold text-slate-500">Hal</span>
+                                    <input type="number" v-model.number="inputPage" @change="jumpToPage" class="w-8 h-5 text-center text-xs font-bold text-[#0033AA] outline-none bg-transparent">
+                                    <span class="text-xs font-bold text-slate-400">/ {{ totalPages }}</span>
+                                </div>
+
+                                <button @click="changePage(pagination.page + 1)" :disabled="pagination.page === totalPages" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-[#0033AA] hover:text-white disabled:opacity-50 transition shadow-sm"><i class="ri-arrow-right-s-line"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-[2rem] p-6 flex flex-col shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="ri-megaphone-fill text-[#0033AA]"></i> Pusat Informasi</h3>
+                    </div>
+                    <div class="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar max-h-[400px]">
+                        <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100 hover:bg-blue-50 transition">
+                            <div class="flex gap-2 items-start">
+                                <i class="ri-information-fill text-[#0033AA] mt-0.5"></i>
+                                <div>
+                                    <h5 class="text-xs font-bold text-slate-800">Maintenance Server</h5>
+                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">Server akan mengalami pemeliharaan pada tgl 20 Jan pukul 00:00 - 02:00 WIB.</p>
+                                    <span class="text-[9px] font-bold text-slate-400 mt-2 block">1 Jam lalu</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 hover:bg-white hover:border-[#0033AA]/30 transition">
+                            <div class="flex gap-2 items-start">
+                                <i class="ri-gift-fill text-[#0033AA] mt-0.5"></i>
+                                <div>
+                                    <h5 class="text-xs font-bold text-slate-800">Promo Deposit</h5>
+                                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">Dapatkan bonus saldo 5% untuk deposit via QRIS minimal 100rb.</p>
+                                    <span class="text-[9px] font-bold text-slate-400 mt-2 block">Hari ini</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div v-if="modal.trx" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="modal.trx = null"></div>
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-md relative overflow-hidden animate-slide-up-fade border border-slate-100">
+            <div class="bg-white border-b border-slate-100 p-6 flex justify-between items-center">
+                <div><h3 class="font-bold text-lg text-slate-800">Detail Invoice</h3><p class="text-xs text-[#0033AA] font-mono font-bold copy-hover" @click="copyToClipboard(modal.trx.id)">{{ modal.trx.id }} <i class="ri-file-copy-line"></i></p></div>
+                <button @click="modal.trx = null" class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors shadow-sm"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="p-6 space-y-5">
+                <div class="flex justify-between items-center">
+                    <span :class="getStatusBtnClass(modal.trx.status)" class="px-3 py-1 rounded-full text-xs font-bold uppercase shadow-sm border border-black/5 text-white">{{ modal.trx.status }}</span>
+                    <span class="text-xs text-slate-400 font-medium">{{ formatDate(modal.trx.date) }}</span>
+                </div>
+                <div class="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+                    <img :src="modal.trx.img" class="w-12 h-12 rounded-xl object-cover shadow-sm flex-shrink-0 border border-slate-200">
+                    <div><h4 class="font-bold text-slate-800 text-sm line-clamp-2">{{ modal.trx.product }}</h4><p class="text-xs text-slate-500 mt-1 font-medium bg-white px-2 py-0.5 rounded w-fit border border-slate-100 shadow-sm">{{ modal.trx.category }}</p></div>
+                </div>
+                <div class="space-y-3 pt-2">
+                    <div class="flex justify-between text-sm items-center">
+                        <span class="text-slate-500">Metode Pembayaran</span>
+                        <img :src="getPaymentLogo(modal.trx.method)" class="h-6 w-auto object-contain bg-white p-0.5 rounded border border-slate-200">
+                    </div>
+                    <div class="flex justify-between text-sm pt-4 border-t border-slate-100"><span class="font-bold text-slate-800">Total Dibayar</span><span class="font-black text-xl text-[#0033AA]">{{ formatRupiah(modal.trx.total) }}</span></div>
+                </div>
+                <button @click="modal.trx = null" class="w-full py-3.5 bg-[#0033AA] hover:bg-[#002B96] text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20 active:scale-95">Download Invoice</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                modal: { trx: null },
+                toast: { show: false, message: '' },
+                
+                sort: {
+                    trx: { key: 'date', order: 'desc' },
+                    products: { key: 'sold', order: 'desc' }
+                },
+
+                filters: {
+                    search: '',
+                    status: 'all', 
+                    dateType: 'all',
+                    startDate: '',
+                    endDate: ''
+                },
+
+                pagination: {
+                    page: 1,
+                    rowsPerPage: 5 
+                },
+                inputPage: 1,
+                
+                stats: { balance: 0, products: 0, totalTransactions: 0, totalSpent: 0 },
+                topProducts: [],
+                recommendedProducts: [],
+                transactions: []
+            }
+        },
+        computed: {
+            filteredTransactions() {
+                let data = this.transactions;
+
+                if (this.filters.search) {
+                    const q = this.filters.search.toLowerCase();
+                    data = data.filter(t => 
+                        t.id.toLowerCase().includes(q) || 
+                        t.product.toLowerCase().includes(q)
+                    );
+                }
+
+                if (this.filters.status !== 'all') {
+                    data = data.filter(t => t.status === this.filters.status);
+                }
+
+                return data.sort((a, b) => {
+                    let modifier = this.sort.trx.order === 'desc' ? -1 : 1;
+                    let valA = a[this.sort.trx.key];
+                    let valB = b[this.sort.trx.key];
+                    if (this.sort.trx.key === 'date') { valA = new Date(valA); valB = new Date(valB); }
+                    if (valA < valB) return -1 * modifier;
+                    if (valA > valB) return 1 * modifier;
+                    return 0;
+                });
+            },
+
+            totalPages() { return Math.ceil(this.filteredTransactions.length / this.pagination.rowsPerPage) || 1; },
+            paginatedTransactions() {
+                const start = (this.pagination.page - 1) * this.pagination.rowsPerPage;
+                const end = start + this.pagination.rowsPerPage;
+                return this.filteredTransactions.slice(start, end);
+            },
+            
+            sortedTopProducts() {
+                return this.topProducts.sort((a, b) => {
+                    let modifier = this.sort.products.order === 'desc' ? -1 : 1;
+                    if (a[this.sort.products.key] < b[this.sort.products.key]) return -1 * modifier;
+                    if (a[this.sort.products.key] > b[this.sort.products.key]) return 1 * modifier;
+                    return 0;
+                });
+            }
+        },
+        watch: {
+            'filters.search'() { this.pagination.page = 1; this.inputPage = 1; },
+            'filters.status'() { this.pagination.page = 1; this.inputPage = 1; },
+            'pagination.rowsPerPage'() { this.pagination.page = 1; this.inputPage = 1; }
+        },
+        methods: {
+            viewTrx(trx) { this.modal.trx = trx; },
+
+            copyToClipboard(text) {
+                if(!text) return;
+                navigator.clipboard.writeText(text).then(() => {
+                    this.toast.message = text;
+                    this.toast.show = true;
+                    setTimeout(() => { this.toast.show = false; }, 3000);
+                });
+            },
+
+            sortBy(table, key) {
+                if (this.sort[table].key === key) {
+                    this.sort[table].order = this.sort[table].order === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sort[table].key = key;
+                    this.sort[table].order = 'desc'; 
+                }
+            },
+
+            changePage(newPage) {
+                if (newPage >= 1 && newPage <= this.totalPages) {
+                    this.pagination.page = newPage;
+                    this.inputPage = newPage;
+                }
+            },
+            jumpToPage() {
+                let p = this.inputPage;
+                if (p < 1) p = 1;
+                if (p > this.totalPages) p = this.totalPages;
+                this.changePage(p);
+            },
+
+            getPaymentLogo(method) {
+                const logos = {
+                    'BCA': 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg',
+                    'QRIS': 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Logo_QRIS.svg',
+                    'GoPay': 'https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg',
+                    'DANA': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_DANA.png',
+                    'Saldo': 'https://cdn-icons-png.flaticon.com/512/2331/2331941.png'
+                };
+                return logos[method] || `https://placehold.co/80x30/e2e8f0/64748b?text=${method}`;
+            },
+
+            formatNumber(num) { return new Intl.NumberFormat('id-ID').format(num); },
+            formatRupiah(num) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num); },
+            formatDate(iso) { return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' }); },
+            
+            // Status Button Logic (Tetap menggunakan warna semantik agar user tidak bingung, tapi style clean)
+            getStatusBtnClass(status) {
+                const map = {
+                    'Paid': 'bg-emerald-500 text-white',
+                    'Proses': 'bg-yellow-500 text-white',
+                    'Done': 'bg-blue-600 text-white',
+                    'Cancel': 'bg-red-500 text-white',
+                    'Unpaid': 'bg-slate-500 text-white'
+                };
+                return map[status] || 'bg-slate-500';
+            },
+
+            shuffleRecommended() {
+                this.recommendedProducts.sort(() => Math.random() - 0.5);
+            },
+
+            generateData() {
+                const rInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+                const rArr = (arr) => arr[Math.floor(Math.random() * arr.length)];
+                
+                this.stats = {
+                    balance: rInt(50000, 5000000), 
+                    products: 452, 
+                    totalTransactions: rInt(10, 150), 
+                    totalSpent: rInt(1000000, 15000000) 
+                };
+
+                const prodList = [
+                    {n: 'MLBB 86 Diamonds', c: 'Game Topup', img: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Source Code Web Berita', c: 'Source Code', img: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Followers IG 1000', c: 'SMM Panel', img: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Netflix 1 Bulan 4K', c: 'Premium Acc', img: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Jasa Landing Page', c: 'Services', img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'POS Kasir VueJS', c: 'Source Code', img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Pubg UC 600', c: 'Game Topup', img: 'https://images.unsplash.com/photo-1593305841991-05c297bb45ec?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Canva Pro Lifetime', c: 'Premium Acc', img: 'https://images.unsplash.com/photo-1611162616475-46b635cb6868?auto=format&fit=crop&q=80&w=100'}
+                ];
+                
+                this.topProducts = Array.from({length: 8}, (_,i) => {
+                      const p = prodList[i % prodList.length];
+                      return { name: p.n, category: p.c, img: p.img, price: rInt(50, 500) * 1000, sold: rInt(100, 1000) };
+                });
+
+                this.recommendedProducts = Array.from({length: 6}, (_,i) => {
+                      const p = rArr(prodList);
+                      return { name: p.n, category: p.c, img: p.img, price: rInt(20, 300) * 1000 };
+                });
+
+                const methods = ['BCA', 'QRIS', 'GoPay', 'DANA', 'Saldo'];
+                const statuses = ['Paid', 'Paid', 'Proses', 'Done', 'Unpaid', 'Cancel'];
+
+                this.transactions = Array.from({length: 150}, (_,i) => {
+                    const p = rArr(prodList);
+                    const date = new Date(Date.now() - rInt(0, 365 * 24 * 60 * 60 * 1000));
+                    return {
+                        id: `INV-${rInt(10000,99999)}`,
+                        product: p.n, category: p.c, img: p.img,
+                        total: rInt(20, 300) * 1000,
+                        status: rArr(statuses),
+                        method: rArr(methods),
+                        date: date.toISOString()
+                    };
+                });
+                
+                this.$nextTick(() => {
+                    gsap.from(".counter", { textContent: 0, duration: 2, ease: "power1.out", snap: { textContent: 1 }, stagger: 0.1 });
+                });
+            }
+        },
+        mounted() { this.generateData(); }
+    }).mount('#app');
+</script>
+</body>
+</html>

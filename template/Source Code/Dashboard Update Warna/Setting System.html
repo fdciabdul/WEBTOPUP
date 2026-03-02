@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Pro - System Setting V5 (Blue Theme)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        // REVISED COLOR PALETTE: Anchored to #0033AA
+                        brand: { 
+                            50: '#EEF4FF', 
+                            100: '#D9E6FF', 
+                            200: '#BCD4FF', 
+                            300: '#8EB6FF', 
+                            400: '#5990FF', 
+                            500: '#2862FF', 
+                            600: '#0033AA', // PRIMARY COLOR (Biru Tegas)
+                            700: '#002685', 
+                            800: '#001F66',
+                            900: '#001445'
+                        },
+                        slate: {
+                            850: '#151f32' // Custom dark slate for contrast
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 40px -10px rgba(0, 51, 170, 0.05)',
+                        'glow': '0 0 20px rgba(0, 51, 170, 0.15)',
+                        'card': '0 0 0 1px rgba(0, 51, 170, 0.03), 0 2px 8px rgba(0, 51, 170, 0.04)',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'spin-slow': 'spin 8s linear infinite',
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                    },
+                    keyframes: {
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+                        pop: { '0%': { transform: 'scale(0.9)', opacity: '0' }, '100%': { transform: 'scale(1)', opacity: '1' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F6F8FC; overflow-x: hidden; }
+        
+        /* Modern Scrollbar Blue Theme */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0033AA; }
+
+        /* Glass Sidebar */
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); border-right: 1px solid rgba(255, 255, 255, 0.8); }
+        
+        /* Navigation Items */
+        .nav-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.75rem 1rem; border-radius: 1rem; font-weight: 600; font-size: 0.9rem; color: #64748b; margin-bottom: 0.4rem; transition: all 0.3s; }
+        .nav-item:hover { background: #EEF4FF; color: #0033AA; transform: translateX(4px); box-shadow: 0 4px 12px rgba(0, 51, 170, 0.05); }
+        
+        /* Active Nav State - Blue Gradient */
+        .nav-active { background: linear-gradient(135deg, #0033AA 0%, #002685 100%); color: white !important; box-shadow: 0 10px 20px -5px rgba(0, 51, 170, 0.3); }
+
+        /* iOS Toggle Switch - Unified to #0033AA */
+        .toggle-checkbox:checked { right: 0; border-color: #0033AA; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #0033AA; }
+        .toggle-label { transition: background-color 0.3s ease-in-out; }
+
+        /* Inputs */
+        .modern-input { background: #F8FAFC; border: 1px solid #E2E8F0; transition: all 0.3s; border-radius: 0.75rem; }
+        .modern-input:focus { background: white; border-color: #0033AA; box-shadow: 0 0 0 4px rgba(0, 51, 170, 0.1); }
+
+        /* Counter Input Modern Style */
+        .cron-control-group { background: #F8FAFC; border-radius: 1rem; padding: 4px; display: flex; align-items: center; gap: 8px; border: 1px solid #E2E8F0; }
+        .cron-btn { width: 32px; height: 32px; background: white; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 1.1rem; user-select: none; border: 1px solid #f1f5f9; }
+        .cron-btn:hover { background: #0033AA; color: white; border-color: #0033AA; }
+        .cron-btn:active { transform: scale(0.95); }
+        .cron-val { width: 30px; text-align: center; font-weight: 800; font-size: 1.1rem; color: #0033AA; background: transparent; border: none; outline: none; }
+        .cron-select { background: white; border: 1px solid #e2e8f0; border-radius: 0.6rem; padding: 0.3rem 0.8rem; font-size: 0.8rem; font-weight: 700; color: #475569; outline: none; cursor: pointer; transition: all 0.2s; height: 32px; }
+
+        /* Section Header Gradient - UNIFIED BLUE THEME */
+        .header-section-blue { background: linear-gradient(135deg, #0033AA 0%, #002288 100%); }
+        /* Keeping delete distinct but dark blue/slate for semantic meaning */
+        .header-delete { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); } 
+
+        /* Template Card */
+        .template-card { transition: all 0.3s ease; border: 1px solid transparent; }
+        .template-card:hover { transform: translateY(-4px); box-shadow: 0 15px 30px -10px rgba(0, 51, 170, 0.1); border-color: rgba(0, 51, 170, 0.2); }
+        
+        .counter-box { background: #F1F5F9; border-radius: 1rem; padding: 4px; display: flex; align-items: center; gap: 4px; }
+        .counter-btn { width: 36px; height: 36px; background: white; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); font-size: 1.2rem; user-select: none; }
+        .counter-btn:hover { background: #0033AA; color: white; transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0, 51, 170, 0.3); }
+        .counter-val { width: 40px; text-align: center; font-weight: 800; font-size: 1.1rem; color: #0033AA; background: transparent; border: none; outline: none; }
+        .unit-select { background: #fff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; color: #64748b; outline: none; cursor: pointer; transition: all 0.2s; }
+        .unit-select:focus { border-color: #0033AA; }
+
+    </style>
+</head>
+<body class="antialiased text-slate-800 font-sans selection:bg-brand-600 selection:text-white">
+
+<div id="app" class="flex h-screen w-full relative">
+
+    <transition enter-active-class="transition ease-out duration-300" enter-from-class="transform -translate-y-5 opacity-0" enter-to-class="transform translate-y-0 opacity-100" leave-active-class="transition ease-in duration-200" leave-from-class="transform translate-y-0 opacity-100" leave-to-class="transform -translate-y-5 opacity-0">
+        <div v-if="toast.show" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex items-center justify-center pointer-events-none">
+            <div class="bg-brand-900/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-white/10 pointer-events-auto shadow-brand-600/20">
+                <i class="ri-checkbox-circle-fill text-brand-400 text-xl"></i>
+                <span class="font-bold text-sm">{{ toast.message }}</span>
+            </div>
+        </div>
+    </transition>
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 glass-panel transition-transform duration-300 lg:translate-x-0 flex flex-col flex-shrink-0 bg-white/80">
+        <div class="h-24 flex items-center px-8 flex-shrink-0 border-b border-slate-100/50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-tr from-brand-600 to-brand-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/40 animate-float">
+                    <i class="ri-rocket-2-fill text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Marspedia</h1>
+                    <span class="text-[10px] font-bold text-white bg-brand-600 px-2 py-0.5 rounded shadow-sm">SUPER ADMIN</span>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar flex flex-col pb-10">
+            <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 px-2 mt-4">System Core</p>
+            <a href="#" class="nav-item nav-active"><i class="ri-settings-4-fill text-lg"></i> System Setting</a>
+            <a href="#" class="nav-item"><i class="ri-shield-keyhole-line text-lg"></i> Access Control</a>
+            <a href="#" class="nav-item"><i class="ri-database-2-line text-lg"></i> Database</a>
+            <div class="mt-auto border-t border-slate-100 pt-4">
+                <a href="#" class="nav-item text-red-500 hover:text-red-600 hover:bg-red-50"><i class="ri-logout-box-line text-lg"></i> Sign Out</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden w-full bg-[#F6F8FC]">
+        
+        <header class="p-4 md:p-8 pb-4 flex flex-col gap-4 z-20 flex-shrink-0 bg-brand-600 shadow-lg shadow-brand-900/10 sticky top-0">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 bg-white/20 text-white rounded-xl shadow-sm hover:bg-white/30 transition"><i class="ri-menu-2-line"></i></button>
+                    <div>
+                        <h2 class="text-3xl font-black text-white tracking-tight">System Setting</h2>
+                        <p class="text-sm text-brand-100 font-medium">Pusat kendali Payment, API, Keamanan & Otomasi.</p>
+                    </div>
+                </div>
+                <button @click="askToSave" class="group bg-white text-brand-600 hover:bg-brand-50 px-8 py-3 rounded-2xl font-bold shadow-xl shadow-brand-900/20 transition-all active:scale-95 flex items-center gap-3">
+                    <i class="ri-save-3-fill group-hover:animate-bounce text-lg"></i> <span>Simpan Semua</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-4 md:px-8 pb-20 custom-scrollbar">
+            <div class="max-w-7xl mx-auto space-y-10 pt-6">
+
+                <section class="setting-section">
+                    <div class="header-section-blue p-5 rounded-2xl text-white shadow-lg shadow-brand-500/20 flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20">
+                            <i class="ri-bank-card-2-fill text-2xl animate-float"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold">Payment Gateway</h3>
+                            <p class="text-brand-100 text-xs font-medium opacity-90">Atur koneksi pembayaran otomatis</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        
+                        <div class="bg-white p-6 rounded-[2rem] shadow-card border border-slate-100 group hover:shadow-soft transition-all relative overflow-hidden">
+                            <div class="absolute -right-10 -top-10 w-40 h-40 bg-brand-50 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition"></div>
+                            <div class="flex justify-between items-start mb-6 relative z-10">
+                                <div class="flex items-center gap-4">
+                                    <div class="text-xl font-black text-slate-800 tracking-tighter">iPaymu</div>
+                                    <span class="text-[10px] font-bold bg-brand-50 text-brand-600 px-2 py-0.5 rounded border border-brand-100">Otomatis</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" v-model="settings.payment.ipaymu.active" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                </label>
+                            </div>
+                            <div class="space-y-4 relative z-10">
+                                <div>
+                                    <label class="text-[10px] font-extrabold text-slate-400 uppercase ml-1 mb-1 block">Credential</label>
+                                    <input type="password" v-model="settings.payment.ipaymu.apiKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700 mb-2" placeholder="API Key">
+                                    <input type="password" v-model="settings.payment.ipaymu.secretKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700" placeholder="Secret Key">
+                                </div>
+                                
+                                <div class="mt-4 p-4 bg-white border border-slate-200 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0">
+                                            <i class="ri-timer-flash-line text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-slate-800 text-base">Cronjob Pengecekan</div>
+                                            <div class="text-xs text-slate-400 font-medium">Jeda waktu cek status mutasi</div>
+                                        </div>
+                                    </div>
+                                    <div class="cron-control-group">
+                                        <div class="cron-btn" @click="changeVal('payment','ipaymu','delayVal', -1)">-</div>
+                                        <input type="number" v-model="settings.payment.ipaymu.delayVal" class="cron-val">
+                                        <div class="cron-btn" @click="changeVal('payment','ipaymu','delayVal', 1)">+</div>
+                                        <select v-model="settings.payment.ipaymu.delayUnit" class="cron-select">
+                                            <option v-for="u in units" :value="u">{{ u }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-[2rem] shadow-card border border-slate-100 group hover:shadow-soft transition-all relative overflow-hidden">
+                            <div class="absolute -right-10 -top-10 w-40 h-40 bg-brand-50 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition"></div>
+                            <div class="flex justify-between items-start mb-6 relative z-10">
+                                <div class="flex items-center gap-4">
+                                    <div class="text-xl font-black text-slate-800 tracking-tighter">Midtrans</div>
+                                    <span class="text-[10px] font-bold bg-brand-50 text-brand-600 px-2 py-0.5 rounded border border-brand-100">Otomatis</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" v-model="settings.payment.midtrans.active" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                </label>
+                            </div>
+                            <div class="space-y-4 relative z-10">
+                                <div>
+                                    <label class="text-[10px] font-extrabold text-slate-400 uppercase ml-1 mb-1 block">Credential</label>
+                                    <input type="password" v-model="settings.payment.midtrans.apiKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700 mb-2" placeholder="Server Key">
+                                    <input type="password" v-model="settings.payment.midtrans.secretKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700" placeholder="Client Key">
+                                </div>
+                                
+                                <div class="mt-4 p-4 bg-white border border-slate-200 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0">
+                                            <i class="ri-timer-line text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-slate-800 text-base">Cronjob Pengecekan</div>
+                                            <div class="text-xs text-slate-400 font-medium">Jeda waktu cek status mutasi</div>
+                                        </div>
+                                    </div>
+                                    <div class="cron-control-group">
+                                        <div class="cron-btn" @click="changeVal('payment','midtrans','delayVal', -1)">-</div>
+                                        <input type="number" v-model="settings.payment.midtrans.delayVal" class="cron-val">
+                                        <div class="cron-btn" @click="changeVal('payment','midtrans','delayVal', 1)">+</div>
+                                        <select v-model="settings.payment.midtrans.delayUnit" class="cron-select">
+                                            <option v-for="u in units" :value="u">{{ u }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-[2rem] shadow-card border border-slate-100 group hover:shadow-soft transition-all relative overflow-hidden">
+                            <div class="absolute -right-10 -top-10 w-40 h-40 bg-brand-50 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition"></div>
+                            <div class="flex justify-between items-start mb-6 relative z-10">
+                                <div class="flex items-center gap-4">
+                                    <div class="text-xl font-black text-slate-800 tracking-tighter">Xendit</div>
+                                    <span class="text-[10px] font-bold bg-brand-50 text-brand-600 px-2 py-0.5 rounded border border-brand-100">Otomatis</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" v-model="settings.payment.xendit.active" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                </label>
+                            </div>
+                            <div class="space-y-4 relative z-10">
+                                <div>
+                                    <label class="text-[10px] font-extrabold text-slate-400 uppercase ml-1 mb-1 block">Credential</label>
+                                    <input type="password" v-model="settings.payment.xendit.apiKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700 mb-2" placeholder="API Key">
+                                    <input type="password" v-model="settings.payment.xendit.secretKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700" placeholder="Callback Token">
+                                </div>
+                                
+                                <div class="mt-4 p-4 bg-white border border-slate-200 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0">
+                                            <i class="ri-timer-line text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-slate-800 text-base">Cronjob Pengecekan</div>
+                                            <div class="text-xs text-slate-400 font-medium">Jeda waktu cek status mutasi</div>
+                                        </div>
+                                    </div>
+                                    <div class="cron-control-group">
+                                        <div class="cron-btn" @click="changeVal('payment','xendit','delayVal', -1)">-</div>
+                                        <input type="number" v-model="settings.payment.xendit.delayVal" class="cron-val">
+                                        <div class="cron-btn" @click="changeVal('payment','xendit','delayVal', 1)">+</div>
+                                        <select v-model="settings.payment.xendit.delayUnit" class="cron-select">
+                                            <option v-for="u in units" :value="u">{{ u }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-[2rem] shadow-card border border-slate-100 group hover:shadow-soft transition-all relative overflow-hidden">
+                            <div class="absolute -right-10 -top-10 w-40 h-40 bg-brand-50 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition"></div>
+                            <div class="flex justify-between items-start mb-6 relative z-10">
+                                <div class="flex items-center gap-4">
+                                    <div class="text-xl font-black text-slate-800 tracking-tighter"><i class="ri-hand-coin-fill text-brand-600"></i> Manual</div>
+                                    <span class="text-[10px] font-bold bg-brand-50 text-brand-600 px-2 py-0.5 rounded border border-brand-100">TRANSFER</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" v-model="settings.payment.manual.active" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                </label>
+                            </div>
+                            <div class="space-y-4 relative z-10">
+                                <div>
+                                    <label class="text-[10px] font-extrabold text-slate-400 uppercase ml-1 mb-1 block">Daftar Rekening Bank</label>
+                                    
+                                    <div v-for="(acc, index) in settings.payment.manual.accounts" :key="index" class="mb-4 bg-slate-50 border border-slate-200 rounded-xl p-4 relative group hover:bg-white hover:shadow-sm transition-all">
+                                        <button @click="removeBankAccount(index)" class="absolute top-2 right-2 w-8 h-8 flex items-center justify-center text-slate-300 hover:text-red-500 transition rounded-full hover:bg-red-50" title="Hapus Rekening"><i class="ri-close-line text-lg"></i></button>
+                                        
+                                        <div class="grid grid-cols-1 gap-3">
+                                            <div>
+                                                <label class="text-[10px] font-bold text-slate-400 uppercase">Nama Bank & No. Rekening</label>
+                                                <input type="text" v-model="acc.no" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:border-brand-600" placeholder="Contoh: BCA 1234567890">
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="text-[10px] font-bold text-slate-400 uppercase">Atas Nama</label>
+                                                    <input type="text" v-model="acc.name" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:border-brand-600" placeholder="a.n Marspedia">
+                                                </div>
+                                                <div>
+                                                    <label class="text-[10px] font-bold text-slate-400 uppercase">URL Logo Bank</label>
+                                                    <input type="text" v-model="acc.logo" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:border-brand-600" placeholder="https://...">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button @click="addBankAccount" class="w-full py-3 border border-dashed border-slate-300 rounded-xl text-slate-500 font-bold text-xs hover:border-brand-600 hover:text-brand-600 hover:bg-brand-50 transition flex items-center justify-center gap-2">
+                                        <i class="ri-add-circle-line text-lg"></i> TAMBAH REKENING BARU
+                                    </button>
+                                </div>
+
+                                <div class="mt-4 p-4 bg-white border border-slate-200 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0">
+                                            <i class="ri-timer-line text-xl"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-slate-800 text-base">Auto Cancel</div>
+                                            <div class="text-xs text-slate-400 font-medium">Batas waktu bayar</div>
+                                        </div>
+                                    </div>
+                                    <div class="cron-control-group">
+                                        <div class="cron-btn" @click="changeVal('payment','manual','delayVal', -1)">-</div>
+                                        <input type="number" v-model="settings.payment.manual.delayVal" class="cron-val">
+                                        <div class="cron-btn" @click="changeVal('payment','manual','delayVal', 1)">+</div>
+                                        <select v-model="settings.payment.manual.delayUnit" class="cron-select">
+                                            <option v-for="u in units" :value="u">{{ u }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <section class="setting-section">
+                    <div class="header-section-blue p-5 rounded-2xl text-white shadow-lg shadow-brand-500/20 flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20">
+                            <i class="ri-gamepad-fill text-2xl animate-float" style="animation-delay: 1s;"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold">API Games</h3>
+                            <p class="text-brand-100 text-xs font-medium opacity-90">Provider Topup Game & PPOB</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        
+                        <div class="bg-white p-6 rounded-[2rem] shadow-card border border-slate-100 relative overflow-hidden group">
+                            <div class="flex justify-between items-center mb-6">
+                                <h4 class="font-bold text-slate-800 flex items-center gap-2 text-lg"><i class="ri-flashlight-fill text-brand-600 text-2xl"></i> Digiflazz</h4>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" v-model="settings.api.digiflazz.active" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                </label>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-[10px] font-extrabold text-slate-400 uppercase ml-1 mb-1 block">Credential</label>
+                                    <input type="text" v-model="settings.api.digiflazz.apiKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700 mb-2" placeholder="Username">
+                                    <input type="password" v-model="settings.api.digiflazz.secretKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700" placeholder="Production Key">
+                                </div>
+                                <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600"><i class="ri-refresh-line text-lg animate-spin-slow"></i></div>
+                                        <div><div class="font-bold text-slate-700 text-sm">Update Status</div><div class="text-[10px] text-slate-400">Jeda waktu sinkronisasi</div></div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="counter-box"><div class="counter-btn" @click="changeVal('api','digiflazz','delayVal', -1)">-</div><input type="number" v-model="settings.api.digiflazz.delayVal" class="counter-val"><div class="counter-btn" @click="changeVal('api','digiflazz','delayVal', 1)">+</div></div>
+                                        <select v-model="settings.api.digiflazz.delayUnit" class="unit-select"><option v-for="u in units" :value="u">{{ u }}</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-[2rem] shadow-card border border-slate-100 relative overflow-hidden group">
+                            <div class="flex justify-between items-center mb-6">
+                                <h4 class="font-bold text-slate-800 flex items-center gap-2 text-lg"><i class="ri-gamepad-line text-brand-600 text-2xl"></i> Apigames</h4>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" v-model="settings.api.apigames.active" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                </label>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-[10px] font-extrabold text-slate-400 uppercase ml-1 mb-1 block">Credential</label>
+                                    <input type="text" v-model="settings.api.apigames.apiKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700 mb-2" placeholder="Merchant ID">
+                                    <input type="password" v-model="settings.api.apigames.secretKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700" placeholder="Secret Key">
+                                </div>
+                                <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600"><i class="ri-refresh-line text-lg animate-spin-slow"></i></div>
+                                        <div><div class="font-bold text-slate-700 text-sm">Update Produk</div><div class="text-[10px] text-slate-400">Jeda sinkronisasi harga</div></div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="counter-box"><div class="counter-btn" @click="changeVal('api','apigames','delayVal', -1)">-</div><input type="number" v-model="settings.api.apigames.delayVal" class="counter-val"><div class="counter-btn" @click="changeVal('api','apigames','delayVal', 1)">+</div></div>
+                                        <select v-model="settings.api.apigames.delayUnit" class="unit-select"><option v-for="u in units" :value="u">{{ u }}</option></select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="setting-section">
+                    <div class="header-section-blue p-5 rounded-2xl text-white shadow-lg shadow-brand-500/20 flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20">
+                            <i class="ri-notification-badge-fill text-2xl animate-float" style="animation-delay: 2s;"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold">Notification</h3>
+                            <p class="text-brand-100 text-xs font-medium opacity-90">Kirim pesan otomatis ke pelanggan</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        <div class="bg-white p-6 rounded-[2rem] shadow-card border border-slate-100">
+                            <div class="flex justify-between items-center mb-6">
+                                <h4 class="font-bold text-slate-800 flex items-center gap-2 text-lg"><i class="ri-mail-send-line text-brand-600 text-2xl"></i> Email API</h4>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" v-model="settings.notify.emailApi.active" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                </label>
+                            </div>
+                            <div class="space-y-4">
+                                <input type="text" v-model="settings.notify.emailApi.apiKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700" placeholder="API Key">
+                                <input type="password" v-model="settings.notify.emailApi.secretKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700" placeholder="Secret Key">
+                                <button @click="openTemplateModal('emailApi')" class="w-full py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 transition flex items-center justify-center gap-2">
+                                    <i class="ri-edit-2-line text-lg"></i> Setting Teks Notifikasi
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-[2rem] shadow-card border border-slate-100">
+                            <div class="flex justify-between items-center mb-6">
+                                <h4 class="font-bold text-slate-800 flex items-center gap-2 text-lg"><i class="ri-server-line text-brand-600 text-2xl"></i> SMTP Server</h4>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" v-model="settings.notify.smtp.active" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                </label>
+                            </div>
+                            <div class="space-y-4">
+                                <input type="text" v-model="settings.notify.smtp.apiKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700" placeholder="Host">
+                                <input type="password" v-model="settings.notify.smtp.secretKey" class="w-full modern-input px-4 py-3 text-sm font-bold text-slate-700" placeholder="Password">
+                                <button @click="openTemplateModal('smtp')" class="w-full py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200 transition flex items-center justify-center gap-2">
+                                    <i class="ri-edit-2-line text-lg"></i> Setting Teks Notifikasi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="setting-section">
+                    <div class="header-section-blue p-5 rounded-2xl text-white shadow-lg shadow-brand-500/20 flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20">
+                            <i class="ri-shield-keyhole-fill text-2xl animate-float" style="animation-delay: 3s;"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold">Security</h3>
+                            <p class="text-brand-100 text-xs font-medium opacity-90">Sistem keamanan & Rate Limit</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-[2rem] shadow-card border border-slate-100 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-brand-50 border-b border-brand-100 text-[11px] font-extrabold text-brand-400 uppercase tracking-widest">
+                                    <tr>
+                                        <th class="px-8 py-5">Fitur Keamanan</th>
+                                        <th class="px-8 py-5 w-24 text-center">Status</th>
+                                        <th class="px-8 py-5">Konfigurasi Delay</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-50">
+                                    <tr class="hover:bg-slate-50/50 transition group">
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-3">
+                                                <i class="ri-login-circle-line text-slate-400 group-hover:text-brand-600 text-xl transition"></i>
+                                                <div><div class="font-bold text-slate-700 text-sm">Rate Limit Login</div><div class="text-[11px] text-slate-400">Cegah Brute Force login</div></div>
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6 text-center">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" v-model="settings.security.login.active" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                            </label>
+                                        </td>
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-2">
+                                                <div class="counter-box"><div class="counter-btn" @click="changeVal('security','login','timeVal', -1)">-</div><input type="number" v-model="settings.security.login.timeVal" class="counter-val"><div class="counter-btn" @click="changeVal('security','login','timeVal', 1)">+</div></div>
+                                                <select v-model="settings.security.login.timeUnit" class="unit-select"><option v-for="u in units" :value="u">{{ u }}</option></select>
+                                                <span class="text-xs font-bold text-slate-400 mx-2">Max: {{ settings.security.login.count }}x</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/50 transition group">
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-3">
+                                                <i class="ri-user-add-line text-slate-400 group-hover:text-brand-600 text-xl transition"></i>
+                                                <div><div class="font-bold text-slate-700 text-sm">Rate Limit Register</div><div class="text-[11px] text-slate-400">Cegah Spam Pendaftaran</div></div>
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6 text-center">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" v-model="settings.security.register.active" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                            </label>
+                                        </td>
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-2">
+                                                <div class="counter-box"><div class="counter-btn" @click="changeVal('security','register','timeVal', -1)">-</div><input type="number" v-model="settings.security.register.timeVal" class="counter-val"><div class="counter-btn" @click="changeVal('security','register','timeVal', 1)">+</div></div>
+                                                <select v-model="settings.security.register.timeUnit" class="unit-select"><option v-for="u in units" :value="u">{{ u }}</option></select>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/50 transition group">
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-3">
+                                                <i class="ri-shopping-cart-2-line text-slate-400 group-hover:text-brand-600 text-xl transition"></i>
+                                                <div><div class="font-bold text-slate-700 text-sm">Order Limit</div><div class="text-[11px] text-slate-400">Batas transaksi unpaid per user</div></div>
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6 text-center">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" v-model="settings.security.order.active" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                            </label>
+                                        </td>
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-2">
+                                                <div class="counter-box"><div class="counter-btn" @click="changeVal('security','order','timeVal', -1)">-</div><input type="number" v-model="settings.security.order.timeVal" class="counter-val"><div class="counter-btn" @click="changeVal('security','order','timeVal', 1)">+</div></div>
+                                                <select v-model="settings.security.order.timeUnit" class="unit-select"><option v-for="u in units" :value="u">{{ u }}</option></select>
+                                                <span class="text-xs font-bold text-slate-400 mx-2">Max: {{ settings.security.order.count }}x</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/50 transition group">
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-3">
+                                                <i class="ri-lock-password-line text-slate-400 group-hover:text-brand-600 text-xl transition"></i>
+                                                <div><div class="font-bold text-slate-700 text-sm">Reset Password Limit</div><div class="text-[11px] text-slate-400">Batas request reset per user</div></div>
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6 text-center">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" v-model="settings.security.reset.active" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                            </label>
+                                        </td>
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-2">
+                                                <div class="counter-box"><div class="counter-btn" @click="changeVal('security','reset','timeVal', -1)">-</div><input type="number" v-model="settings.security.reset.timeVal" class="counter-val"><div class="counter-btn" @click="changeVal('security','reset','timeVal', 1)">+</div></div>
+                                                <select v-model="settings.security.reset.timeUnit" class="unit-select"><option v-for="u in units" :value="u">{{ u }}</option></select>
+                                                <span class="text-xs font-bold text-slate-400 mx-2">Max: {{ settings.security.reset.count }}x</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50/50 transition group">
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-3">
+                                                <i class="ri-global-line text-slate-400 group-hover:text-brand-600 text-xl transition"></i>
+                                                <div><div class="font-bold text-slate-700 text-sm">Request Halaman Limit</div><div class="text-[11px] text-slate-400">Rate limit traffic per IP</div></div>
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6 text-center">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" v-model="settings.security.request.active" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                            </label>
+                                        </td>
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-2">
+                                                <div class="counter-box"><div class="counter-btn" @click="changeVal('security','request','timeVal', -1)">-</div><input type="number" v-model="settings.security.request.timeVal" class="counter-val"><div class="counter-btn" @click="changeVal('security','request','timeVal', 1)">+</div></div>
+                                                <select v-model="settings.security.request.timeUnit" class="unit-select"><option v-for="u in units" :value="u">{{ u }}</option></select>
+                                                <span class="text-xs font-bold text-slate-400 mx-2">Max: {{ settings.security.request.count }}x</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <tr class="bg-red-50/50 hover:bg-red-50 transition">
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center gap-3">
+                                                <i class="ri-shield-cross-line text-red-500 text-2xl"></i>
+                                                <div><div class="font-bold text-slate-800 text-sm">Geo-Block IP</div><div class="text-[11px] text-slate-500">Hanya izinkan akses dari 🇮🇩 Indonesia</div></div>
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6 text-center">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" v-model="settings.security.geoBlock" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                            </label>
+                                        </td>
+                                        <td class="px-8 py-6">
+                                            <span class="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-500">Whitelist ID</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="setting-section pb-10">
+                    <div class="header-delete p-5 rounded-2xl text-white shadow-lg shadow-slate-900/20 flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20">
+                            <i class="ri-delete-bin-2-fill text-2xl animate-float" style="animation-delay: 4s;"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold">Auto Delete System</h3>
+                            <p class="text-slate-300 text-xs font-medium opacity-90">Pembersihan data sampah otomatis</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-[2rem] shadow-card border border-slate-100 flex flex-col justify-between group hover:shadow-soft transition">
+                            <div>
+                                <div class="flex justify-between items-center mb-4">
+                                    <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 font-bold"><i class="ri-history-line"></i></div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" v-model="settings.autoDelete.logs.active" class="sr-only peer">
+                                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                    </label>
+                                </div>
+                                <h5 class="font-bold text-slate-700 mb-1">Log Activity</h5>
+                                <p class="text-xs text-slate-400 mb-6">Hapus riwayat aktivitas user</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="counter-box w-full justify-center"><div class="counter-btn" @click="changeVal('autoDelete','logs','delayVal', -1)">-</div><input type="number" v-model="settings.autoDelete.logs.delayVal" class="counter-val"><div class="counter-btn" @click="changeVal('autoDelete','logs','delayVal', 1)">+</div></div>
+                                <select v-model="settings.autoDelete.logs.delayUnit" class="unit-select"><option v-for="u in units" :value="u">{{ u }}</option></select>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-[2rem] shadow-card border border-slate-100 flex flex-col justify-between group hover:shadow-soft transition">
+                            <div>
+                                <div class="flex justify-between items-center mb-4">
+                                    <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 font-bold"><i class="ri-time-line"></i></div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" v-model="settings.autoDelete.unpaid.active" class="sr-only peer">
+                                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                    </label>
+                                </div>
+                                <h5 class="font-bold text-slate-700 mb-1">Unpaid Transaksi</h5>
+                                <p class="text-xs text-slate-400 mb-6">Hapus transaksi pending lama</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="counter-box w-full justify-center"><div class="counter-btn" @click="changeVal('autoDelete','unpaid','delayVal', -1)">-</div><input type="number" v-model="settings.autoDelete.unpaid.delayVal" class="counter-val"><div class="counter-btn" @click="changeVal('autoDelete','unpaid','delayVal', 1)">+</div></div>
+                                <select v-model="settings.autoDelete.unpaid.delayUnit" class="unit-select"><option v-for="u in units" :value="u">{{ u }}</option></select>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-[2rem] shadow-card border border-slate-100 flex flex-col justify-between group hover:shadow-soft transition">
+                            <div>
+                                <div class="flex justify-between items-center mb-4">
+                                    <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 font-bold"><i class="ri-cpu-line"></i></div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" v-model="settings.autoDelete.cache.active" class="sr-only peer">
+                                        <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                    </label>
+                                </div>
+                                <h5 class="font-bold text-slate-700 mb-1">System Cache</h5>
+                                <p class="text-xs text-slate-400 mb-6">Bersihkan file sampah sistem</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="counter-box w-full justify-center"><div class="counter-btn" @click="changeVal('autoDelete','cache','delayVal', -1)">-</div><input type="number" v-model="settings.autoDelete.cache.delayVal" class="counter-val"><div class="counter-btn" @click="changeVal('autoDelete','cache','delayVal', 1)">+</div></div>
+                                <select v-model="settings.autoDelete.cache.delayUnit" class="unit-select"><option v-for="u in units" :value="u">{{ u }}</option></select>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <div class="pb-10">
+                    <button @click="askToSave" class="w-full py-5 bg-brand-600 hover:bg-brand-700 text-white rounded-3xl font-black text-xl shadow-2xl shadow-brand-500/40 transition-all active:scale-95 flex items-center justify-center gap-3 border-4 border-white/20">
+                        <i class="ri-save-3-fill animate-pulse"></i> SIMPAN SEMUA KONFIGURASI
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div v-if="modals.template" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-[#F8FAFC] rounded-[2.5rem] shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] animate-pop relative overflow-hidden border border-white/30">
+            <div class="bg-white px-8 py-6 border-b border-slate-100 flex justify-between items-center z-10 sticky top-0">
+                <div>
+                    <h3 class="font-black text-2xl text-slate-800 tracking-tight">Template Editor</h3>
+                    <p class="text-sm font-medium text-slate-400">Provider: <span class="text-brand-600 font-bold uppercase">{{ modals.template.type }}</span></p>
+                </div>
+                <button @click="modals.template = null" class="w-12 h-12 rounded-2xl bg-slate-50 hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-slate-400 transition shadow-sm"><i class="ri-close-fill text-2xl"></i></button>
+            </div>
+
+            <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div class="bg-white p-5 rounded-3xl shadow-card border border-brand-50 template-card relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><i class="ri-shopping-cart-2-fill text-lg"></i></div>
+                                <span class="font-extrabold text-slate-700 text-sm uppercase">Pemesanan</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="settings.templates[modals.template.type].order.active" class="sr-only peer">
+                                <div class="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all peer-checked:after:translate-x-full"></div>
+                            </label>
+                        </div>
+                        <textarea v-model="settings.templates[modals.template.type].order.text" class="w-full h-24 modern-input rounded-xl p-3 text-xs font-medium text-slate-600" placeholder="Halo {{nama}}, pesananmu telah dibuat..."></textarea>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-3xl shadow-card border border-brand-50 template-card relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><i class="ri-shield-keyhole-fill text-lg"></i></div>
+                                <span class="font-extrabold text-slate-700 text-sm uppercase">Verifikasi OTP</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="settings.templates[modals.template.type].otp.active" class="sr-only peer">
+                                <div class="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all peer-checked:after:translate-x-full"></div>
+                            </label>
+                        </div>
+                        <textarea v-model="settings.templates[modals.template.type].otp.text" class="w-full h-24 modern-input rounded-xl p-3 text-xs font-medium text-slate-600" placeholder="Kode OTP Rahasia Anda: {{otp}}..."></textarea>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-3xl shadow-card border border-brand-50 template-card relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><i class="ri-user-add-fill text-lg"></i></div>
+                                <span class="font-extrabold text-slate-700 text-sm uppercase">Register</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="settings.templates[modals.template.type].register.active" class="sr-only peer">
+                                <div class="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all peer-checked:after:translate-x-full"></div>
+                            </label>
+                        </div>
+                        <textarea v-model="settings.templates[modals.template.type].register.text" class="w-full h-24 modern-input rounded-xl p-3 text-xs font-medium text-slate-600" placeholder="Selamat datang {{nama}} di Marspedia..."></textarea>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-3xl shadow-card border border-brand-50 template-card relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><i class="ri-lock-password-fill text-lg"></i></div>
+                                <span class="font-extrabold text-slate-700 text-sm uppercase">Reset Password</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="settings.templates[modals.template.type].reset.active" class="sr-only peer">
+                                <div class="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all peer-checked:after:translate-x-full"></div>
+                            </label>
+                        </div>
+                        <textarea v-model="settings.templates[modals.template.type].reset.text" class="w-full h-24 modern-input rounded-xl p-3 text-xs font-medium text-slate-600" placeholder="Klik link berikut untuk reset password..."></textarea>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-3xl shadow-card border border-brand-50 template-card relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><i class="ri-loader-4-fill text-lg animate-spin-slow"></i></div>
+                                <span class="font-extrabold text-slate-700 text-sm uppercase">Pesanan Diproses</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="settings.templates[modals.template.type].process.active" class="sr-only peer">
+                                <div class="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all peer-checked:after:translate-x-full"></div>
+                            </label>
+                        </div>
+                        <textarea v-model="settings.templates[modals.template.type].process.text" class="w-full h-24 modern-input rounded-xl p-3 text-xs font-medium text-slate-600" placeholder="Pesanan {{invoice}} sedang diproses..."></textarea>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-3xl shadow-card border border-brand-50 template-card relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><i class="ri-checkbox-circle-fill text-lg"></i></div>
+                                <span class="font-extrabold text-slate-700 text-sm uppercase">Pesanan Selesai</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="settings.templates[modals.template.type].success.active" class="sr-only peer">
+                                <div class="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all peer-checked:after:translate-x-full"></div>
+                            </label>
+                        </div>
+                        <textarea v-model="settings.templates[modals.template.type].success.text" class="w-full h-24 modern-input rounded-xl p-3 text-xs font-medium text-slate-600" placeholder="Pesanan Sukses! SN: {{sn}}..."></textarea>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-3xl shadow-card border border-brand-50 template-card relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><i class="ri-close-circle-fill text-lg"></i></div>
+                                <span class="font-extrabold text-slate-700 text-sm uppercase">Pesanan Batal</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="settings.templates[modals.template.type].failed.active" class="sr-only peer">
+                                <div class="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all peer-checked:after:translate-x-full"></div>
+                            </label>
+                        </div>
+                        <textarea v-model="settings.templates[modals.template.type].failed.text" class="w-full h-24 modern-input rounded-xl p-3 text-xs font-medium text-slate-600" placeholder="Maaf pesanan dibatalkan karena..."></textarea>
+                    </div>
+
+                    <div v-for="(item, index) in settings.templates[modals.template.type].custom" :key="index" class="bg-white p-5 rounded-3xl shadow-card border border-brand-50 template-card relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><i class="ri-edit-2-fill text-lg"></i></div>
+                                <input type="text" v-model="item.title" class="font-extrabold text-slate-700 text-sm uppercase bg-transparent border-b border-dashed border-slate-300 focus:border-brand-500 outline-none w-32" placeholder="JUDUL BARU">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" v-model="item.active" class="sr-only peer">
+                                    <div class="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:shadow-sm after:transition-all peer-checked:after:translate-x-full"></div>
+                                </label>
+                                <button @click="removeCustomField(index)" class="text-red-400 hover:text-red-600"><i class="ri-delete-bin-line"></i></button>
+                            </div>
+                        </div>
+                        <textarea v-model="item.text" class="w-full h-24 modern-input rounded-xl p-3 text-xs font-medium text-slate-600" placeholder="Isi pesan custom..."></textarea>
+                    </div>
+
+                </div>
+
+                <button @click="addCustomField" class="w-full py-4 border-2 border-dashed border-slate-200 rounded-3xl text-slate-400 font-bold hover:border-brand-400 hover:text-brand-600 hover:bg-brand-50 transition flex items-center justify-center gap-2">
+                    <i class="ri-add-circle-fill text-xl"></i> TAMBAH CUSTOM MANUAL
+                </button>
+            </div>
+
+            <div class="p-6 bg-white border-t border-slate-100 flex justify-end gap-3 z-10 sticky bottom-0">
+                <button @click="modals.template = null" class="px-6 py-3 rounded-xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition">Tutup</button>
+                <button @click="saveTemplate" class="px-6 py-3 rounded-xl font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-lg shadow-brand-500/30 transition flex items-center gap-2"><i class="ri-save-3-line"></i> Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+    
+    <div v-if="modals.confirmSave" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-all">
+        <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl animate-pop text-center relative overflow-hidden">
+            <div class="w-20 h-20 bg-brand-50 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-600 shadow-glow">
+                <i class="ri-question-mark text-4xl"></i>
+            </div>
+            <h3 class="font-black text-2xl text-slate-800 mb-2 tracking-tight">Simpan Perubahan?</h3>
+            <p class="text-slate-500 text-sm font-medium mb-8 leading-relaxed">Pastikan seluruh konfigurasi sudah sesuai sebelum menyimpan data.</p>
+            <div class="grid grid-cols-2 gap-4">
+                <button @click="modals.confirmSave = false" class="py-3 rounded-xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition">Batal</button>
+                <button @click="proceedSave" class="py-3 rounded-xl font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-lg shadow-brand-500/30 transition">Ya, Simpan</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                toast: { show: false, message: '' },
+                modals: { template: null, confirmSave: false },
+                units: ['Detik', 'Menit', 'Jam', 'Hari', 'Bulan', 'Tahun'],
+                
+                settings: {
+                    payment: {
+                        ipaymu: { active: true, apiKey: '', secretKey: '', delayVal: 5, delayUnit: 'Menit' },
+                        midtrans: { active: false, apiKey: '', secretKey: '', delayVal: 5, delayUnit: 'Menit' },
+                        xendit: { active: false, apiKey: '', secretKey: '', delayVal: 5, delayUnit: 'Menit' }, 
+                        manual: { 
+                            active: true, 
+                            accounts: [
+                                { no: '', name: '', logo: '' }
+                            ],
+                            delayVal: 1, 
+                            delayUnit: 'Jam' 
+                        } 
+                    },
+                    api: {
+                        digiflazz: { active: true, apiKey: '', secretKey: '', delayVal: 1, delayUnit: 'Menit' },
+                        apigames: { active: true, apiKey: '', secretKey: '', delayVal: 10, delayUnit: 'Menit' }
+                    },
+                    notify: {
+                        emailApi: { active: true, apiKey: '', secretKey: '' },
+                        smtp: { active: false, apiKey: '', secretKey: '' }
+                    },
+                    security: {
+                        login: { active: true, count: 5, timeVal: 5, timeUnit: 'Menit' },
+                        register: { active: true, count: 1, timeVal: 1, timeUnit: 'Jam' },
+                        order: { active: true, count: 3, timeVal: 1, timeUnit: 'Menit' },
+                        reset: { active: true, count: 1, timeVal: 5, timeUnit: 'Menit' },
+                        request: { active: true, count: 60, timeVal: 1, timeUnit: 'Menit' }, 
+                        geoBlock: true
+                    },
+                    autoDelete: {
+                        logs: { active: true, delayVal: 7, delayUnit: 'Hari' },
+                        unpaid: { active: true, delayVal: 2, delayUnit: 'Hari' },
+                        cache: { active: true, delayVal: 1, delayUnit: 'Hari' }
+                    },
+                    templates: {
+                        emailApi: {
+                            order: { active: true, text: '' },
+                            otp: { active: true, text: '' },
+                            register: { active: true, text: '' },
+                            reset: { active: true, text: '' },
+                            process: { active: true, text: '' },
+                            success: { active: true, text: '' },
+                            failed: { active: true, text: '' },
+                            custom: []
+                        },
+                        smtp: {
+                            order: { active: true, text: '' },
+                            otp: { active: true, text: '' },
+                            register: { active: true, text: '' },
+                            reset: { active: true, text: '' },
+                            process: { active: true, text: '' },
+                            success: { active: true, text: '' },
+                            failed: { active: true, text: '' },
+                            custom: []
+                        }
+                    }
+                }
+            }
+        },
+        methods: {
+            askToSave() {
+                this.modals.confirmSave = true;
+            },
+            proceedSave() {
+                this.modals.confirmSave = false;
+                this.toast.message = 'Konfigurasi System Berhasil Disimpan!';
+                this.toast.show = true;
+                setTimeout(() => { this.toast.show = false }, 3000);
+                console.log(JSON.parse(JSON.stringify(this.settings)));
+            },
+            openTemplateModal(type) {
+                this.modals.template = { type: type };
+            },
+            saveTemplate() {
+                this.toast.message = 'Template Berhasil Diupdate!';
+                this.toast.show = true;
+                setTimeout(() => { this.toast.show = false }, 2000);
+                this.modals.template = null;
+            },
+            changeVal(section, sub, key, delta) {
+                let currentVal = this.settings[section][sub][key];
+                let newVal = parseInt(currentVal) + delta;
+                if(newVal < 1) newVal = 1;
+                this.settings[section][sub][key] = newVal;
+            },
+            addCustomField() {
+                this.settings.templates[this.modals.template.type].custom.push({
+                    title: 'Custom Notif',
+                    active: true,
+                    text: ''
+                });
+            },
+            removeCustomField(index) {
+                this.settings.templates[this.modals.template.type].custom.splice(index, 1);
+            },
+            addBankAccount() {
+                this.settings.payment.manual.accounts.push({ no: '', name: '', logo: '' });
+            },
+            removeBankAccount(index) {
+                this.settings.payment.manual.accounts.splice(index, 1);
+            }
+        },
+        mounted() {
+            gsap.from(".setting-section", {
+                y: 50, opacity: 0, duration: 0.8, stagger: 0.2, ease: "power3.out"
+            });
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

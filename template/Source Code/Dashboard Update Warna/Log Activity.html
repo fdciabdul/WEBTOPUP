@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Pro - Log Activity (Unified Blue)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        // Mendefinisikan warna Brand utama menjadi #0033AA
+                        brand: { 
+                            DEFAULT: '#0033AA', 
+                            50: '#F0F4FF', // Lightest Blue background
+                            100: '#E0E7FF', 
+                            200: '#C7D2FE',
+                            500: '#0033AA', // Main Brand Color
+                            600: '#002B88', // Hover state
+                            700: '#002277', // Active state
+                            900: '#001144'
+                        }
+                    },
+                    animation: {
+                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                    },
+                    keyframes: {
+                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } },
+                        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+                        pop: { '0%': { transform: 'scale(0.9)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F8FAFC; overflow-x: hidden; }
+        
+        /* Custom Scrollbar - Unified Blue */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0033AA; }
+
+        /* Glass Panel Styling */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid #E2E8F0;
+            box-shadow: 4px 0 24px rgba(0, 51, 170, 0.02);
+        }
+
+        /* Sidebar Styling */
+        .nav-item {
+            display: flex; align-items: center; gap: 0.8rem; padding: 0.75rem 1rem;
+            border-radius: 0.75rem; font-weight: 600; font-size: 0.9rem;
+            color: #64748b; margin-bottom: 0.2rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .nav-item:hover { background: #F0F4FF; color: #0033AA; transform: translateX(4px); box-shadow: 0 4px 12px rgba(0, 51, 170, 0.05); }
+        
+        /* Nav Active - Solid Blue #0033AA */
+        .nav-active {
+            background-color: #0033AA;
+            color: white !important;
+            box-shadow: 0 8px 16px -4px rgba(0, 51, 170, 0.3);
+        }
+        
+        .nav-section {
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            color: #94a3b8; margin-top: 1.5rem; margin-bottom: 0.5rem; padding-left: 0.5rem;
+        }
+
+        /* Table Header - Solid Blue #0033AA */
+        .table-header-brand { 
+            background-color: #0033AA; 
+            color: white; 
+        }
+
+        .row-hover:hover { background-color: #F8FAFC; transform: scale(1.001); transition: all 0.2s; }
+        
+        /* JSON Viewer */
+        .json-viewer {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            tab-size: 2;
+        }
+
+        /* Badge Styles Unified */
+        .badge-brand {
+            background-color: #F0F4FF;
+            color: #0033AA;
+            border: 1px solid #C7D2FE;
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-800 font-sans selection:bg-brand-500 selection:text-white">
+
+<div id="app" class="flex h-screen w-full relative">
+
+    <transition name="pop">
+        <div v-if="toast.show" class="fixed top-6 right-6 z-[100] pointer-events-none">
+            <div class="bg-white/95 backdrop-blur-md px-6 py-4 rounded-2xl shadow-2xl border-l-4 border-l-brand-500 flex items-center gap-4 animate-pop pointer-events-auto min-w-[320px]">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-xl shadow-lg" 
+                     :class="toast.type === 'success' ? 'bg-brand-500' : 'bg-red-500'">
+                    <i :class="toast.type === 'success' ? 'ri-checkbox-circle-fill' : 'ri-error-warning-fill'"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm">{{ toast.title }}</h4>
+                    <p class="text-xs text-slate-500 font-medium">{{ toast.message }}</p>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 glass-panel transition-transform duration-300 lg:translate-x-0 flex flex-col flex-shrink-0 bg-white">
+        <div class="h-24 flex items-center px-8 flex-shrink-0 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                    <i class="ri-rocket-2-fill text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Marspedia</h1>
+                    <span class="text-[10px] font-bold text-white bg-brand-500 px-2 py-0.5 rounded shadow-sm">LOG SYSTEM</span>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar flex flex-col pb-10">
+            <p class="nav-section">Overview</p>
+            <a href="#" class="nav-item"><i class="ri-layout-grid-line text-lg"></i> Dashboard</a>
+            <a href="#" class="nav-item"><i class="ri-file-text-line text-lg"></i> Transaksi</a>
+            <a href="#" class="nav-item"><i class="ri-truck-line text-lg"></i> Pengiriman</a>
+            <a href="#" class="nav-item"><i class="ri-shopping-bag-3-line text-lg"></i> Produk</a>
+            <a href="#" class="nav-item"><i class="ri-user-smile-line text-lg"></i> Member</a>
+
+            <p class="nav-section">System</p>
+            <a href="#" class="nav-item"><i class="ri-settings-4-line text-lg"></i> Setting</a>
+            <a href="#" class="nav-item"><i class="ri-shield-check-line text-lg"></i> Keamanan</a>
+            <a href="#" class="nav-item nav-active"><i class="ri-history-line text-lg"></i> Log Activity</a>
+
+            <div class="mt-8 border-t border-slate-100 pt-4">
+                <a href="#" class="nav-item text-slate-400 hover:text-red-600 hover:bg-red-50"><i class="ri-logout-box-line text-lg"></i> Sign Out</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden w-full bg-[#F8FAFC]">
+        
+        <header class="p-4 md:p-8 pb-0 flex flex-col gap-6 z-20 flex-shrink-0">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 bg-white rounded-xl shadow-sm text-slate-500"><i class="ri-menu-2-line"></i></button>
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                            Log Activity <span class="bg-brand-50 text-brand-600 text-[10px] px-2 py-0.5 rounded-md border border-brand-200">v2.0</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 font-bold mt-1">Tracking aktivitas pengguna secara realtime.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button @click="openHistory" class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition active:scale-95">
+                        <i class="ri-time-zone-line text-lg"></i> Admin History
+                    </button>
+
+                    <button @click="askClearAll" class="bg-white hover:bg-red-50 text-red-500 border border-red-100 hover:border-red-200 px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition active:scale-95">
+                        <i class="ri-delete-bin-2-fill text-lg"></i> Clear All Logs
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-2 rounded-[1.5rem] shadow-lg shadow-slate-200/50 border border-slate-100 flex flex-col lg:flex-row gap-2 items-center">
+                <div class="relative w-full lg:flex-1 group">
+                    <i class="ri-search-2-line absolute left-4 top-3 text-slate-400 group-focus-within:text-brand-600 transition-colors"></i>
+                    <input v-model="searchQuery" type="text" placeholder="Cari User, IP, Event, atau Browser..." class="w-full bg-slate-50 border border-transparent pl-11 pr-4 py-2.5 rounded-2xl text-sm font-bold text-slate-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-200 transition-all">
+                </div>
+
+                <div class="flex w-full lg:w-auto gap-2 overflow-x-auto pb-1 lg:pb-0">
+                    <div class="relative min-w-[140px]">
+                        <i class="ri-calendar-line absolute left-3 top-3 text-slate-400 text-xs"></i>
+                        <select v-model="timeFilter" class="w-full pl-8 pr-8 py-2.5 bg-slate-50 rounded-2xl text-xs font-bold text-slate-600 border border-transparent hover:border-slate-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500/20 appearance-none h-[42px]">
+                            <option v-for="t in timeFilters" :value="t">{{ t }}</option>
+                        </select>
+                        <i class="ri-arrow-down-s-fill absolute right-3 top-3.5 text-slate-400 text-xs pointer-events-none"></i>
+                    </div>
+
+                    <div class="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-2xl border border-transparent">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">Show</span>
+                        <select v-model="itemsPerPage" @change="currentPage = 1" class="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer">
+                            <option :value="10">10</option>
+                            <option :value="25">25</option>
+                            <option :value="50">50</option>
+                            <option :value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 flex flex-col overflow-hidden px-4 md:px-8 py-6">
+            <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col flex-1 overflow-hidden relative">
+                
+                <div class="overflow-auto flex-1 custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="table-header-brand text-xs uppercase tracking-wider sticky top-0 z-20 shadow-md">
+                            <tr>
+                                <th @click="sortBy('user.name')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition rounded-tl-none w-[20%]">
+                                    User & Role <i class="ri-sort-asc ml-1 opacity-50"></i>
+                                </th>
+                                <th class="px-6 py-5 font-extrabold w-[20%]">Contact</th>
+                                <th @click="sortBy('event')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition w-[20%]">
+                                    Event <i class="ri-sort-asc ml-1 opacity-50"></i>
+                                </th>
+                                <th @click="sortBy('ip')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition">
+                                    IP Address <i class="ri-sort-asc ml-1 opacity-50"></i>
+                                </th>
+                                <th class="px-6 py-5 font-extrabold w-[15%]">Device Info</th>
+                                <th @click="sortBy('timestamp')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition">
+                                    Waktu <i class="ri-sort-asc ml-1 opacity-50"></i>
+                                </th>
+                                <th class="px-6 py-5 font-extrabold text-right rounded-tr-none">Aksi</th>
+                            </tr>
+                        </thead>
+                        
+                        <tbody class="text-sm font-medium text-slate-600 divide-y divide-slate-50">
+                            <tr v-for="(log, idx) in paginatedData" :key="log.id" class="row-hover bg-white group transition-colors duration-200">
+                                
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <img :src="log.user.avatar" class="w-10 h-10 rounded-full object-cover border-2 border-slate-100 shadow-sm">
+                                        <div>
+                                            <div class="font-bold text-slate-800 text-sm">{{ log.user.name }}</div>
+                                            <div class="text-[10px] bg-brand-500 text-white px-3 py-1 rounded-md font-black border border-brand-600 inline-flex items-center gap-1 mt-1 shadow-sm uppercase tracking-wide">
+                                                <i class="ri-user-3-fill"></i> {{ log.user.role }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col gap-2">
+                                        <div class="flex items-center gap-2 group/email">
+                                            <div class="w-6 h-6 rounded bg-brand-50 text-brand-600 flex items-center justify-center text-xs flex-shrink-0"><i class="ri-mail-fill"></i></div>
+                                            <span class="text-xs font-bold text-slate-600 select-all" :title="log.contact.email">{{ log.contact.email }}</span>
+                                            <button @click="copyToClipboard(log.contact.email)" class="opacity-0 group-hover/email:opacity-100 text-slate-300 hover:text-brand-600 transition"><i class="ri-file-copy-line"></i></button>
+                                        </div>
+                                        <div class="flex items-center gap-2 group/phone">
+                                            <div class="w-6 h-6 rounded bg-brand-50 text-brand-600 flex items-center justify-center text-xs flex-shrink-0"><i class="ri-whatsapp-fill"></i></div>
+                                            <span class="text-xs font-bold text-slate-600">{{ log.contact.phone }}</span>
+                                            <button @click="copyToClipboard(log.contact.phone)" class="opacity-0 group-hover/phone:opacity-100 text-slate-300 hover:text-brand-600 transition"><i class="ri-file-copy-line"></i></button>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="flex items-start gap-2">
+                                        <div class="mt-0.5 w-2 h-2 rounded-full bg-brand-500"></div>
+                                        <div>
+                                            <div class="font-bold text-slate-700 text-xs leading-relaxed">{{ log.event }}</div>
+                                            <a :href="log.url" target="_blank" class="text-[10px] text-brand-500 font-bold hover:underline truncate max-w-[150px] block mt-0.5">{{ log.url }}</a>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2 group/ip w-fit">
+                                        <img :src="`https://flagcdn.com/w40/${log.ip.countryCode}.png`" class="w-5 h-3.5 object-cover rounded shadow-sm hover:scale-110 transition-transform">
+                                        <span class="font-mono font-bold text-xs text-slate-700 group-hover/ip:text-brand-600 transition">{{ log.ip.addr }}</span>
+                                        <button @click="copyToClipboard(log.ip.addr)" class="opacity-0 group-hover/ip:opacity-100 text-slate-300 hover:text-brand-600 transition"><i class="ri-file-copy-line"></i></button>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col gap-2 items-start">
+                                        <div class="flex items-center gap-2 group">
+                                            <i :class="[getBrowserIcon(log.browser)]" class="text-lg text-slate-500 transition-transform group-hover:scale-110 group-hover:text-brand-600"></i>
+                                            <span class="text-xs font-bold text-slate-600">{{ log.browser }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 group">
+                                            <i :class="[getDeviceIcon(log.device)]" class="text-lg text-slate-500 transition-transform group-hover:scale-110 group-hover:text-brand-600"></i>
+                                            <span class="text-xs font-bold text-slate-600">{{ log.device }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="text-xs font-bold text-slate-700">{{ formatDate(log.timestamp).date }}</div>
+                                    <div class="text-[10px] font-bold text-slate-400 mt-0.5 flex items-center gap-1">
+                                        <i class="ri-time-line"></i> {{ formatDate(log.timestamp).time }} WIB
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button @click="openDetail(log)" class="w-8 h-8 rounded-lg bg-white border border-brand-200 text-brand-600 hover:bg-brand-600 hover:text-white transition shadow-sm flex items-center justify-center" title="Detail Lengkap">
+                                            <i class="ri-eye-fill"></i>
+                                        </button>
+                                        
+                                        <button @click="askDelete(log)" class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-400 hover:bg-red-500 hover:text-white hover:border-red-500 transition shadow-sm flex items-center justify-center" title="Hapus Log">
+                                            <i class="ri-delete-bin-5-fill"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="paginatedData.length === 0">
+                                <td colspan="7" class="py-20 text-center">
+                                    <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 text-4xl shadow-inner"><i class="ri-search-eye-line"></i></div>
+                                    <p class="font-bold text-slate-600 text-lg">Tidak ada data ditemukan.</p>
+                                    <p class="text-xs text-slate-400">Coba ubah filter pencarian atau waktu.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-white border-t border-slate-100 p-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0 z-10">
+                    <p class="text-xs font-bold text-slate-500">
+                        Menampilkan <span class="text-brand-600">{{ paginatedData.length }}</span> dari <span class="text-brand-600">{{ filteredLogs.length }}</span> data log.
+                    </p>
+
+                    <div class="flex items-center gap-2 flex-wrap justify-center bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                        <button @click="currentPage = 1" :disabled="currentPage === 1" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-600 hover:border-brand-500 transition disabled:opacity-50 disabled:hover:border-slate-200"><i class="ri-skip-back-line"></i></button>
+                        <button @click="currentPage--" :disabled="currentPage === 1" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-600 hover:border-brand-500 transition disabled:opacity-50 disabled:hover:border-slate-200"><i class="ri-arrow-left-s-line"></i></button>
+                        
+                        <div class="flex items-center gap-1 px-3">
+                            <span class="text-xs font-bold text-slate-600">Page</span>
+                            <input type="number" v-model.number="jumpPageInput" @keyup.enter="jumpToPage" class="w-10 h-6 bg-white border border-slate-200 rounded text-center text-xs font-bold focus:border-brand-500 focus:outline-none" :placeholder="currentPage">
+                            <span class="text-xs font-bold text-slate-600">/ {{ totalPages }}</span>
+                        </div>
+                        
+                        <button @click="currentPage++" :disabled="currentPage === totalPages" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-600 hover:border-brand-500 transition disabled:opacity-50 disabled:hover:border-slate-200"><i class="ri-arrow-right-s-line"></i></button>
+                        <button @click="currentPage = totalPages" :disabled="currentPage === totalPages" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-brand-600 hover:border-brand-500 transition disabled:opacity-50 disabled:hover:border-slate-200"><i class="ri-skip-forward-line"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div v-if="modals.detail" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div @click="modals.detail = null" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+        <div class="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden flex flex-col relative animate-pop z-10 border border-white/20">
+            
+            <div class="bg-brand-500 px-8 py-6 flex justify-between items-center shadow-lg">
+                <div>
+                    <h3 class="font-black text-xl text-white">Detail Aktivitas</h3>
+                    <p class="text-xs font-bold text-white/80 font-mono mt-0.5">ID: {{ activeLog.id }}</p>
+                </div>
+                <button @click="modals.detail = null" class="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition backdrop-blur-md"><i class="ri-close-line text-xl"></i></button>
+            </div>
+
+            <div class="p-8 overflow-y-auto max-h-[70vh] custom-scrollbar space-y-6">
+                <div class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <img :src="activeLog.user.avatar" class="w-16 h-16 rounded-full border-2 border-white shadow-md">
+                    <div>
+                        <div class="font-bold text-lg text-slate-800">{{ activeLog.user.name }}</div>
+                        <span class="text-[10px] bg-brand-500 text-white px-3 py-1 rounded-md font-black border border-brand-600 inline-block mb-1 shadow-sm uppercase">{{ activeLog.user.role }}</span>
+                        <div class="flex items-center gap-3 text-xs text-slate-500 font-bold">
+                            <span class="flex items-center gap-1"><i class="ri-mail-fill text-brand-500"></i> {{ activeLog.contact.email }}</span>
+                            <span class="flex items-center gap-1"><i class="ri-whatsapp-fill text-brand-500"></i> {{ activeLog.contact.phone }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Event / Aktivitas</label>
+                        <div class="font-bold text-slate-700 bg-white border border-slate-200 p-3 rounded-xl shadow-sm flex justify-between items-center group">
+                            {{ activeLog.event }}
+                            <button @click="copyToClipboard(activeLog.event)" class="text-slate-300 hover:text-brand-600 transition"><i class="ri-file-copy-line"></i></button>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">URL / Path</label>
+                        <div class="font-mono text-xs font-bold text-brand-600 bg-brand-50 border border-brand-100 p-3 rounded-xl shadow-sm flex justify-between items-center overflow-hidden">
+                            <span class="truncate pr-2">{{ activeLog.url }}</span>
+                            <button @click="copyToClipboard(activeLog.url)" class="text-slate-400 hover:text-brand-600 transition flex-shrink-0"><i class="ri-file-copy-line"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10"><i class="ri-terminal-box-fill text-6xl"></i></div>
+                    <h4 class="font-bold text-sm mb-4 border-b border-white/10 pb-2">Technical Information</h4>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <span class="text-slate-400 block mb-1">IP Address</span>
+                            <div class="font-mono font-bold flex items-center gap-2">
+                                <img :src="`https://flagcdn.com/w20/${activeLog.ip.countryCode}.png`" class="w-4 rounded-sm"> 
+                                {{ activeLog.ip.addr }}
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-1">Timestamp</span>
+                            <div class="font-bold">{{ formatDate(activeLog.timestamp).full }}</div>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-1">Browser</span>
+                            <div class="font-bold flex items-center gap-1"><i :class="getBrowserIcon(activeLog.browser)"></i> {{ activeLog.browser }}</div>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-1">Device</span>
+                            <div class="font-bold flex items-center gap-1"><i :class="getDeviceIcon(activeLog.device)"></i> {{ activeLog.device }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white px-8 py-4 border-t border-slate-100 flex justify-end">
+                <button @click="modals.detail = null" class="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-brand-500/30 transition">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modals.history" class="fixed inset-0 z-[80] flex items-center justify-center p-4">
+        <div @click="modals.history = false" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+        <div class="bg-white w-full max-w-5xl h-[85vh] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col relative animate-pop z-10">
+            <div class="bg-brand-500 px-8 py-6 flex justify-between items-center shadow-lg flex-shrink-0 relative overflow-hidden">
+                <div class="absolute inset-0 bg-brand-600 opacity-50 z-0"></div>
+                <div class="absolute -right-10 -bottom-10 text-white/5 z-0"><i class="ri-history-line text-9xl"></i></div>
+                
+                <div class="flex items-center gap-4 relative z-10">
+                    <div class="bg-white/10 backdrop-blur-md p-3 rounded-2xl text-white border border-white/10 shadow-inner">
+                        <i class="ri-shield-keyhole-line text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-2xl text-white tracking-tight">Admin Action History</h3>
+                        <p class="text-xs font-bold text-brand-100 mt-1">Riwayat tindakan pembersihan & penghapusan log.</p>
+                    </div>
+                </div>
+                <button @click="modals.history = false" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition z-10"><i class="ri-close-line text-xl"></i></button>
+            </div>
+
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0">
+                <div class="relative w-full md:w-1/2">
+                     <i class="ri-search-line absolute left-3 top-2.5 text-slate-400"></i>
+                     <input v-model="historySearch" type="text" placeholder="Cari Target atau Action..." class="w-full bg-white border border-slate-200 px-4 pl-10 py-2 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                </div>
+                <div class="flex items-center gap-2">
+                     <div class="text-xs font-bold text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                        Total: <span class="text-brand-600 font-black text-sm">{{ filteredHistory.length }}</span> Records
+                    </div>
+                    <button @click="askClearHistory" v-if="adminHistory.length > 0" class="text-xs font-bold bg-white text-red-500 px-3 py-1.5 rounded-lg border border-red-100 hover:bg-red-50 hover:border-red-200 transition shadow-sm flex items-center gap-1">
+                        <i class="ri-delete-bin-7-fill"></i> Clear History
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-auto custom-scrollbar bg-slate-50">
+                <table class="w-full text-left border-collapse">
+                    <thead class="table-header-brand text-xs uppercase tracking-wider sticky top-0 z-20 shadow-md">
+                        <tr>
+                            <th @click="sortHistory('action')" class="px-6 py-4 font-extrabold cursor-pointer hover:bg-white/10 transition w-[20%]">
+                                Action Type <i class="ri-sort-asc ml-1 opacity-50"></i>
+                            </th>
+                            <th @click="sortHistory('target')" class="px-6 py-4 font-extrabold cursor-pointer hover:bg-white/10 transition w-[25%]">
+                                Target Info <i class="ri-sort-asc ml-1 opacity-50"></i>
+                            </th>
+                            <th class="px-6 py-4 font-extrabold w-[15%]">Data Count</th>
+                            <th @click="sortHistory('timestamp')" class="px-6 py-4 font-extrabold cursor-pointer hover:bg-white/10 transition w-[20%]">
+                                Timestamp <i class="ri-sort-asc ml-1 opacity-50"></i>
+                            </th>
+                            <th class="px-6 py-4 font-extrabold text-right rounded-tr-none">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm font-medium text-slate-600 divide-y divide-slate-100">
+                        <tr v-for="(item, idx) in filteredHistory" :key="idx" class="bg-white hover:bg-brand-50/50 transition-colors animate-fade-in group/history">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-sm bg-brand-50 text-brand-600">
+                                        <i class="ri-file-shred-line"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-black text-slate-800">{{ item.action }}</div> 
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-brand-900">{{ item.target }}</div>
+                                <div class="text-xs text-slate-400">Target Object</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200">
+                                    {{ item.data.length }} Items
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-1 text-xs font-bold text-slate-600">
+                                    <i class="ri-time-line text-brand-400"></i> {{ item.timestamp }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <button @click="viewFullData(item)" class="w-8 h-8 rounded-full bg-brand-50 text-brand-600 hover:bg-brand-600 hover:text-white transition flex items-center justify-center shadow-sm" title="View Detail JSON">
+                                        <i class="ri-file-list-3-fill"></i>
+                                    </button>
+                                    
+                                    <button @click="askRestoreHistory(item, idx)" class="bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-md shadow-brand-500/20 transition flex items-center gap-1">
+                                        <i class="ri-restart-line"></i> Restore
+                                    </button>
+
+                                    <button @click="askDeleteHistory(idx)" class="bg-white border border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1" title="Hapus dari History">
+                                        <i class="ri-delete-bin-line"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modals.confirmClear" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl animate-pop text-center relative overflow-hidden border-t-4 border-red-500">
+            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center text-red-600 mx-auto mb-5 text-4xl shadow-inner animate-pulse">
+                <i class="ri-alarm-warning-fill"></i>
+            </div>
+            <h3 class="font-black text-2xl text-slate-800 mb-2">Bersihkan Semua?</h3>
+            <p class="text-sm text-slate-500 mb-8 font-medium leading-relaxed">Anda akan menghapus <span class="font-bold text-red-600">{{ logs.length }} data log</span>. Data akan dipindahkan ke Admin History.</p>
+            <div class="flex flex-col gap-3">
+                <button @click="processClearAll" class="w-full py-3.5 font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 transition shadow-lg shadow-red-500/30 flex items-center justify-center gap-2">
+                    <i class="ri-delete-bin-fill"></i> Ya, Hapus Semuanya
+                </button>
+                <button @click="modals.confirmClear = false" class="w-full py-3.5 font-bold text-slate-500 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition">
+                    Batalkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modals.historyDetail" class="fixed inset-0 z-[90] flex items-center justify-center p-4">
+        <div @click="modals.historyDetail = false" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity"></div>
+        <div class="bg-slate-900 w-full max-w-3xl h-[80vh] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col relative animate-pop z-10 border border-slate-700">
+            <div class="bg-slate-800 px-6 py-5 flex justify-between items-center border-b border-slate-700">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-brand-500/20 text-brand-400 flex items-center justify-center border border-brand-500/30">
+                        <i class="ri-code-s-slash-line text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg text-white">Log Data Detail</h3>
+                        <p class="text-xs text-slate-400">Raw JSON data view</p>
+                    </div>
+                </div>
+                <button @click="modals.historyDetail = false" class="text-slate-400 hover:text-white transition"><i class="ri-close-circle-fill text-2xl"></i></button>
+            </div>
+            
+            <div class="bg-slate-800/50 px-6 py-3 border-b border-slate-700 flex justify-between items-center">
+                <span class="text-xs font-mono text-brand-300">{{ activeHistoryItem?.data.length }} Objects found</span>
+                <button @click="copyHistoryData" class="text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg transition flex items-center gap-2">
+                    <i class="ri-file-copy-line"></i> Copy JSON
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-auto custom-scrollbar p-6 bg-[#0d1117]">
+                <pre class="json-viewer text-slate-300">{{ JSON.stringify(activeHistoryItem?.data, null, 2) }}</pre>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                searchQuery: '',
+                timeFilter: 'All Time',
+                timeFilters: ['All Time', 'Today', 'Yesterday', 'This Week', 'This Month', 'Last Month'],
+                
+                // Pagination
+                currentPage: 1,
+                itemsPerPage: 10,
+                jumpPageInput: '',
+                
+                // State & Modals
+                toast: { show: false, timer: null, title: '', message: '', type: 'success' },
+                modals: { detail: null, confirmDelete: null, confirmClear: false, history: false, confirmHistoryClear: false, historyDetail: false, confirmHistoryRestore: false, confirmHistoryDelete: false },
+                activeLog: null,
+                
+                // History Actions
+                activeHistoryAction: null, 
+                activeHistoryItem: null, 
+
+                // Admin History
+                adminHistory: [], 
+                historySearch: '',
+                historySortKey: 'timestamp',
+                historySortAsc: false,
+
+                // Data
+                logs: [],
+                sortKey: 'timestamp',
+                sortAsc: false 
+            }
+        },
+        computed: {
+            filteredLogs() {
+                let data = this.logs.filter(log => {
+                    // Search Logic
+                    if (this.searchQuery) {
+                        const q = this.searchQuery.toLowerCase();
+                        return log.user.name.toLowerCase().includes(q) || 
+                               log.event.toLowerCase().includes(q) ||
+                               log.ip.addr.includes(q) ||
+                               log.browser.toLowerCase().includes(q);
+                    }
+                    return true;
+                });
+                
+                // Sorting
+                return data.sort((a, b) => {
+                    let valA = a[this.sortKey];
+                    let valB = b[this.sortKey];
+                    
+                    if(this.sortKey === 'user.name') { valA = a.user.name; valB = b.user.name; }
+                    if(this.sortKey === 'ip') { valA = a.ip.addr; valB = b.ip.addr; }
+
+                    if (valA < valB) return this.sortAsc ? -1 : 1;
+                    if (valA > valB) return this.sortAsc ? 1 : -1;
+                    return 0;
+                });
+            },
+            paginatedData() {
+                const start = (this.currentPage - 1) * this.itemsPerPage;
+                return this.filteredLogs.slice(start, start + this.itemsPerPage);
+            },
+            totalPages() {
+                return Math.ceil(this.filteredLogs.length / this.itemsPerPage) || 1;
+            },
+            filteredHistory() {
+                let data = this.adminHistory;
+                if(this.historySearch) {
+                    const q = this.historySearch.toLowerCase();
+                    data = data.filter(item => 
+                        item.target.toLowerCase().includes(q) || 
+                        item.action.toLowerCase().includes(q) ||
+                        item.dataId.toLowerCase().includes(q)
+                    );
+                }
+                
+                // Sorting History
+                return data.sort((a, b) => {
+                    let valA = a[this.historySortKey];
+                    let valB = b[this.historySortKey];
+
+                    if (valA < valB) return this.historySortAsc ? -1 : 1;
+                    if (valA > valB) return this.historySortAsc ? 1 : -1;
+                    return 0;
+                });
+            }
+        },
+        methods: {
+            // --- CORE ACTIONS ---
+            askDelete(log) {
+                this.modals.confirmDelete = log;
+            },
+            processDelete() {
+                const log = this.modals.confirmDelete;
+                const idx = this.logs.findIndex(l => l.id === log.id);
+                if (idx !== -1) {
+                    this.addToHistory('Delete', log.user.name, log.id, [log]);
+                    this.logs.splice(idx, 1);
+                    this.showToast('Terhapus', 'Log dihapus & masuk History.', 'success');
+                }
+                this.modals.confirmDelete = null;
+            },
+            askClearAll() {
+                if(this.logs.length === 0) return this.showToast('Info', 'Log sudah kosong.', 'error');
+                this.modals.confirmClear = true;
+            },
+            processClearAll() {
+                this.addToHistory('Clear All', 'All Logs', `BATCH-${Date.now()}`, [...this.logs]);
+                this.logs = [];
+                this.modals.confirmClear = false;
+                this.showToast('Selesai', 'Semua log dibersihkan.', 'success');
+            },
+            
+            // --- HISTORY FEATURE ---
+            openHistory() {
+                this.modals.history = true;
+            },
+            sortHistory(key) {
+                if (this.historySortKey === key) this.historySortAsc = !this.historySortAsc;
+                else { this.historySortKey = key; this.historySortAsc = true; }
+            },
+            addToHistory(action, targetName, dataId, fullDataObj) {
+                this.adminHistory.unshift({
+                    action: action,
+                    target: targetName,
+                    dataId: dataId,
+                    data: fullDataObj, 
+                    timestamp: new Date().toLocaleString('id-ID')
+                });
+            },
+            
+            // --- HISTORY CONFIRMATION & ACTIONS ---
+            askRestoreHistory(item, index) {
+                this.activeHistoryAction = { item, index };
+                this.modals.confirmHistoryRestore = true;
+            },
+            processRestoreHistory() {
+                if(this.activeHistoryAction) {
+                    const { item, index } = this.activeHistoryAction;
+                    
+                    if(item.data && Array.isArray(item.data)) {
+                        this.logs.push(...item.data);
+                    }
+                    this.adminHistory.splice(index, 1);
+                    this.showToast('Restored', 'Data berhasil dikembalikan.', 'success');
+                    
+                    this.sortKey = 'timestamp';
+                    this.sortAsc = false;
+                    
+                    if(this.adminHistory.length === 0) this.modals.history = false;
+                }
+                this.modals.confirmHistoryRestore = false;
+                this.activeHistoryAction = null;
+            },
+
+            askDeleteHistory(index) {
+                this.activeHistoryAction = { index };
+                this.modals.confirmHistoryDelete = true;
+            },
+            processDeleteHistory() {
+                if(this.activeHistoryAction) {
+                    this.adminHistory.splice(this.activeHistoryAction.index, 1);
+                    this.showToast('Deleted', 'Item history dihapus.', 'success');
+                }
+                this.modals.confirmHistoryDelete = false;
+                this.activeHistoryAction = null;
+            },
+
+            askClearHistory() {
+                this.modals.confirmHistoryClear = true;
+            },
+            processClearHistory() {
+                this.adminHistory = [];
+                this.modals.confirmHistoryClear = false;
+                this.showToast('Cleaned', 'History Admin telah dibersihkan.', 'success');
+            },
+
+            viewFullData(item) {
+                this.activeHistoryItem = item;
+                this.modals.historyDetail = true;
+            },
+            
+            copyHistoryData() {
+                if(this.activeHistoryItem) {
+                    navigator.clipboard.writeText(JSON.stringify(this.activeHistoryItem.data, null, 2));
+                    this.showToast('Copied', 'JSON Data disalin ke clipboard.');
+                }
+            },
+
+            openDetail(log) {
+                this.activeLog = log;
+                this.modals.detail = true;
+            },
+
+            // --- UTILS ---
+            sortBy(key) {
+                if (this.sortKey === key) this.sortAsc = !this.sortAsc;
+                else { this.sortKey = key; this.sortAsc = true; }
+            },
+            jumpToPage() {
+                if (this.jumpPageInput >= 1 && this.jumpPageInput <= this.totalPages) {
+                    this.currentPage = this.jumpPageInput;
+                    this.jumpPageInput = '';
+                }
+            },
+            showToast(title, message, type = 'success') {
+                this.toast = { show: true, title, message, type };
+                if (this.toast.timer) clearTimeout(this.toast.timer);
+                this.toast.timer = setTimeout(() => { this.toast.show = false; }, 3000);
+            },
+            copyToClipboard(text) {
+                navigator.clipboard.writeText(text);
+                this.showToast('Disalin', text + ' telah disalin ke clipboard.');
+            },
+            
+            // --- FORMATTING & ICONS ---
+            getBrowserIcon(browser) {
+                if(browser.includes('Chrome')) return 'ri-chrome-fill';
+                if(browser.includes('Firefox')) return 'ri-firefox-fill';
+                if(browser.includes('Safari')) return 'ri-safari-fill';
+                if(browser.includes('Edge')) return 'ri-edge-fill';
+                return 'ri-global-line';
+            },
+            getDeviceIcon(device) {
+                if(device.includes('Windows')) return 'ri-windows-fill';
+                if(device.includes('Mac')) return 'ri-finder-fill';
+                if(device.includes('Android')) return 'ri-android-fill';
+                if(device.includes('iPhone')) return 'ri-apple-fill';
+                return 'ri-device-line';
+            },
+            formatDate(iso) {
+                const d = new Date(iso);
+                return {
+                    date: d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+                    time: d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                    full: d.toLocaleString('id-ID')
+                };
+            },
+
+            // --- DATA GENERATOR ---
+            generateLogs() {
+                const names = ['Andi Saputra', 'Budi Santoso', 'Citra Kirana', 'Dewi Persik', 'Eko Patrio', 'Fajar Sadboy', 'Gading Marten'];
+                const roles = ['Member', 'Reseller', 'Reseller VIP', 'Reseller VVIP', 'Super Admin', 'Guest'];
+                const events = ['User Login Success', 'Login Failed (Wrong Password)', 'Checkout Item #INV-293', 'Update Profile Picture', 'Delete Transaction', 'View Product Detail', 'Topup Balance'];
+                const browsers = ['Chrome 120', 'Firefox 110', 'Safari 17', 'Edge 90'];
+                const devices = ['Windows 11', 'MacOS Sonoma', 'Android 14', 'iPhone 15 Pro'];
+                const countries = ['id', 'us', 'sg', 'my', 'jp'];
+
+                this.logs = Array.from({length: 50}, (_, i) => {
+                    const role = roles[Math.floor(Math.random() * roles.length)];
+                    return {
+                        id: `LOG-${Date.now()}-${i}`,
+                        user: {
+                            name: role === 'Guest' ? 'Visitor Guest' : names[Math.floor(Math.random() * names.length)],
+                            role: role,
+                            avatar: `https://ui-avatars.com/api/?name=${names[i % names.length]}&background=0033AA&color=fff`
+                        },
+                        contact: {
+                            email: `user${i}@marspedia.id`,
+                            phone: `0812${Math.floor(10000000 + Math.random() * 90000000)}`
+                        },
+                        event: events[Math.floor(Math.random() * events.length)],
+                        url: role === 'Guest' ? '/home/landing' : '/member/dashboard/transaksi',
+                        ip: {
+                            addr: `192.168.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`,
+                            countryCode: countries[Math.floor(Math.random() * countries.length)]
+                        },
+                        browser: browsers[Math.floor(Math.random() * browsers.length)],
+                        device: devices[Math.floor(Math.random() * devices.length)],
+                        timestamp: new Date(Date.now() - Math.floor(Math.random() * 1000000000)).toISOString()
+                    };
+                }).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            }
+        },
+        mounted() {
+            this.generateLogs();
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

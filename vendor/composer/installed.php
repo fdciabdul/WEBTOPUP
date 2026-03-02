@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'laravel/laravel',
-        'pretty_version' => 'v12.11.1',
-        'version' => '12.11.1.0',
-        'reference' => null,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '67acd33dc6222f3adeeb6e80787c4fee10631492',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -382,6 +382,15 @@
                 0 => 'v12.46.0',
             ),
         ),
+        'ipaymu/ipaymu-php-api' => array(
+            'pretty_version' => 'v3.0.2',
+            'version' => '3.0.2.0',
+            'reference' => 'd020ee9d83fccfdcdd29e950ff1b7662a743a82e',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../ipaymu/ipaymu-php-api',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'kodova/hamcrest-php' => array(
             'dev_requirement' => true,
             'replaced' => array(
@@ -398,9 +407,9 @@
             'dev_requirement' => false,
         ),
         'laravel/laravel' => array(
-            'pretty_version' => 'v12.11.1',
-            'version' => '12.11.1.0',
-            'reference' => null,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '67acd33dc6222f3adeeb6e80787c4fee10631492',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

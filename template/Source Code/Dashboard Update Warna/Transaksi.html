@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Pro - Transaksi v2.1 (Unified Blue #0033AA)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        // Mengatur Brand Color menjadi #0033AA
+                        brand: { 
+                            DEFAULT: '#0033AA', 
+                            50: '#F0F4FF', // Lightest Blue background
+                            100: '#E0E7FF', 
+                            500: '#0033AA', // Main Brand Color
+                            600: '#002B88', // Hover state
+                            700: '#002277'  // Active state
+                        }
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 3s infinite',
+                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                    },
+                    keyframes: {
+                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } },
+                        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+                        pop: { '0%': { transform: 'scale(0.9)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F8FAFC; overflow-x: hidden; }
+        
+        /* Custom Scrollbar - Unified Blue */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0033AA; }
+
+        /* Glass Panel Styling */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid #E2E8F0;
+            box-shadow: 4px 0 24px rgba(0, 51, 170, 0.02);
+        }
+
+        /* Sidebar Styling */
+        .nav-item {
+            display: flex; align-items: center; gap: 0.8rem; padding: 0.65rem 1rem;
+            border-radius: 0.75rem; font-weight: 600; font-size: 0.9rem;
+            color: #64748b; margin-bottom: 0.2rem;
+            transition: all 0.3s; width: 100%; text-align: left;
+        }
+        .nav-item:hover { background: #F0F4FF; color: #0033AA; transform: translateX(4px); }
+        
+        /* Nav Active - Solid Blue #0033AA */
+        .nav-active {
+            background-color: #0033AA;
+            color: white !important;
+            box-shadow: 0 8px 16px -4px rgba(0, 51, 170, 0.3);
+        }
+        
+        .nav-section {
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            color: #94a3b8; margin-top: 1.5rem; margin-bottom: 0.5rem; padding-left: 0.5rem;
+        }
+
+        /* Table Specifics - Header #0033AA */
+        .table-header { 
+            background-color: #0033AA;
+            color: white; 
+        }
+        .table-row-hover:hover { background-color: #F8FAFC; }
+        
+        /* iOS Input Style */
+        .ios-input {
+            background: #F1F5F9; border: 1px solid transparent;
+            transition: all 0.3s;
+        }
+        .ios-input:focus { background: white; border-color: #0033AA; box-shadow: 0 0 0 3px rgba(0, 51, 170, 0.1); }
+
+        /* Unified Button Hover */
+        .btn-brand {
+            background-color: #0033AA; color: white;
+        }
+        .btn-brand:hover {
+            background-color: #002B88;
+            box-shadow: 0 4px 12px rgba(0, 51, 170, 0.25);
+        }
+
+        /* Member Role Badge Style */
+        .role-badge {
+            background-color: #0033AA;
+            color: white;
+            border: 1px solid #0033AA;
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-800 font-sans selection:bg-brand-500 selection:text-white">
+
+<div id="app" class="flex h-screen w-full relative">
+
+    <transition name="pop">
+        <div v-if="toast.show" class="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+            <div class="bg-white/95 backdrop-blur-md text-slate-800 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-pop border border-slate-200 pointer-events-auto min-w-[300px] border-l-4" :class="toast.type === 'success' ? 'border-l-brand-500' : 'border-l-red-500'">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-xl shadow-md" :class="toast.type === 'success' ? 'bg-brand-500' : 'bg-red-500'">
+                    <i :class="toast.type === 'success' ? 'ri-checkbox-circle-fill' : 'ri-error-warning-fill'"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-base">{{ toast.title }}</h4>
+                    <p class="text-xs text-slate-500 font-medium">{{ toast.message }}</p>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 glass-panel transition-transform duration-300 lg:translate-x-0 flex flex-col flex-shrink-0 z-50 h-full border-r border-slate-200 bg-white">
+        <div class="h-24 flex items-center px-8 flex-shrink-0 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                    <i class="ri-rocket-2-fill text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Marspedia</h1>
+                    <span class="text-[10px] font-bold text-white bg-brand-500 px-2 py-0.5 rounded shadow-sm">SUPER ADMIN</span>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar flex flex-col pb-10">
+            
+            <p class="nav-section">Overview</p>
+            <button class="nav-item"><i class="ri-layout-grid-line text-lg"></i> Dashboard</button>
+            <button class="nav-item nav-active"><i class="ri-file-text-fill text-lg"></i> Transaksi</button>
+            <button class="nav-item"><i class="ri-truck-line text-lg"></i> Pengiriman</button>
+            <button class="nav-item"><i class="ri-shopping-bag-3-line text-lg"></i> Produk</button>
+            <button class="nav-item"><i class="ri-list-check text-lg"></i> Kategori</button>
+            <button class="nav-item"><i class="ri-user-smile-line text-lg"></i> Member</button>
+
+            <p class="nav-section">Content</p>
+            <button class="nav-item"><i class="ri-chat-smile-2-line text-lg"></i> Ulasan</button>
+            <button class="nav-item"><i class="ri-question-answer-line text-lg"></i> FAQ</button>
+            <button class="nav-item"><i class="ri-gift-2-line text-lg"></i> Bonus File</button>
+            <button class="nav-item"><i class="ri-broadcast-line text-lg"></i> Media Liputan</button>
+            <button class="nav-item"><i class="ri-article-line text-lg"></i> Informasi</button>
+
+            <p class="nav-section">System</p>
+            <button class="nav-item"><i class="ri-settings-4-line text-lg"></i> Setting</button>
+            <button class="nav-item"><i class="ri-bank-card-2-line text-lg"></i> Payment Gateway</button>
+            <button class="nav-item"><i class="ri-gamepad-line text-lg"></i> API Games</button>
+            <button class="nav-item"><i class="ri-notification-4-line text-lg"></i> Notifikasi</button>
+            <button class="nav-item"><i class="ri-shield-check-line text-lg"></i> Keamanan</button>
+            <button class="nav-item"><i class="ri-delete-bin-5-line text-lg"></i> Auto Delete</button>
+            <button @click="modals.logs = true" class="nav-item text-brand-600 font-bold bg-brand-50"><i class="ri-history-line text-lg"></i> Log Activity</button>
+
+            <div class="mt-8 border-t border-slate-100 pt-4">
+                <button class="nav-item text-slate-400 hover:text-red-600 hover:bg-red-50 w-full"><i class="ri-logout-box-line text-lg"></i> Sign Out</button>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden w-full bg-[#F8FAFC]">
+        
+        <header class="p-4 md:p-8 pb-0 flex flex-col gap-6 z-20 flex-shrink-0">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 bg-white rounded-xl shadow-sm text-slate-500"><i class="ri-menu-2-line"></i></button>
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-slate-800">Transaksi</h2>
+                        <p class="text-xs text-slate-500 font-medium">Kelola semua pesanan masuk (FIFO System).</p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button @click="triggerUndo" v-if="lastAction" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg flex items-center gap-2 animate-fade-in hover:bg-slate-700 transition">
+                        <i class="ri-arrow-go-back-line"></i> Undo
+                    </button>
+                    <div class="flex bg-white rounded-xl shadow-sm border border-slate-200 p-1">
+                        <button @click="exportData" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center gap-2">
+                            <i class="ri-download-cloud-2-line"></i> Export
+                        </button>
+                        <div class="w-px bg-slate-200 my-1"></div>
+                        <button @click="triggerImport" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center gap-2">
+                            <i class="ri-upload-cloud-2-line"></i> Import
+                        </button>
+                        <input type="file" ref="fileInput" class="hidden" accept=".json" @change="handleImport">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-2 rounded-[1.5rem] shadow-sm border border-slate-200 flex flex-col xl:flex-row gap-2 items-start xl:items-center">
+                <div class="flex overflow-x-auto gap-1 p-1 bg-slate-50/50 rounded-2xl xl:w-fit custom-scrollbar max-w-full">
+                    <button v-for="s in statuses" :key="s.key" 
+                        @click="activeStatus = s.key; currentPage = 1"
+                        :class="activeStatus === s.key ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/30' : 'bg-white text-slate-500 hover:bg-white/60 hover:text-brand-600'"
+                        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 border border-transparent">
+                        <i :class="s.icon"></i> {{ s.label }} 
+                        <span v-if="activeStatus === s.key" class="bg-white text-brand-600 px-1.5 py-0.5 rounded text-[10px]">{{ getCount(s.key) }}</span>
+                    </button>
+                </div>
+
+                <div class="flex-1 flex flex-col md:flex-row gap-2 items-center w-full">
+                    <div class="relative w-full flex-1 group">
+                        <i class="ri-search-2-line absolute left-4 top-3 text-slate-400 group-focus-within:text-brand-600 transition-colors"></i>
+                        <input v-model="searchQuery" type="text" placeholder="Cari ID Invoice, Produk, User..." class="w-full bg-slate-50 border border-transparent pl-11 pr-4 py-2.5 rounded-2xl text-sm font-bold text-slate-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-200 transition-all">
+                    </div>
+                    
+                    <div class="flex gap-2 w-full md:w-auto items-center">
+                        <div v-if="timeFilter === 'Custom'" class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-1 rounded-xl animate-fade-in">
+                            <input type="date" class="bg-transparent text-xs font-bold text-slate-600 focus:outline-none px-2 h-full">
+                            <span class="text-slate-300">-</span>
+                            <input type="date" class="bg-transparent text-xs font-bold text-slate-600 focus:outline-none px-2 h-full">
+                        </div>
+
+                        <select v-model="timeFilter" class="bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 text-slate-600 text-xs font-bold rounded-2xl px-4 py-2.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all h-[42px]">
+                            <option v-for="t in timeFilters" :value="t">{{ t }}</option>
+                        </select>
+                        <button class="bg-brand-600 hover:bg-brand-700 text-white w-[42px] h-[42px] rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/30 transition-all active:scale-95 flex-shrink-0">
+                            <i class="ri-filter-3-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 flex flex-col overflow-hidden px-4 md:px-8 py-6">
+            <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col flex-1 overflow-hidden relative">
+                
+                <div class="overflow-auto flex-1 custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-brand-500 text-white text-xs uppercase tracking-wider sticky top-0 z-20 shadow-md">
+                            <tr>
+                                <th class="px-6 py-5 font-extrabold w-16 text-center rounded-tl-none">Note</th>
+                                <th @click="sortBy('date')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition">Invoice & Waktu <i class="ri-sort-asc ml-1 opacity-50"></i></th>
+                                <th @click="sortBy('product')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition">Produk <i class="ri-sort-asc ml-1 opacity-50"></i></th>
+                                <th @click="sortBy('total')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition">Harga & Metode <i class="ri-sort-asc ml-1 opacity-50"></i></th>
+                                <th class="px-6 py-5 font-extrabold">Member & IP</th>
+                                <th class="px-6 py-5 font-extrabold">Status</th>
+                                <th class="px-6 py-5 font-extrabold text-right rounded-tr-none">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm font-medium text-slate-600 divide-y divide-slate-50">
+                            <tr v-for="(trx, idx) in paginatedData" :key="trx.id" class="table-row-hover group transition-colors duration-200 bg-white">
+                                
+                                <td class="px-6 py-4 text-center">
+                                    <button @click="openNoteModal(trx)" class="relative w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:scale-110 active:scale-95" 
+                                        :class="trx.note ? 'bg-yellow-100 text-yellow-600' : 'bg-slate-50 text-slate-300 hover:text-brand-500 hover:bg-brand-50'">
+                                        <i class="ri-sticky-note-fill text-xl" :class="trx.note ? 'animate-bounce-slow' : ''"></i>
+                                        <span v-if="trx.note" class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                                    </button>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-mono font-bold text-xs text-brand-600 bg-brand-50 px-2 py-1 rounded border border-brand-100">{{ trx.id }}</span>
+                                        <button @click="copyToClipboard(trx.id)" class="w-6 h-6 rounded flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-brand-600 hover:text-white transition shadow-sm" title="Salin Invoice ID">
+                                            <i class="ri-file-copy-line text-xs"></i>
+                                        </button>
+                                    </div>
+                                    <div class="text-[11px] text-slate-400 font-bold mt-1.5 flex items-center gap-1">
+                                        <i class="ri-time-line"></i> {{ formatDate(trx.date) }}
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="flex items-start gap-3">
+                                        <img :src="trx.img" class="w-10 h-10 rounded-lg object-cover shadow-sm border border-slate-100">
+                                        <div>
+                                            <div class="font-bold text-slate-800 line-clamp-1 max-w-[180px]">{{ trx.product }}</div>
+                                            <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold border border-slate-200 inline-block mt-0.5">{{ trx.category }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="font-extrabold text-slate-800 text-[13px] mb-1.5">{{ formatRupiah(trx.total) }}</div>
+                                    <div class="flex items-center justify-start">
+                                        <img :src="getBankLogo(trx.method)" class="h-6 w-auto object-contain" :title="trx.method">
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="mb-1.5 flex items-center gap-1 group/member">
+                                        <span class="font-bold text-slate-800 text-xs">{{ trx.user.name }}</span>
+                                        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold role-badge ml-1">{{ trx.user.role }}</span>
+                                        
+                                        <button @click="copyToClipboard(trx.user.name)" class="opacity-0 group-hover/member:opacity-100 text-slate-300 hover:text-brand-600 transition ml-1">
+                                            <i class="ri-file-copy-line text-xs"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-1.5 group/ip w-fit">
+                                        <img :src="getFlagUrl(trx.flag)" class="w-4 h-3 object-cover rounded shadow-sm">
+                                        <span class="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{{ trx.ip }}</span>
+                                        <button @click="copyToClipboard(trx.ip)" class="opacity-0 group-hover/ip:opacity-100 text-slate-300 hover:text-brand-600 transition">
+                                            <i class="ri-file-copy-line text-xs"></i>
+                                        </button>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="relative group/status w-[110px]">
+                                        <div :class="getStatusBtnClass(trx.status)" class="flex items-center justify-between px-3 py-1.5 rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer border border-white/20">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider">{{ trx.status }}</span>
+                                            <i class="ri-arrow-down-s-fill text-xs opacity-80"></i>
+                                        </div>
+                                        <select v-model="trx.status" @change="saveHistory('Status Change', trx)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                            <option v-for="opt in statusOptions" :value="opt">{{ opt }}</option>
+                                        </select>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button @click="openSendModal(trx)" class="w-8 h-8 rounded-lg bg-white border border-brand-100 text-brand-600 hover:bg-brand-600 hover:text-white transition shadow-sm flex items-center justify-center" title="Kirim Pesanan Manual">
+                                            <i class="ri-send-plane-fill"></i>
+                                        </button>
+                                        <button @click="openDetail(trx)" class="w-8 h-8 rounded-lg bg-white border border-brand-100 text-brand-600 hover:bg-brand-600 hover:text-white transition shadow-sm flex items-center justify-center" title="Detail">
+                                            <i class="ri-eye-line"></i>
+                                        </button>
+                                        <button v-if="lastAction && lastAction.data.id === trx.id" @click="triggerUndo" class="w-8 h-8 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition shadow-sm flex items-center justify-center animate-pop" title="Undo Aksi Terakhir">
+                                            <i class="ri-arrow-go-back-line"></i>
+                                        </button>
+                                        
+                                        <button v-if="activeStatus === 'Trash'" @click="restoreTrx(trx)" class="w-8 h-8 rounded-lg bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition shadow-sm flex items-center justify-center" title="Restore">
+                                            <i class="ri-refresh-line"></i>
+                                        </button>
+                                        <button @click="askDelete(trx)" class="w-8 h-8 rounded-lg bg-white border border-red-100 text-red-500 hover:bg-red-500 hover:text-white transition shadow-sm flex items-center justify-center" title="Hapus">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="paginatedData.length === 0">
+                                <td colspan="7" class="py-20 text-center">
+                                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400 text-3xl"><i class="ri-inbox-line"></i></div>
+                                    <p class="font-bold text-slate-500">Tidak ada data transaksi.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-white border-t border-slate-100 p-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0">
+                    <div class="flex items-center gap-4">
+                        <p class="text-xs font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                            Total Data: <span class="text-brand-600">{{ filteredData.length }}</span>
+                        </p>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Tampilkan</span>
+                            <select v-model="itemsPerPage" @change="currentPage = 1" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2 py-1.5 focus:outline-none cursor-pointer focus:border-brand-500">
+                                <option :value="10">10</option>
+                                <option :value="50">50</option>
+                                <option :value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap justify-center">
+                        <button @click="currentPage = 1" :disabled="currentPage === 1" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 disabled:opacity-50"><i class="ri-skip-back-line"></i></button>
+                        <button @click="currentPage--" :disabled="currentPage === 1" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 disabled:opacity-50"><i class="ri-arrow-left-s-line"></i></button>
+                        
+                        <span class="text-xs font-bold text-slate-700 mx-2">Page {{ currentPage }} / {{ totalPages }}</span>
+                        
+                        <button @click="currentPage++" :disabled="currentPage === totalPages" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 disabled:opacity-50"><i class="ri-arrow-right-s-line"></i></button>
+                        <button @click="currentPage = totalPages" :disabled="currentPage === totalPages" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 disabled:opacity-50"><i class="ri-skip-forward-line"></i></button>
+
+                        <div class="flex items-center gap-1 ml-2 pl-2 border-l border-slate-200">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Go to</span>
+                            <input type="number" v-model.number="jumpPageInput" @keyup.enter="jumpToPage" class="w-12 h-8 rounded-lg border border-slate-200 text-center text-xs font-bold text-slate-700 focus:outline-none focus:border-brand-500" min="1" :max="totalPages">
+                            <button @click="jumpToPage" class="h-8 px-2 rounded-lg bg-brand-50 text-brand-600 text-[10px] font-bold hover:bg-brand-600 hover:text-white transition">Go</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div v-if="modals.send" class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-pop flex flex-col max-h-[90vh]">
+            <div class="bg-brand-500 text-white border-b border-brand-600 px-8 py-5">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="font-bold text-xl">Kirim Pesanan Manual</h3>
+                        <p class="text-xs text-brand-100 font-medium">Ke: <span class="font-bold text-white">{{ activeTrx?.user?.name }}</span></p>
+                    </div>
+                    <button @click="modals.send = null" class="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-red-500 transition"><i class="ri-close-line text-lg"></i></button>
+                </div>
+                <div class="flex gap-2 p-1.5 bg-brand-700/50 rounded-xl">
+                    <button @click="sendModalTab = 'akun'" :class="sendModalTab === 'akun' ? 'bg-white text-brand-600 shadow-sm' : 'text-brand-100 hover:text-white'" class="flex-1 py-3 rounded-lg text-xs font-bold transition-all uppercase tracking-wide">Akun</button>
+                    <button @click="sendModalTab = 'link'" :class="sendModalTab === 'link' ? 'bg-white text-brand-600 shadow-sm' : 'text-brand-100 hover:text-white'" class="flex-1 py-3 rounded-lg text-xs font-bold transition-all uppercase tracking-wide">Link</button>
+                    <button @click="sendModalTab = 'custom'" :class="sendModalTab === 'custom' ? 'bg-white text-brand-600 shadow-sm' : 'text-brand-100 hover:text-white'" class="flex-1 py-3 rounded-lg text-xs font-bold transition-all uppercase tracking-wide">Custom</button>
+                </div>
+            </div>
+            
+            <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
+                <div v-if="sendModalTab === 'akun'" class="space-y-5 animate-fade-in">
+                    <div class="grid grid-cols-2 gap-5">
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 uppercase mb-1.5 block">Username / Email</label>
+                            <input v-model="sendData.username" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:border-brand-500 transition" placeholder="Contoh: user123">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 uppercase mb-1.5 block">Password</label>
+                            <input v-model="sendData.password" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:border-brand-500 transition" placeholder="******">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-5">
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 uppercase mb-1.5 block">PIN / Kode</label>
+                            <input v-model="sendData.pin" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:border-brand-500 transition" placeholder="1234">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 uppercase mb-1.5 block">Profile / Info</label>
+                            <input v-model="sendData.profile" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:border-brand-500 transition" placeholder="Profile A">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1.5 block">Catatan</label>
+                        <textarea v-model="sendData.note" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 focus:outline-none focus:border-brand-500 transition h-24" placeholder="Pesan tambahan untuk pembeli..."></textarea>
+                    </div>
+                    <div v-for="(field, index) in sendData.accountExtras" :key="'acc-'+index" class="flex gap-3 items-start mt-2">
+                        <div class="flex-1 space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200 border-dashed">
+                            <input v-model="field.title" type="text" class="w-full bg-transparent border-b border-slate-300 rounded-none px-0 py-1 text-xs font-bold text-slate-500 uppercase focus:outline-none focus:border-brand-500" placeholder="JUDUL KOLOM BARU">
+                            <input v-model="field.value" type="text" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:border-brand-500" placeholder="Isi data...">
+                        </div>
+                        <button @click="removeExtraField('akun', index)" class="mt-8 text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition"><i class="ri-delete-bin-line"></i></button>
+                    </div>
+                    <button @click="addExtraField('akun')" class="w-full py-3 rounded-xl border-2 border-dashed border-slate-300 text-slate-500 font-bold text-xs hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50 transition flex items-center justify-center gap-2 mt-2">
+                        <i class="ri-add-circle-line text-lg"></i> Tambah Kolom Baru
+                    </button>
+                </div>
+                
+                <div class="mt-8 pt-5 border-t border-slate-100 space-y-4">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Opsi Notifikasi Otomatis</p>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600"><i class="ri-whatsapp-fill text-lg"></i></div>
+                                <span class="text-xs font-bold text-slate-700">WhatsApp</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="notifyOptions.wa" class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><i class="ri-mail-fill text-lg"></i></div>
+                                <span class="text-xs font-bold text-slate-700">Email</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" v-model="notifyOptions.email" class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-8 pt-0 bg-white">
+                <button @click="askSendConfirmation" class="w-full py-4 rounded-xl font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-lg shadow-brand-500/30 transition flex items-center justify-center gap-3 text-sm transform active:scale-[0.99]">
+                    <i class="ri-send-plane-2-fill text-lg"></i> KONFIRMASI & KIRIM SEKARANG
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modals.detail" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div @click="modals.detail = null" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+        <div class="bg-[#F2F2F7] w-full max-w-4xl h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col relative animate-slide-up z-10 border border-white/20">
+            <div class="bg-white/80 backdrop-blur-md px-8 py-5 flex justify-between items-center border-b border-slate-200 sticky top-0 z-20">
+                <div>
+                    <h2 class="font-black text-2xl text-slate-900">Detail Pesanan</h2>
+                    <p class="text-xs font-bold text-brand-600 font-mono mt-0.5">{{ activeTrx.id }}</p>
+                </div>
+                <div class="flex gap-3">
+                    <button class="w-10 h-10 rounded-full bg-slate-200 hover:bg-brand-600 hover:text-white text-slate-600 flex items-center justify-center transition"><i class="ri-printer-line"></i></button>
+                    <button @click="modals.detail = null" class="w-10 h-10 rounded-full bg-slate-200 hover:bg-red-500 hover:text-white text-slate-600 flex items-center justify-center transition"><i class="ri-close-line text-xl"></i></button>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 p-4 opacity-10"><i class="ri-shopping-bag-3-fill text-9xl text-brand-600"></i></div>
+                            <h3 class="font-bold text-slate-900 text-lg mb-4 flex items-center gap-2 relative z-10"><i class="ri-box-3-fill text-brand-500"></i> Informasi Produk</h3>
+                            <div class="flex gap-5 relative z-10">
+                                <img :src="activeTrx.img" class="w-24 h-24 rounded-2xl object-cover shadow-md border border-slate-100">
+                                <div class="flex-1 space-y-3">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-400 uppercase">Nama Produk</label>
+                                        <div class="font-bold text-slate-800 text-sm leading-snug">{{ activeTrx.product }}</div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="text-[10px] font-bold text-slate-400 uppercase">Kategori</label>
+                                            <div class="font-bold text-slate-700 text-xs bg-slate-100 px-2 py-1 rounded w-fit">{{ activeTrx.category }}</div>
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] font-bold text-slate-400 uppercase">Variant</label>
+                                            <div class="font-bold text-slate-700 text-xs">Premium License</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 relative z-10">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-2">Data Inputan <i class="ri-file-copy-line cursor-pointer hover:text-brand-600" @click="copyToClipboard(activeTrx.inputData)"></i></label>
+                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mt-1 text-xs font-mono text-slate-600 break-all group-hover:bg-brand-50 transition-colors">
+                                    {{ activeTrx.inputData }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                            <h3 class="font-bold text-slate-900 text-lg mb-4 flex items-center gap-2"><i class="ri-user-smile-fill text-brand-500"></i> Data Pembeli</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 group cursor-pointer" @click="copyToClipboard(activeTrx.user.name)">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold text-lg">{{ activeTrx.user.initial }}</div>
+                                        <div>
+                                            <p class="text-xs text-slate-400 font-bold">Nama Lengkap</p>
+                                            <p class="text-sm font-bold text-slate-800">{{ activeTrx.user.name }}</p>
+                                        </div>
+                                    </div>
+                                    <i class="ri-file-copy-line text-slate-300 group-hover:text-brand-600 transition"></i>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 group cursor-pointer" @click="copyToClipboard(activeTrx.user.email)">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600"><i class="ri-mail-fill"></i></div>
+                                        <div>
+                                            <p class="text-xs text-slate-400 font-bold">Email Address</p>
+                                            <p class="text-sm font-bold text-slate-800">{{ activeTrx.user.email }}</p>
+                                        </div>
+                                    </div>
+                                    <i class="ri-file-copy-line text-slate-300 group-hover:text-brand-600 transition"></i>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 group cursor-pointer" @click="copyToClipboard(activeTrx.user.phone)">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600"><i class="ri-whatsapp-fill"></i></div>
+                                        <div>
+                                            <p class="text-xs text-slate-400 font-bold">WhatsApp</p>
+                                            <p class="text-sm font-bold text-slate-800">{{ activeTrx.user.phone }}</p>
+                                        </div>
+                                    </div>
+                                    <i class="ri-file-copy-line text-slate-300 group-hover:text-brand-600 transition"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                            <h3 class="font-bold text-slate-900 text-lg mb-4 flex items-center gap-2"><i class="ri-shield-check-fill text-brand-500"></i> Status & Pembayaran</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Status Pesanan</label>
+                                    <select v-model="activeTrx.status" class="w-full ios-input rounded-xl px-3 py-2 text-xs font-bold text-slate-700 cursor-pointer">
+                                        <option v-for="opt in statusOptions" :value="opt">{{ opt }}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Status Pembayaran</label>
+                                    <select v-model="activeTrx.paymentStatus" class="w-full ios-input rounded-xl px-3 py-2 text-xs font-bold text-slate-700 cursor-pointer">
+                                        <option value="Paid">Lunas</option>
+                                        <option value="Unpaid">Belum Bayar</option>
+                                        <option value="Refund">Refunded</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-brand-700 to-brand-500 rounded-3xl p-6 shadow-lg text-white relative overflow-hidden">
+                            <div class="absolute -right-10 -top-10 w-40 h-40 bg-white rounded-full blur-[60px] opacity-20"></div>
+                            <h3 class="font-bold text-lg mb-6 flex items-center gap-2 relative z-10"><i class="ri-calculator-fill text-white/80"></i> Rincian Keuangan</h3>
+                            <div class="space-y-4 relative z-10">
+                                <div>
+                                    <label class="text-[10px] font-bold text-blue-200 uppercase mb-1 block">Harga Modal (Input)</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2.5 text-blue-200 text-xs font-bold">Rp</span>
+                                        <input type="text" v-model="activeTrx.costPriceInput" @input="formatCostPrice" class="w-full bg-white/10 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm font-bold text-white focus:outline-none focus:bg-white/20 transition placeholder:text-white/30" placeholder="0">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 pt-2">
+                                    <div class="bg-white/5 rounded-xl p-3 border border-white/5">
+                                        <p class="text-[10px] text-blue-200 font-bold uppercase">Harga Jual</p>
+                                        <p class="text-sm font-bold text-white">{{ formatRupiah(activeTrx.total) }}</p>
+                                    </div>
+                                    <div class="bg-white/10 rounded-xl p-3 border border-white/20">
+                                        <p class="text-[10px] text-blue-100 font-bold uppercase">Estimasi Profit</p>
+                                        <p class="text-lg font-black text-white">{{ formatRupiah(calculateProfit) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i class="ri-sticky-note-fill text-brand-500"></i> Catatan Admin</h3>
+                                <button v-if="activeTrx.note" @click="copyToClipboard(activeTrx.note)" class="text-xs font-bold text-brand-600 hover:text-brand-700 bg-brand-50 px-2 py-1 rounded flex items-center gap-1"><i class="ri-file-copy-line"></i> Salin</button>
+                            </div>
+                            <textarea v-model="activeTrx.note" class="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm text-slate-700 focus:ring-2 focus:ring-brand-400 focus:outline-none min-h-[100px] placeholder:text-slate-400 font-medium" placeholder="Tulis catatan khusus untuk transaksi ini..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white/80 backdrop-blur-md px-8 py-4 border-t border-slate-200 flex justify-end gap-3 sticky bottom-0 z-20">
+                <button @click="modals.detail = null" class="px-6 py-3 rounded-xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition">Tutup</button>
+                <button @click="saveChanges" class="px-6 py-3 rounded-xl font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-lg shadow-brand-500/30 transition flex items-center gap-2"><i class="ri-save-3-line"></i> Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modals.note" class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-[2px]">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 animate-pop relative">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-slate-800">Catatan Admin</h3>
+                <button v-if="modals.note.content" @click="copyToClipboard(modals.note.content)" class="text-xs font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg flex items-center gap-1 transition">
+                    <i class="ri-file-copy-line"></i> Salin
+                </button>
+            </div>
+            <textarea v-model="modals.note.content" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-brand-500 h-48 mb-4 font-medium text-slate-700" placeholder="Belum ada catatan..."></textarea>
+            <div class="flex justify-end gap-2">
+                <button @click="modals.note = null" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 transition">Batal</button>
+                <button @click="saveNoteFromModal" class="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-lg shadow-brand-500/30 transition">Simpan Catatan</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modals.sendConfirm" class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl animate-pop text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-brand-500"></div>
+            <div class="w-20 h-20 bg-brand-50 rounded-full flex items-center justify-center text-brand-600 mx-auto mb-5 text-4xl shadow-sm">
+                <i class="ri-mail-send-line"></i>
+            </div>
+            <h3 class="font-black text-2xl text-slate-800 mb-2">Kirim Sekarang?</h3>
+            <p class="text-sm text-slate-500 mb-8 font-medium leading-relaxed px-2">Data pesanan akan dikirimkan ke pembeli melalui notifikasi otomatis (WA/Email).</p>
+            <div class="flex flex-col gap-3">
+                <button @click="processSend" class="w-full py-3.5 font-bold text-white bg-brand-600 rounded-xl hover:bg-brand-700 transition shadow-lg shadow-brand-500/30 flex items-center justify-center gap-2 transform active:scale-[0.98]">
+                    <i class="ri-check-line text-lg"></i> Ya, Kirim Data
+                </button>
+                <button @click="modals.sendConfirm = null" class="w-full py-3.5 font-bold text-slate-500 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modals.deleteConfirm" class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-pop text-center">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-600 mx-auto mb-4 text-3xl">
+                <i class="ri-delete-bin-line"></i>
+            </div>
+            <h3 class="font-bold text-xl text-slate-800 mb-2">Hapus Transaksi?</h3>
+            <p class="text-sm text-slate-500 mb-6">Data akan dipindahkan ke folder Trash. Anda bisa memulihkannya nanti.</p>
+            <div class="flex gap-3">
+                <button @click="modals.deleteConfirm = null" class="flex-1 py-3 font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Batal</button>
+                <button @click="confirmDelete" class="flex-1 py-3 font-bold text-white bg-red-500 rounded-xl hover:bg-red-600 transition shadow-lg shadow-red-500/30">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modals.logs" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden shadow-2xl animate-pop border border-white/20">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white z-20">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center text-xl">
+                        <i class="ri-history-line"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-black text-xl text-slate-800">Riwayat Aktivitas Admin</h2>
+                        <p class="text-xs text-slate-400 font-bold">Log perubahan data & aksi sistem.</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button @click="modals.confirmClearLogs = true" v-if="adminLogs.length > 0" class="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-bold hover:bg-red-500 hover:text-white transition flex items-center gap-2">
+                        <i class="ri-delete-bin-2-line"></i> Clear All Logs
+                    </button>
+                    <button @click="modals.logs = false" class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition">
+                        <i class="ri-close-line text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-50 border-b border-slate-100 flex items-center gap-4">
+                <div class="relative flex-1">
+                    <i class="ri-search-2-line absolute left-3 top-2.5 text-slate-400"></i>
+                    <input v-model="logSearchQuery" type="text" class="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-sm font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20" placeholder="Cari log (ID, Aksi, Deskripsi)...">
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-auto custom-scrollbar bg-[#F8FAFC] p-4">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-100 text-slate-500 text-xs uppercase tracking-wider font-bold">
+                            <tr>
+                                <th class="px-6 py-4">Waktu</th>
+                                <th class="px-6 py-4">Tipe Aksi</th>
+                                <th class="px-6 py-4">Target (ID/Ref)</th>
+                                <th class="px-6 py-4">Deskripsi / Detail</th>
+                                <th class="px-6 py-4 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50 text-sm">
+                            <tr v-for="log in filteredLogs" :key="log.id" class="hover:bg-slate-50 transition">
+                                <td class="px-6 py-4 font-mono text-slate-500 text-xs font-bold">{{ formatTime(log.time) }}</td>
+                                <td class="px-6 py-4">
+                                    <span :class="getLogBadgeClass(log.action)" class="px-2 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wide border">{{ log.action }}</span>
+                                </td>
+                                <td class="px-6 py-4 font-bold text-slate-700 font-mono">{{ log.target }}</td>
+                                <td class="px-6 py-4 text-slate-600 font-medium">{{ log.desc }}</td>
+                                <td class="px-6 py-4 text-right">
+                                    <button @click="deleteLog(log.id)" class="text-slate-300 hover:text-red-500 transition" title="Hapus Log Ini">
+                                        <i class="ri-close-circle-fill text-lg"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr v-if="filteredLogs.length === 0">
+                                <td colspan="5" class="py-12 text-center text-slate-400 font-medium">
+                                    <div class="mb-2"><i class="ri-file-history-line text-2xl opacity-50"></i></div>
+                                    Belum ada catatan aktivitas.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modals.confirmClearLogs" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-pop text-center">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-600 mx-auto mb-4 text-3xl">
+                <i class="ri-delete-bin-line"></i>
+            </div>
+            <h3 class="font-bold text-xl text-slate-800 mb-2">Hapus Semua Log?</h3>
+            <p class="text-sm text-slate-500 mb-6">Tindakan ini tidak dapat dibatalkan. Riwayat aktivitas akan kosong.</p>
+            <div class="flex gap-3">
+                <button @click="modals.confirmClearLogs = null" class="flex-1 py-3 font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Batal</button>
+                <button @click="clearAllLogs" class="flex-1 py-3 font-bold text-white bg-red-500 rounded-xl hover:bg-red-600 transition shadow-lg shadow-red-500/30">Hapus Semua</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                searchQuery: '',
+                activeStatus: 'Paid',
+                timeFilter: 'All Time',
+                currentPage: 1,
+                itemsPerPage: 10,
+                jumpPageInput: '',
+                
+                // Modals & Toast State
+                toast: { show: false, timer: null, title: 'Berhasil', message: '', type: 'success' },
+                modals: { 
+                    detail: null, 
+                    note: null, 
+                    deleteConfirm: null, 
+                    send: null, 
+                    sendConfirm: null, 
+                    logs: false,
+                    confirmClearLogs: null
+                },
+                activeTrx: null, 
+                lastAction: null,
+                
+                // SEND MODAL DATA
+                sendModalTab: 'akun',
+                sendData: {
+                    username: '', password: '', pin: '', profile: '', note: '',
+                    linkUrl: '', rarPass: '',
+                    accountExtras: [],
+                    linkExtras: [],
+                    customFields: [{ title: 'Lisensi', value: '' }]
+                },
+                notifyOptions: { wa: true, email: true },
+
+                // LOGGING SYSTEM
+                adminLogs: [],
+                logSearchQuery: '',
+
+                // Data Static
+                statuses: [
+                    { key: 'Paid', label: 'Paid', icon: 'ri-check-double-line' },
+                    { key: 'Proses', label: 'Proses', icon: 'ri-loader-4-line' },
+                    { key: 'Done', label: 'Done', icon: 'ri-checkbox-circle-line' },
+                    { key: 'Cancel', label: 'Cancel', icon: 'ri-close-circle-line' },
+                    { key: 'Unpaid', label: 'Unpaid', icon: 'ri-time-line' },
+                    { key: 'Complain', label: 'Complain', icon: 'ri-customer-service-line' },
+                    { key: 'Trash', label: 'Trash', icon: 'ri-delete-bin-2-line' },
+                    { key: 'All', label: 'Semua', icon: 'ri-list-check' }
+                ],
+                statusOptions: ['Paid', 'Proses', 'Done', 'Cancel', 'Unpaid', 'Complain'],
+                timeFilters: ['All Time', 'Yearly', 'Monthly', 'Weekly', 'Daily', 'Custom'],
+                
+                // Database
+                transactions: [],
+                sortKey: 'date',
+                sortAsc: true,
+            }
+        },
+        computed: {
+            filteredData() {
+                let data = this.transactions.filter(t => {
+                    if (this.activeStatus === 'Trash') return t.status === 'Trash';
+                    if (t.status === 'Trash') return false; 
+                    if (this.activeStatus !== 'All' && t.status !== this.activeStatus) return false;
+
+                    if (this.searchQuery) {
+                        const lower = this.searchQuery.toLowerCase();
+                        return t.id.toLowerCase().includes(lower) || 
+                               t.product.toLowerCase().includes(lower) || 
+                               t.user.name.toLowerCase().includes(lower) ||
+                               t.ip.includes(lower) || 
+                               (t.note && t.note.toLowerCase().includes(lower));
+                    }
+                    return true;
+                });
+
+                return data.sort((a, b) => {
+                    let valA = a[this.sortKey];
+                    let valB = b[this.sortKey];
+                    if (this.sortKey === 'total') { valA = a.total; valB = b.total; }
+                    
+                    if (valA < valB) return this.sortAsc ? -1 : 1;
+                    if (valA > valB) return this.sortAsc ? 1 : -1;
+                    return 0;
+                });
+            },
+            paginatedData() {
+                const start = (this.currentPage - 1) * this.itemsPerPage;
+                return this.filteredData.slice(start, start + this.itemsPerPage);
+            },
+            totalPages() {
+                return Math.ceil(this.filteredData.length / this.itemsPerPage) || 1;
+            },
+            calculateProfit() {
+                if (!this.activeTrx) return 0;
+                const cost = parseInt(this.activeTrx.costPriceInput.replace(/\./g, '')) || 0;
+                return this.activeTrx.total - cost;
+            },
+            // FILTER FOR LOGS
+            filteredLogs() {
+                return this.adminLogs.filter(log => {
+                    if (!this.logSearchQuery) return true;
+                    const q = this.logSearchQuery.toLowerCase();
+                    return log.desc.toLowerCase().includes(q) || 
+                           log.target.toLowerCase().includes(q) || 
+                           log.action.toLowerCase().includes(q);
+                });
+            }
+        },
+        methods: {
+            showToast(title, message, type = 'success') {
+                this.toast.title = title;
+                this.toast.message = message;
+                this.toast.type = type;
+                this.toast.show = true;
+                clearTimeout(this.toast.timer);
+                this.toast.timer = setTimeout(() => { this.toast.show = false; }, 3000);
+            },
+            copyToClipboard(text) {
+                if (!text) return;
+                navigator.clipboard.writeText(text);
+                this.showToast('Berhasil Disalin!', 'Data telah disimpan ke clipboard.');
+            },
+            jumpToPage() {
+                if (this.jumpPageInput >= 1 && this.jumpPageInput <= this.totalPages) {
+                    this.currentPage = this.jumpPageInput;
+                    this.jumpPageInput = '';
+                } else {
+                    this.showToast('Error', 'Halaman tidak ditemukan!', 'error');
+                }
+            },
+            exportData() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.transactions, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                const date = new Date().toISOString().slice(0,10);
+                downloadAnchorNode.setAttribute("download", `transaction_backup_${date}.json`);
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                this.showToast('Export Berhasil', 'Data transaksi telah diunduh.');
+            },
+            triggerImport() {
+                this.$refs.fileInput.click();
+            },
+            handleImport(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (Array.isArray(importedData)) {
+                            this.transactions = importedData;
+                            this.currentPage = 1;
+                            this.showToast('Import Berhasil', `${importedData.length} data transaksi dimuat.`);
+                            
+                            // Log Import Action
+                            this.adminLogs.unshift({
+                                id: Date.now(),
+                                time: new Date().toISOString(),
+                                action: 'Import Data',
+                                target: 'Database',
+                                desc: `Mengimport ${importedData.length} data transaksi dari file JSON.`
+                            });
+
+                        } else {
+                            this.showToast('Gagal', 'Format file JSON tidak valid.', 'error');
+                        }
+                    } catch (error) {
+                        this.showToast('Gagal', 'Terjadi kesalahan saat membaca file.', 'error');
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = ''; 
+            },
+
+            // -- SEND FUNCTION --
+            openSendModal(trx) {
+                this.activeTrx = trx;
+                // Reset form
+                this.sendModalTab = 'akun';
+                this.sendData = {
+                    username: '', password: '', pin: '', profile: '', note: '',
+                    linkUrl: '', rarPass: '',
+                    accountExtras: [],
+                    linkExtras: [],
+                    customFields: [{ title: 'Lisensi', value: '' }]
+                };
+                this.notifyOptions = { wa: true, email: true };
+                this.modals.send = true;
+            },
+            addExtraField(type) {
+                if(type === 'akun') this.sendData.accountExtras.push({ title: '', value: '' });
+                else if(type === 'link') this.sendData.linkExtras.push({ title: '', value: '' });
+                else if(type === 'custom') this.sendData.customFields.push({ title: '', value: '' });
+            },
+            removeExtraField(type, index) {
+                if(type === 'akun') this.sendData.accountExtras.splice(index, 1);
+                else if(type === 'link') this.sendData.linkExtras.splice(index, 1);
+                else if(type === 'custom') this.sendData.customFields.splice(index, 1);
+            },
+            askSendConfirmation() {
+                this.modals.sendConfirm = true;
+            },
+            processSend() {
+                // Log Sending
+                this.adminLogs.unshift({
+                    id: Date.now(),
+                    time: new Date().toISOString(),
+                    action: 'Send Data',
+                    target: this.activeTrx.id,
+                    desc: `Mengirim data manual ke ${this.activeTrx.user.name} (WA: ${this.notifyOptions.wa ? 'Yes' : 'No'}, Email: ${this.notifyOptions.email ? 'Yes' : 'No'})`
+                });
+
+                this.modals.sendConfirm = null;
+                this.modals.send = null;
+                this.showToast('Terkirim!', `Pesanan ${this.activeTrx.id} berhasil dikirim ke buyer.`, 'success');
+            },
+
+            // -- CORE ACTIONS --
+            openDetail(trx) {
+                this.activeTrx = JSON.parse(JSON.stringify(trx));
+                if (!this.activeTrx.costPriceInput) this.activeTrx.costPriceInput = "0";
+                this.modals.detail = true;
+            },
+            saveChanges() {
+                const idx = this.transactions.findIndex(t => t.id === this.activeTrx.id);
+                if (idx !== -1) {
+                    this.saveHistory('Edit Detail', this.transactions[idx]);
+                    this.transactions[idx] = JSON.parse(JSON.stringify(this.activeTrx));
+                }
+                this.modals.detail = null;
+            },
+            openNoteModal(trx) {
+                this.modals.note = { id: trx.id, content: trx.note || '' };
+            },
+            saveNoteFromModal() {
+                const idx = this.transactions.findIndex(t => t.id === this.modals.note.id);
+                if (idx !== -1) {
+                    const oldNote = this.transactions[idx].note || '(kosong)';
+                    this.transactions[idx].note = this.modals.note.content;
+
+                    this.adminLogs.unshift({
+                        id: Date.now(),
+                        time: new Date().toISOString(),
+                        action: 'Update Note',
+                        target: this.transactions[idx].id,
+                        desc: `Mengubah catatan admin.`
+                    });
+                }
+                this.modals.note = null;
+            },
+            askDelete(trx) {
+                this.modals.deleteConfirm = trx;
+            },
+            confirmDelete() {
+                const trx = this.modals.deleteConfirm;
+                this.saveHistory('Delete', trx);
+                const idx = this.transactions.findIndex(t => t.id === trx.id);
+                if (idx !== -1) {
+                    this.transactions[idx].status = 'Trash'; 
+                    this.showToast('Berhasil', 'Data dipindahkan ke Trash');
+                }
+                this.modals.deleteConfirm = null;
+            },
+            restoreTrx(trx) {
+                const idx = this.transactions.findIndex(t => t.id === trx.id);
+                if (idx !== -1) {
+                    this.transactions[idx].status = 'Unpaid';
+                    this.showToast('Dipulihkan', 'Data dikembalikan dari Trash');
+                    
+                    // Log Restore
+                    this.adminLogs.unshift({
+                        id: Date.now(),
+                        time: new Date().toISOString(),
+                        action: 'Restore',
+                        target: trx.id,
+                        desc: `Memulihkan transaksi dari Trash ke status Unpaid.`
+                    });
+                }
+            },
+            saveHistory(type, data) {
+                this.lastAction = { type, data: JSON.parse(JSON.stringify(data)) };
+                
+                let desc = '';
+                if(type === 'Delete') desc = `Memindahkan transaksi ke Trash.`;
+                else if(type === 'Status Change') desc = `Mengubah status menjadi ${data.status}.`;
+                else if(type === 'Edit Detail') desc = `Mengupdate informasi detail pesanan.`;
+                else desc = `Melakukan aksi: ${type}`;
+
+                this.adminLogs.unshift({
+                    id: Date.now(),
+                    time: new Date().toISOString(),
+                    action: type,
+                    target: data.id,
+                    desc: desc
+                });
+            },
+            triggerUndo() {
+                if (!this.lastAction) return;
+                const { type, data } = this.lastAction;
+                const idx = this.transactions.findIndex(t => t.id === data.id);
+                if (idx !== -1) {
+                    this.transactions[idx] = data; 
+                    
+                    this.adminLogs.unshift({
+                        id: Date.now(),
+                        time: new Date().toISOString(),
+                        action: 'Undo',
+                        target: data.id,
+                        desc: `Membatalkan aksi sebelumnya (${type}).`
+                    });
+
+                    this.lastAction = null;
+                    this.showToast('Undo', 'Perubahan dibatalkan');
+                }
+            },
+
+            // -- NEW LOG METHODS --
+            formatTime(iso) {
+                return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit', second: '2-digit' });
+            },
+            getLogBadgeClass(action) {
+                if(action.includes('Delete')) return 'bg-red-100 text-red-600 border-red-200';
+                if(action.includes('Undo')) return 'bg-amber-100 text-amber-600 border-amber-200';
+                if(action.includes('Send')) return 'bg-brand-100 text-brand-600 border-brand-200';
+                if(action.includes('Update') || action.includes('Edit')) return 'bg-brand-50 text-brand-700 border-brand-200';
+                if(action.includes('Status')) return 'bg-brand-100 text-brand-600 border-brand-200';
+                return 'bg-slate-100 text-slate-600 border-slate-200';
+            },
+            deleteLog(id) {
+                this.adminLogs = this.adminLogs.filter(l => l.id !== id);
+            },
+            clearAllLogs() {
+                this.adminLogs = [];
+                this.modals.confirmClearLogs = null;
+                this.showToast('Cleared', 'Semua log aktivitas telah dihapus.');
+            },
+
+            // -- UTILS --
+            sortBy(key) {
+                if (this.sortKey === key) this.sortAsc = !this.sortAsc;
+                else { this.sortKey = key; this.sortAsc = true; }
+            },
+            getCount(status) {
+                if (status === 'All') return this.transactions.filter(t => t.status !== 'Trash').length;
+                return this.transactions.filter(t => t.status === status).length;
+            },
+            formatRupiah(num) {
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+            },
+            formatDate(iso) {
+                return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+            },
+            formatCostPrice(e) {
+                let val = e.target.value.replace(/\D/g, '');
+                this.activeTrx.costPriceInput = new Intl.NumberFormat('id-ID').format(val);
+            },
+            getStatusBtnClass(status) {
+                const map = {
+                    'Paid': 'bg-emerald-500 shadow-emerald-500/30 text-white',
+                    'Proses': 'bg-yellow-500 shadow-yellow-500/30 text-white',
+                    'Done': 'bg-brand-600 shadow-brand-600/30 text-white',
+                    'Cancel': 'bg-rose-600 shadow-rose-600/30 text-white',
+                    'Unpaid': 'bg-slate-500 shadow-slate-500/30 text-white',
+                    'Complain': 'bg-black shadow-lg shadow-slate-900/20 text-white',
+                    'Trash': 'bg-yellow-400 shadow-yellow-400/40 text-yellow-950 font-extrabold'
+                };
+                return map[status] || 'bg-slate-500';
+            },
+            getBankLogo(method) {
+                const logos = {
+                    'BCA': 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg',
+                    'DANA': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_dana_blue.svg',
+                    'GoPay': 'https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg',
+                    'QRIS': 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Logo_QRIS.svg'
+                };
+                return logos[method] || 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Old_Visa_Logo.svg/1200px-Old_Visa_Logo.svg.png';
+            },
+            getFlagUrl(flag) {
+                if(flag === '🇮🇩') return 'https://upload.wikimedia.org/wikipedia/commons/9/9f/Flag_of_Indonesia.svg';
+                return 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Flag_of_the_United_Nations.svg';
+            },
+
+            generateData() {
+                const products = [
+                    {n: 'MLBB 86 Diamonds', c: 'Game Topup', p: 20000, img: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Source Code Web Berita', c: 'Source Code', p: 150000, img: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Followers IG 1000', c: 'SMM Panel', p: 35000, img: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Netflix 1 Bulan 4K', c: 'Premium Acc', p: 30000, img: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&q=80&w=100'}
+                ];
+                const users = ['Andi Saputra', 'Budi Santoso', 'Citra Kirana', 'Dewi Persik'];
+                
+                this.transactions = Array.from({length: 40}, (_, i) => {
+                    const prod = products[Math.floor(Math.random() * products.length)];
+                    return {
+                        id: `INV-${2026000 + i}`,
+                        date: new Date(Date.now() - Math.floor(Math.random() * 1000000000)).toISOString(),
+                        product: prod.n,
+                        category: prod.c,
+                        img: prod.img,
+                        total: prod.p,
+                        costPriceInput: (prod.p * 0.8).toString(),
+                        method: ['QRIS', 'BCA', 'DANA', 'GoPay'][Math.floor(Math.random()*4)],
+                        status: this.statusOptions[Math.floor(Math.random() * this.statusOptions.length)],
+                        paymentStatus: 'Paid',
+                        note: Math.random() > 0.7 ? 'Tolong dipercepat ya min' : '',
+                        inputData: '81239123 (Server 2021)',
+                        user: {
+                            name: users[Math.floor(Math.random() * users.length)],
+                            role: ['Member', 'Reseller', 'Reseller VIP'][Math.floor(Math.random()*3)],
+                            email: `user${i}@gmail.com`,
+                            phone: `0812-${Math.floor(Math.random()*9000)}-${Math.floor(Math.random()*9000)}`,
+                            initial: 'U'
+                        },
+                        ip: `192.168.1.${Math.floor(Math.random()*255)}`,
+                        flag: '🇮🇩'
+                    };
+                });
+                
+                // GENERATE FAKE LOGS FOR DEMO
+                this.adminLogs = [
+                    { id: 1, time: new Date().toISOString(), action: 'System Init', target: 'System', desc: 'Aplikasi dijalankan.' },
+                    { id: 2, time: new Date(Date.now() - 50000).toISOString(), action: 'Status Change', target: 'INV-2026002', desc: 'Mengubah status menjadi Proses.' },
+                    { id: 3, time: new Date(Date.now() - 120000).toISOString(), action: 'Send Data', target: 'INV-2026005', desc: 'Mengirim data manual ke Budi Santoso.' }
+                ];
+            }
+        },
+        mounted() {
+            this.generateData();
+            window.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                    e.preventDefault();
+                    this.triggerUndo();
+                }
+            });
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

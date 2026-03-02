@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Pro - Kategori v2.3 (Blue Series)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        // REVISI: Menggunakan Palet #0033AA
+                        brand: { 
+                            50: '#EEF2FF', 
+                            100: '#E0E7FF', 
+                            200: '#C7D2FE', // Lighter variation
+                            300: '#A5B4FC',
+                            400: '#0044CC', // Lighter accent
+                            500: '#0033AA', // MAIN COLOR (Primary)
+                            600: '#002B96', // Hover State
+                            700: '#002280', // Active/Deep State
+                            800: '#001A60',
+                            900: '#001140',
+                        }
+                    },
+                    animation: {
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'fade-in': 'fadeIn 0.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        pop: { '0%': { transform: 'scale(0.9)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } },
+                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } },
+                        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F8FAFC; overflow-x: hidden; }
+        
+        /* Scrollbar Customization - Blue Tone */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0033AA; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 0.8rem; padding: 0.75rem 1rem;
+            border-radius: 0.8rem; font-weight: 600; font-size: 0.9rem;
+            color: #64748b; margin-bottom: 0.2rem; transition: all 0.3s;
+        }
+        .nav-item:hover { background: #EEF2FF; color: #0033AA; transform: translateX(4px); }
+        
+        /* REVISI: Nav Active menjadi Biru Tegas Solid */
+        .nav-active {
+            background-color: #0033AA !important;
+            color: white !important;
+            box-shadow: 0 8px 20px -6px rgba(0, 51, 170, 0.5);
+        }
+
+        /* REVISI: Toggle Switch menjadi #0033AA */
+        .toggle-checkbox:checked { right: 0; border-color: #0033AA; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #0033AA; }
+        
+        /* REVISI: Table Header menjadi Solid #0033AA */
+        .blue-header {
+            background: #0033AA;
+            color: white;
+            border-bottom: 2px solid #002B96;
+        }
+
+        /* Custom Input Focus */
+        input:focus, select:focus {
+            border-color: #0033AA !important;
+            ring: 2px solid rgba(0, 51, 170, 0.2) !important;
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-800 font-sans selection:bg-[#0033AA] selection:text-white">
+
+<div id="app" class="flex h-screen w-full relative">
+
+    <transition name="pop">
+        <div v-if="toast.show" class="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+            <div class="bg-slate-900/95 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-pop min-w-[300px] pointer-events-auto border border-white/10 shadow-blue-900/20">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl" :class="toast.type === 'success' ? 'bg-[#0033AA]' : 'bg-red-600'">
+                    <i :class="toast.type === 'success' ? 'ri-checkbox-circle-fill' : 'ri-error-warning-fill'"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-base">{{ toast.title }}</h4>
+                    <p class="text-xs text-slate-300">{{ toast.message }}</p>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 glass-panel transition-transform duration-300 lg:translate-x-0 flex flex-col flex-shrink-0 border-r border-slate-200 bg-white">
+        <div class="h-24 flex items-center px-8 flex-shrink-0 border-b border-slate-100/50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-[#0033AA] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20">
+                    <i class="ri-rocket-2-fill text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Marspedia</h1>
+                    <span class="text-[10px] font-bold text-white bg-[#0033AA] px-2 py-0.5 rounded shadow-sm">SUPER ADMIN 👑</span>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar flex flex-col pb-10">
+            <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 pl-2 mt-4">Main Menu</p>
+            <a href="#" class="nav-item"><i class="ri-layout-grid-line text-lg"></i> Dashboard</a>
+            <a href="#" class="nav-item nav-active"><i class="ri-list-check text-lg"></i> Kategori</a>
+            <a href="#" class="nav-item"><i class="ri-shopping-bag-3-line text-lg"></i> Produk</a>
+            <a href="#" class="nav-item"><i class="ri-user-smile-line text-lg"></i> Member</a>
+            
+            <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 pl-2 mt-6">Settings</p>
+            <a href="#" class="nav-item"><i class="ri-settings-3-line text-lg"></i> Konfigurasi</a>
+            <a href="#" class="nav-item"><i class="ri-shield-key-line text-lg"></i> Keamanan</a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden w-full bg-[#F8FAFC]">
+        
+        <header class="p-4 md:p-8 pb-0 flex flex-col gap-6 z-20 flex-shrink-0">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 bg-white rounded-xl shadow-sm text-slate-500 hover:text-[#0033AA]"><i class="ri-menu-2-line"></i></button>
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-slate-800">Kategori Produk</h2>
+                        <p class="text-xs text-slate-500 font-medium">Atur urutan dan status aktif kategori website.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button @click="modal.history = true" class="bg-slate-800 text-white px-4 py-3 rounded-xl text-xs font-bold shadow-lg flex items-center gap-2 hover:bg-slate-700 transition active:scale-95 group relative">
+                        <i class="ri-history-line text-lg group-hover:-rotate-180 transition duration-500"></i> 
+                        History
+                        <span v-if="adminChanges.length > 0" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-slate-50 flex items-center justify-center text-[10px]">{{ adminChanges.length }}</span>
+                    </button>
+
+                    <button @click="openModal('add')" class="bg-[#0033AA] hover:bg-[#002B96] text-white px-5 py-3 rounded-xl text-xs font-bold shadow-lg shadow-blue-500/20 flex items-center gap-2 transition active:scale-95">
+                        <i class="ri-add-line text-lg"></i> Tambah Kategori
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-2 rounded-[1.5rem] shadow-sm border border-slate-200 flex flex-col md:flex-row gap-2 items-center">
+                <div class="relative w-full md:w-64 group">
+                    <i class="ri-search-2-line absolute left-4 top-3 text-slate-400 group-focus-within:text-[#0033AA] transition-colors"></i>
+                    <input v-model="filters.search" type="text" placeholder="Cari Kategori..." class="w-full bg-slate-50 border border-transparent pl-11 pr-4 py-2.5 rounded-2xl text-sm font-bold text-slate-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0033AA]/20 transition-all">
+                </div>
+
+                <div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 custom-scrollbar">
+                    <select v-model="filters.time" class="bg-slate-50 border border-slate-200 text-slate-600 text-xs font-bold rounded-xl px-4 py-2.5 cursor-pointer focus:outline-none focus:border-[#0033AA] min-w-[120px]">
+                        <option value="All">All Time</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Weekly">Weekly</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 flex flex-col overflow-hidden px-4 md:px-8 py-6">
+            <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col flex-1 overflow-hidden relative">
+                
+                <div class="overflow-auto flex-1 custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="blue-header text-xs uppercase tracking-wider sticky top-0 z-20 shadow-md">
+                            <tr>
+                                <th @click="sortBy('position')" class="px-6 py-5 font-extrabold w-20 text-center cursor-pointer hover:bg-white/10 transition">Posisi <i class="ri-sort-asc ml-1 opacity-60"></i></th>
+                                <th @click="sortBy('name')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition">Nama Kategori <i class="ri-sort-asc ml-1 opacity-60"></i></th>
+                                <th class="px-6 py-5 font-extrabold">Slug (Quick Edit)</th>
+                                <th @click="sortBy('count')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition">Total Produk <i class="ri-sort-asc ml-1 opacity-60"></i></th>
+                                <th @click="sortBy('isActive')" class="px-6 py-5 font-extrabold text-center cursor-pointer hover:bg-white/10 transition">Status <i class="ri-sort-asc ml-1 opacity-60"></i></th>
+                                <th class="px-6 py-5 font-extrabold text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm font-medium text-slate-600 divide-y divide-slate-50">
+                            <tr v-for="cat in paginatedCategories" :key="cat.id" class="hover:bg-slate-50 transition-colors group">
+                                <td class="px-6 py-4">
+                                    <input type="number" v-model.number="cat.position" @change="logChange('Ubah Posisi', cat)" class="w-12 h-10 bg-slate-100 text-center font-bold rounded-lg border border-transparent focus:bg-white focus:border-[#0033AA] focus:ring-2 focus:ring-blue-100 outline-none transition" min="1">
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div @click="openModal('edit', cat)" class="flex items-center gap-3 cursor-pointer group/name">
+                                        <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-[#0033AA] shadow-sm text-xl group-hover/name:bg-[#0033AA] group-hover/name:text-white transition-all">
+                                            <i :class="cat.icon || 'ri-layout-grid-fill'"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-slate-800 group-hover/name:text-[#0033AA] transition-colors flex items-center gap-2">
+                                                {{ cat.name }}
+                                                <i class="ri-pencil-fill opacity-0 group-hover/name:opacity-100 text-xs text-[#0033AA]"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="relative group/slug">
+                                        <div class="absolute inset-y-0 left-2 flex items-center pointer-events-none text-slate-400">
+                                            <i class="ri-link"></i>
+                                        </div>
+                                        <input type="text" v-model="cat.slug" @change="logChange('Ubah Slug', cat)" class="w-full pl-7 pr-2 py-1.5 bg-transparent border-b border-dashed border-slate-300 hover:border-[#0033AA]/50 focus:border-[#0033AA] focus:bg-white focus:border-solid outline-none text-xs font-mono text-slate-600 transition-all rounded-t-md" placeholder="url-slug">
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <span class="bg-blue-50 text-[#0033AA] px-3 py-1 rounded-lg text-xs font-bold border border-blue-100">
+                                        {{ cat.count }} Item
+                                    </span>
+                                </td>
+
+                                <td class="px-6 py-4 text-center">
+                                    <div class="flex justify-center">
+                                        <label class="relative inline-flex items-center cursor-pointer group/toggle" title="Klik untuk Ubah Status">
+                                            <input type="checkbox" v-model="cat.isActive" @change="logChange('Ubah Status', cat)" class="sr-only peer toggle-checkbox">
+                                            <div class="w-14 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all toggle-label peer-checked:bg-[#0033AA] shadow-inner"></div>
+                                            <span class="absolute text-[8px] font-black text-white left-2 opacity-0 peer-checked:opacity-100 transition-opacity uppercase tracking-wider">ON</span>
+                                            <span class="absolute text-[8px] font-black text-slate-400 right-2 opacity-100 peer-checked:opacity-0 transition-opacity uppercase tracking-wider">OFF</span>
+                                        </label>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button @click="openModal('edit', cat)" class="w-8 h-8 rounded-lg bg-slate-50 text-slate-600 hover:bg-[#0033AA] hover:text-white transition flex items-center justify-center border border-transparent hover:border-[#0033AA]" title="Edit">
+                                            <i class="ri-pencil-line"></i>
+                                        </button>
+                                        <button @click="confirmDelete(cat)" class="w-8 h-8 rounded-lg bg-slate-50 text-red-500 hover:bg-red-500 hover:text-white transition flex items-center justify-center" title="Hapus">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="paginatedCategories.length === 0">
+                                <td colspan="6" class="py-20 text-center text-slate-400">
+                                    <i class="ri-search-line text-4xl mb-2 block"></i>
+                                    Tidak ada data kategori.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-white border-t border-slate-100 p-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0">
+                    
+                    <div class="flex items-center gap-4">
+                        <p class="text-xs font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                            Total: <span class="text-[#0033AA]">{{ sortedCategories.length }}</span>
+                        </p>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Show</span>
+                            <select v-model="pagination.itemsPerPage" @change="pagination.currentPage = 1" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2 py-1.5 focus:outline-none cursor-pointer hover:border-[#0033AA]">
+                                <option :value="10">10</option>
+                                <option :value="25">25</option>
+                                <option :value="50">50</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap justify-center">
+                        <button @click="pagination.currentPage = 1" :disabled="pagination.currentPage === 1" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-[#0033AA] hover:text-white hover:border-[#0033AA] disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition" title="First Page"><i class="ri-skip-back-line"></i></button>
+                        <button @click="pagination.currentPage--" :disabled="pagination.currentPage === 1" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-[#0033AA] hover:text-white hover:border-[#0033AA] disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition" title="Previous"><i class="ri-arrow-left-s-line"></i></button>
+                        
+                        <span class="text-xs font-bold text-slate-700 mx-2">Page {{ pagination.currentPage }} / {{ totalPages }}</span>
+                        
+                        <button @click="pagination.currentPage++" :disabled="pagination.currentPage === totalPages" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-[#0033AA] hover:text-white hover:border-[#0033AA] disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition" title="Next"><i class="ri-arrow-right-s-line"></i></button>
+                        <button @click="pagination.currentPage = totalPages" :disabled="pagination.currentPage === totalPages" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-[#0033AA] hover:text-white hover:border-[#0033AA] disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-500 transition" title="Last Page"><i class="ri-skip-forward-line"></i></button>
+
+                        <div class="flex items-center gap-1 ml-2 pl-2 border-l border-slate-200">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Go to</span>
+                            <input type="number" v-model.number="pagination.jumpPage" @keyup.enter="jumpToPage" class="w-12 h-8 rounded-lg border border-slate-200 text-center text-xs font-bold text-slate-700 focus:outline-none focus:border-[#0033AA]" min="1" :max="totalPages">
+                            <button @click="jumpToPage" class="h-8 px-2 rounded-lg bg-slate-100 text-[#0033AA] text-[10px] font-bold hover:bg-[#0033AA] hover:text-white transition">Go</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div v-if="modal.history" class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-[95%] max-w-7xl overflow-hidden animate-pop flex flex-col h-[85vh] border border-slate-100">
+            
+            <div class="bg-white p-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <div>
+                    <h3 class="font-black text-xl text-slate-800 flex items-center gap-2"><i class="ri-history-line text-[#0033AA]"></i> Riwayat Perubahan</h3>
+                    <p class="text-xs text-slate-500 font-medium mt-1">Log aktivitas admin lengkap dengan opsi restore dan manajemen log.</p>
+                </div>
+                <button @click="modal.history = false" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-red-100 hover:text-red-500 text-slate-500 transition flex items-center justify-center"><i class="ri-close-line text-xl"></i></button>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 flex gap-4 items-center border-b border-slate-100 flex-shrink-0">
+                <div class="relative flex-1">
+                    <i class="ri-search-2-line absolute left-3 top-2.5 text-slate-400"></i>
+                    <input v-model="historyFilter.search" type="text" placeholder="Cari Log (Aksi, Nama Item, Pengguna...)" class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-[#0033AA]">
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">Urutkan</span>
+                    <button @click="sortHistory('time')" class="px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0033AA] hover:border-[#0033AA] flex items-center gap-1 transition">
+                        Waktu <i class="ri-sort-desc"></i>
+                    </button>
+                    <button @click="sortHistory('type')" class="px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-[#0033AA] hover:border-[#0033AA] flex items-center gap-1 transition">
+                        Tipe Aksi <i class="ri-sort-desc"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-auto custom-scrollbar">
+                <table class="w-full text-left text-sm">
+                    <thead class="blue-header text-xs uppercase tracking-wider sticky top-0 z-20 shadow-sm">
+                        <tr>
+                            <th @click="sortHistory('time')" class="px-6 py-4 font-extrabold w-48 cursor-pointer hover:bg-white/10 transition">Waktu <i class="ri-sort-asc ml-1 opacity-60"></i></th>
+                            <th @click="sortHistory('type')" class="px-6 py-4 font-extrabold w-32 cursor-pointer hover:bg-white/10 transition">Tipe Aksi <i class="ri-sort-asc ml-1 opacity-60"></i></th>
+                            <th class="px-6 py-4 font-extrabold">Deskripsi Perubahan</th>
+                            <th @click="sortHistory('user')" class="px-6 py-4 font-extrabold w-48 cursor-pointer hover:bg-white/10 transition">Pengguna <i class="ri-sort-asc ml-1 opacity-60"></i></th>
+                            <th class="px-6 py-4 font-extrabold text-right w-48">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50 font-medium text-slate-600">
+                        <tr v-for="(log, index) in processedHistory" :key="log.id" class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-slate-700 text-xs flex items-center gap-1"><i class="ri-time-line text-slate-400"></i> {{ log.time }}</div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">{{ log.date }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span :class="getBadgeClass(log.type)" class="px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wide border shadow-sm inline-flex items-center gap-1">
+                                    <i :class="getActionIcon(log.type)"></i> {{ log.type }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="text-sm text-slate-800 font-bold">{{ log.desc }}</p>
+                                <p class="text-[11px] text-slate-400 mt-0.5 font-mono">ID Referensi: {{ log.refId }}</p>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
+                                        {{ log.user.charAt(0) }}
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-700">{{ log.user }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <button @click="restoreHistory(log)" class="text-xs font-bold bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-[#0033AA] hover:text-white hover:border-[#0033AA] transition shadow-sm flex items-center gap-1">
+                                        <i class="ri-restart-line"></i> Restore
+                                    </button>
+                                    <button @click="confirmDeleteLog(log)" class="text-xs font-bold bg-white border border-slate-200 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-500 hover:text-white hover:border-red-500 transition shadow-sm flex items-center gap-1" title="Hapus Log">
+                                        <i class="ri-delete-bin-line"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-if="processedHistory.length === 0">
+                            <td colspan="5" class="py-20 text-center text-slate-400">
+                                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2 text-2xl"><i class="ri-file-history-line"></i></div>
+                                Tidak ada data riwayat yang cocok.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center flex-shrink-0">
+                <span class="text-xs font-bold text-slate-500">Total Log: {{ adminChanges.length }}</span>
+                <button @click="modal.clearAllConfirm = true" v-if="adminChanges.length > 0" class="text-xs font-bold text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg transition flex items-center gap-1">
+                    <i class="ri-delete-bin-line"></i> Bersihkan Semua Log
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modal.show" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8 animate-pop border border-slate-100">
+            <h3 class="font-bold text-xl text-slate-800 mb-6">{{ modal.mode === 'add' ? 'Tambah Kategori Baru' : 'Edit Kategori' }}</h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Kategori</label>
+                    <input v-model="form.name" @input="autoSlug" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:border-[#0033AA]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Slug URL</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3 text-slate-400 text-sm">/</span>
+                        <input v-model="form.slug" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-7 pr-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:border-[#0033AA]">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Posisi Urutan</label>
+                        <input v-model.number="form.position" type="number" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:border-[#0033AA]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Icon Remixicon</label>
+                        <div class="flex gap-2">
+                            <div class="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 text-lg"><i :class="form.icon || 'ri-question-line'"></i></div>
+                            <input v-model="form.icon" type="text" placeholder="ri-home-line" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:border-[#0033AA]">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <span class="text-sm font-bold text-slate-700">Status Aktif</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" v-model="form.isActive" class="sr-only peer toggle-checkbox">
+                        <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all toggle-label peer-checked:bg-[#0033AA]"></div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-8">
+                <button @click="modal.show = false" class="flex-1 py-3 font-bold text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Batal</button>
+                <button @click="saveCategory" class="flex-1 py-3 font-bold text-white bg-[#0033AA] rounded-xl hover:bg-[#002B96] transition shadow-lg shadow-blue-500/20">Simpan Data</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modal.deleteConfirm" class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl animate-pop text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-red-500"></div>
+            
+            <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-5 text-4xl shadow-sm">
+                <i class="ri-delete-bin-2-line"></i>
+            </div>
+            <h3 class="font-black text-2xl text-slate-800 mb-2">Hapus Kategori?</h3>
+            <p class="text-sm text-slate-500 mb-8 font-medium px-4">
+                Anda akan menghapus kategori <br>
+                <span class="font-bold text-red-500">"{{ modal.targetItem?.name }}"</span>.
+            </p>
+            
+            <div class="flex flex-col gap-3">
+                <button @click="processDelete" class="w-full py-3.5 font-bold text-white bg-red-500 rounded-xl hover:bg-red-600 transition shadow-lg shadow-red-500/30 flex items-center justify-center gap-2 transform active:scale-[0.98]">
+                    <i class="ri-check-line text-lg"></i> Ya, Hapus Permanen
+                </button>
+                <button @click="modal.deleteConfirm = false" class="w-full py-3.5 font-bold text-slate-500 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition">
+                    Batalkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modal.deleteLog" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl animate-pop text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-orange-500"></div>
+            
+            <div class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mx-auto mb-4 text-3xl shadow-sm">
+                <i class="ri-error-warning-line"></i>
+            </div>
+            <h3 class="font-black text-xl text-slate-800 mb-2">Hapus Log Riwayat?</h3>
+            <p class="text-xs text-slate-500 mb-6 font-medium px-2 leading-relaxed">
+                Log yang dihapus tidak dapat dikembalikan. Aksi restore untuk log ini tidak akan tersedia lagi.
+            </p>
+            
+            <div class="flex gap-3">
+                <button @click="modal.deleteLog = null" class="flex-1 py-3 font-bold text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition">
+                    Batal
+                </button>
+                <button @click="processDeleteLog" class="flex-1 py-3 font-bold text-white bg-orange-500 rounded-xl hover:bg-orange-600 transition shadow-lg shadow-orange-500/30">
+                    Hapus Log
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modal.clearAllConfirm" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl animate-pop text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-red-600"></div>
+            
+            <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-600 mx-auto mb-4 text-3xl shadow-sm">
+                <i class="ri-delete-bin-7-line"></i>
+            </div>
+            <h3 class="font-black text-xl text-slate-800 mb-2">Hapus Semua Riwayat?</h3>
+            <p class="text-xs text-slate-500 mb-6 font-medium px-2 leading-relaxed">
+                Tindakan ini akan menghapus <b>{{ adminChanges.length }}</b> entri log. Semua data history akan hilang permanen.
+            </p>
+            
+            <div class="flex gap-3">
+                <button @click="modal.clearAllConfirm = false" class="flex-1 py-3 font-bold text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition">
+                    Batal
+                </button>
+                <button @click="processClearAllLogs" class="flex-1 py-3 font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 transition shadow-lg shadow-red-600/30">
+                    Hapus Semua
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                toast: { show: false, timer: null, title: '', message: '', type: 'success' },
+                
+                staticCategories: [
+                    'TOP UP', 'JASA JOKI', 'APLIKASI', 'VOUCHER', 'AUTOMATISASI (BOT)', 
+                    'JASA PROFESSIONAL', 'PULSA', 'SOCIAL MEDIA', 'MEMBERSHIP VIP', 'OTHERS'
+                ],
+
+                // Data & Pagination
+                categories: [],
+                pagination: {
+                    itemsPerPage: 10,
+                    currentPage: 1,
+                    jumpPage: ''
+                },
+                
+                // Filters Main Table
+                filters: { search: '', time: 'All', sortKey: 'position', sortAsc: true },
+                
+                // History Filters & Data
+                historyFilter: { search: '', sortKey: 'time', sortAsc: false },
+                adminChanges: [],
+
+                // Modals
+                modal: { show: false, history: false, deleteConfirm: false, deleteLog: null, clearAllConfirm: false, targetItem: null, mode: 'add' },
+                form: { id: null, name: '', slug: '', position: 1, count: 0, isActive: true, icon: 'ri-layout-grid-fill' },
+            }
+        },
+        computed: {
+            sortedCategories() {
+                let data = this.categories.filter(c => {
+                    if(this.filters.search) {
+                        const q = this.filters.search.toLowerCase();
+                        if(!c.name.toLowerCase().includes(q) && !c.slug.toLowerCase().includes(q)) return false;
+                    }
+                    return true;
+                });
+
+                return data.sort((a, b) => {
+                    let valA = a[this.filters.sortKey];
+                    let valB = b[this.filters.sortKey];
+                    
+                    if (this.filters.sortKey === 'isActive') {
+                        // Boolean sort
+                        if (valA === valB) return 0;
+                        return this.filters.sortAsc ? (valA ? -1 : 1) : (valA ? 1 : -1);
+                    }
+
+                    if(typeof valA === 'string') { valA = valA.toLowerCase(); valB = valB.toLowerCase(); }
+                    
+                    if(valA < valB) return this.filters.sortAsc ? -1 : 1;
+                    if(valA > valB) return this.filters.sortAsc ? 1 : -1;
+                    return 0;
+                });
+            },
+            paginatedCategories() {
+                const start = (this.pagination.currentPage - 1) * this.pagination.itemsPerPage;
+                const end = start + this.pagination.itemsPerPage;
+                return this.sortedCategories.slice(start, end);
+            },
+            totalPages() {
+                return Math.ceil(this.sortedCategories.length / this.pagination.itemsPerPage) || 1;
+            },
+            
+            // Processed History for Table
+            processedHistory() {
+                let data = this.adminChanges.filter(log => {
+                    if(this.historyFilter.search) {
+                        const q = this.historyFilter.search.toLowerCase();
+                        return log.desc.toLowerCase().includes(q) || 
+                               log.type.toLowerCase().includes(q) ||
+                               log.user.toLowerCase().includes(q);
+                    }
+                    return true;
+                });
+                
+                // History Sorting Logic
+                return data.sort((a, b) => {
+                    let valA = a[this.historyFilter.sortKey];
+                    let valB = b[this.historyFilter.sortKey];
+
+                    // Special case for time (using ID which is timestamp)
+                    if(this.historyFilter.sortKey === 'time') {
+                         valA = a.id; 
+                         valB = b.id;
+                    }
+
+                    if(typeof valA === 'string') { valA = valA.toLowerCase(); valB = valB.toLowerCase(); }
+
+                    if(valA < valB) return this.historyFilter.sortAsc ? -1 : 1;
+                    if(valA > valB) return this.historyFilter.sortAsc ? 1 : -1;
+                    return 0;
+                });
+            }
+        },
+        methods: {
+            showToast(title, message, type = 'success') {
+                this.toast = { show: true, title, message, type };
+                clearTimeout(this.toast.timer);
+                this.toast.timer = setTimeout(() => this.toast.show = false, 3000);
+            },
+            
+            // --- Pagination ---
+            jumpToPage() {
+                const p = parseInt(this.pagination.jumpPage);
+                if(p >= 1 && p <= this.totalPages) {
+                    this.pagination.currentPage = p;
+                    this.pagination.jumpPage = '';
+                } else {
+                    this.showToast('Error', 'Halaman tidak valid', 'error');
+                }
+            },
+
+            // --- CRUD ---
+            openModal(mode, data = null) {
+                this.modal.mode = mode;
+                if(mode === 'edit' && data) {
+                    this.tempBeforeEdit = JSON.parse(JSON.stringify(data));
+                    this.form = JSON.parse(JSON.stringify(data));
+                } else {
+                    const maxPos = Math.max(...this.categories.map(c => c.position), 0);
+                    this.form = { id: Date.now(), name: '', slug: '', position: maxPos + 1, count: 0, isActive: true, icon: 'ri-layout-grid-fill' };
+                }
+                this.modal.show = true;
+            },
+            autoSlug() {
+                this.form.slug = this.form.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+            },
+            saveCategory() {
+                if(!this.form.name) return this.showToast('Gagal', 'Nama Kategori wajib diisi!', 'error');
+
+                if(this.modal.mode === 'add') {
+                    this.logAction('Tambah', `Menambah kategori "${this.form.name}"`, null, this.form); 
+                    this.categories.push({...this.form});
+                    this.showToast('Berhasil', 'Kategori baru ditambahkan');
+                } else {
+                    const idx = this.categories.findIndex(c => c.id === this.form.id);
+                    if(idx !== -1) {
+                        this.logAction('Edit', `Edit detail kategori "${this.form.name}"`, this.tempBeforeEdit, this.form);
+                        this.categories[idx] = {...this.form};
+                        this.showToast('Berhasil', 'Data kategori diperbarui');
+                    }
+                }
+                this.modal.show = false;
+            },
+            
+            confirmDelete(cat) {
+                this.modal.targetItem = cat;
+                this.modal.deleteConfirm = true;
+            },
+            processDelete() {
+                const cat = this.modal.targetItem;
+                this.logAction('Hapus', `Menghapus kategori "${cat.name}"`, cat, null);
+                this.categories = this.categories.filter(c => c.id !== cat.id);
+                this.modal.deleteConfirm = false;
+                this.showToast('Terhapus', 'Kategori berhasil dihapus.', 'success');
+            },
+
+            // --- History System ---
+            logChange(type, item) {
+                let desc = `${type} pada "${item.name}"`;
+                this.adminChanges.push({
+                    id: Date.now(),
+                    date: new Date().toLocaleDateString('id-ID'),
+                    time: new Date().toLocaleTimeString('id-ID'),
+                    type: type,
+                    desc: desc,
+                    user: 'Super Admin',
+                    refId: item.id,
+                    oldData: JSON.parse(JSON.stringify(item)), 
+                    newData: JSON.parse(JSON.stringify(item))
+                });
+            },
+            logAction(type, desc, oldData, newData) {
+                this.adminChanges.push({
+                    id: Date.now(),
+                    date: new Date().toLocaleDateString('id-ID'),
+                    time: new Date().toLocaleTimeString('id-ID'),
+                    type: type,
+                    desc: desc,
+                    user: 'Super Admin',
+                    refId: newData ? newData.id : (oldData ? oldData.id : '-'),
+                    oldData: oldData ? JSON.parse(JSON.stringify(oldData)) : null,
+                    newData: newData ? JSON.parse(JSON.stringify(newData)) : null
+                });
+            },
+            restoreHistory(log) {
+                if (log.type === 'Hapus') {
+                    if(log.oldData) {
+                        this.categories.push(log.oldData);
+                        this.showToast('Restore', `Kategori "${log.oldData.name}" dikembalikan.`);
+                    }
+                } 
+                else if (log.type === 'Tambah') {
+                    if(log.newData) {
+                        this.categories = this.categories.filter(c => c.id !== log.newData.id);
+                        this.showToast('Restore', `Penambahan "${log.newData.name}" dibatalkan.`);
+                    }
+                }
+                else if (log.type === 'Edit' || log.type.includes('Ubah')) {
+                    const idx = this.categories.findIndex(c => c.id === log.oldData.id);
+                    if(idx !== -1) {
+                        this.categories[idx] = log.oldData;
+                        this.showToast('Restore', `Perubahan pada "${log.oldData.name}" dikembalikan.`);
+                    }
+                }
+                else {
+                    this.showToast('Info', 'Restore data ini tidak tersedia.', 'warning');
+                }
+                
+                // Remove the log after restore to avoid duplicate restores
+                this.adminChanges = this.adminChanges.filter(l => l.id !== log.id);
+            },
+            
+            // Delete Log Logic
+            confirmDeleteLog(log) {
+                this.modal.deleteLog = log;
+            },
+            processDeleteLog() {
+                if(this.modal.deleteLog) {
+                    this.adminChanges = this.adminChanges.filter(l => l.id !== this.modal.deleteLog.id);
+                    this.modal.deleteLog = null;
+                    this.showToast('Terhapus', 'Entri log berhasil dihapus.', 'success');
+                }
+            },
+            processClearAllLogs() {
+                this.adminChanges = [];
+                this.modal.clearAllConfirm = false;
+                this.showToast('Sukses', 'Semua riwayat perubahan telah dibersihkan.');
+            },
+
+            // --- UI Helpers ---
+            // REVISI: Menyelaraskan badge menjadi warna Brand Blue untuk aksi positif/netral
+            getBadgeClass(type) {
+                if(type === 'Hapus') return 'bg-red-50 text-red-600 border-red-200'; // Hapus tetap merah (Danger)
+                if(type === 'Tambah') return 'bg-blue-50 text-[#0033AA] border-blue-200';
+                if(type === 'Edit') return 'bg-indigo-50 text-indigo-600 border-indigo-200'; // Sedikit variasi tapi tetap senada
+                return 'bg-slate-50 text-slate-600 border-slate-200';
+            },
+            getActionIcon(type) {
+                if(type === 'Hapus') return 'ri-delete-bin-line';
+                if(type === 'Tambah') return 'ri-add-line';
+                if(type === 'Edit') return 'ri-pencil-line';
+                return 'ri-edit-circle-line';
+            },
+            sortHistory(key) {
+                if(this.historyFilter.sortKey === key) this.historyFilter.sortAsc = !this.historyFilter.sortAsc;
+                else { this.historyFilter.sortKey = key; this.historyFilter.sortAsc = true; }
+            },
+            sortBy(key) {
+                if(this.filters.sortKey === key) this.filters.sortAsc = !this.filters.sortAsc;
+                else { this.filters.sortKey = key; this.filters.sortAsc = true; }
+            },
+
+            initData() {
+                const icons = {
+                    'TOP UP': 'ri-gamepad-line',
+                    'JASA JOKI': 'ri-sword-line',
+                    'APLIKASI': 'ri-apps-line',
+                    'VOUCHER': 'ri-ticket-line',
+                    'AUTOMATISASI (BOT)': 'ri-robot-2-line',
+                    'JASA PROFESSIONAL': 'ri-briefcase-4-line',
+                    'PULSA': 'ri-smartphone-line',
+                    'SOCIAL MEDIA': 'ri-instagram-line',
+                    'MEMBERSHIP VIP': 'ri-vip-crown-line',
+                    'OTHERS': 'ri-more-fill'
+                };
+
+                this.categories = this.staticCategories.map((name, index) => ({
+                    id: index + 1,
+                    name: name,
+                    slug: name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
+                    position: index + 1,
+                    count: Math.floor(Math.random() * 500),
+                    isActive: true, 
+                    icon: icons[name] || 'ri-layout-grid-fill',
+                }));
+            }
+        },
+        mounted() {
+            this.initData();
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             SettingSeeder::class,
             FeeSeeder::class,
             CategorySeeder::class,
+            ProductSeeder::class,
             FaqSeeder::class,
             ReviewSeeder::class,
         ]);

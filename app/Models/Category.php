@@ -15,6 +15,8 @@ class Category extends Model
         'slug',
         'icon',
         'description',
+        'type',
+        'game_code',
         'sort_order',
         'is_active',
     ];

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Pro - Riwayat Transaksi</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 3s infinite',
+                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                    },
+                    keyframes: {
+                        slideUp: { '0%': { transform: 'translateY(20px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } },
+                        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+                        pop: { '0%': { transform: 'scale(0.9)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F8FAFC; overflow-x: hidden; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Glass Panel Styling */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
+        }
+
+        /* Sidebar Styling */
+        .nav-item {
+            display: flex; align-items: center; gap: 0.8rem; padding: 0.75rem 1rem;
+            border-radius: 0.8rem; font-weight: 600; font-size: 0.9rem;
+            color: #64748b; margin-bottom: 0.4rem;
+            transition: all 0.3s;
+        }
+        .nav-item:hover { background: white; color: #2563eb; transform: translateX(4px); }
+        .nav-active {
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+            color: white !important;
+            box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+        }
+        .nav-section {
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            color: #94a3b8; margin-top: 1.5rem; margin-bottom: 0.5rem; padding-left: 0.5rem;
+        }
+
+        /* Table Specifics */
+        .table-header { 
+            background: linear-gradient(to right, #2563eb, #3b82f6); /* BLUE HEADER */
+            color: white; 
+        }
+        .table-row-hover:hover { background-color: #f8fafc; }
+        
+        /* iOS Input Style */
+        .ios-input {
+            background: #F1F5F9; border: 1px solid transparent;
+            transition: all 0.3s;
+        }
+        .ios-input:focus { background: white; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+    </style>
+</head>
+<body class="antialiased text-slate-800 font-sans selection:bg-brand-500 selection:text-white">
+
+<div id="app" class="flex h-screen w-full relative">
+
+    <transition name="pop">
+        <div v-if="toast.show" class="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+            <div class="bg-slate-900/90 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-pop border border-white/10 pointer-events-auto min-w-[300px]">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-xl" :class="toast.type === 'success' ? 'bg-green-500' : 'bg-blue-500'">
+                    <i :class="toast.type === 'success' ? 'ri-checkbox-circle-fill' : 'ri-information-fill'"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-base">{{ toast.title }}</h4>
+                    <p class="text-xs text-slate-300">{{ toast.message }}</p>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 glass-panel transition-transform duration-300 lg:translate-x-0 flex flex-col flex-shrink-0 z-50 h-full border-r border-white/50 bg-white">
+        <div class="h-24 flex items-center px-8 flex-shrink-0 border-b border-slate-100/50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-tr from-brand-600 to-cyan-400 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/40">
+                    <i class="ri-rocket-2-fill text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Marspedia</h1>
+                    <span class="text-[10px] font-bold text-white bg-brand-600 px-2 py-0.5 rounded shadow-sm">ADMIN PANEL</span>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar flex flex-col pb-10">
+            
+            <p class="nav-section">Menu Utama</p>
+            
+            <a href="#" class="nav-item">
+                <i class="ri-dashboard-line text-lg"></i> Dashboard
+            </a>
+            
+            <a href="#" class="nav-item">
+                <i class="ri-shopping-cart-2-line text-lg"></i> Order Baru
+            </a>
+            
+            <a href="#" class="nav-item nav-active">
+                <i class="ri-file-list-3-line text-lg"></i> Riwayat Transaksi
+            </a>
+            
+            <a href="#" class="nav-item">
+                <i class="ri-wallet-3-line text-lg"></i> Deposit Saldo
+            </a>
+            
+            <a href="#" class="nav-item">
+                <i class="ri-folder-open-line text-lg"></i> File Manager
+            </a>
+
+            <p class="nav-section">Lainnya</p>
+
+            <a href="#" class="nav-item">
+                <i class="ri-user-settings-line text-lg"></i> Profile (Pengaturan)
+            </a>
+            
+            <a href="#" class="nav-item">
+                <i class="ri-customer-service-2-line text-lg"></i> Bantuan / CS
+            </a>
+
+            <div class="mt-auto pt-4">
+                <a href="#" class="nav-item text-red-500 hover:text-red-600 hover:bg-red-50">
+                    <i class="ri-logout-box-line text-lg"></i> Logout
+                </a>
+            </div>
+        </nav>
+        </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden w-full bg-[#F8FAFC]">
+        
+        <header class="p-4 md:p-8 pb-0 flex flex-col gap-6 z-20 flex-shrink-0">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 bg-white rounded-xl shadow-sm text-slate-500"><i class="ri-menu-2-line"></i></button>
+                    <div>
+                        <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">Riwayat Transaksi</h2>
+                        <p class="text-[10px] md:text-xs text-slate-500 font-medium hidden md:block">Kelola dan pantau semua riwayat pesanan (FIFO System).</p>
+                    </div>
+                </div>
+                <div class="flex gap-2 items-center">
+                    
+                    <div class="flex items-center gap-3 bg-gradient-to-tr from-emerald-500 to-teal-400 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl shadow-lg shadow-emerald-500/30 mr-1 md:mr-3 animate-fade-in hover:-translate-y-0.5 transition-transform duration-300">
+                        <div class="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-lg hidden md:flex">
+                            <i class="ri-wallet-3-fill"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[8px] md:text-[9px] font-bold text-emerald-100 uppercase tracking-wider">Total Saldo</span>
+                            <span class="text-xs md:text-sm font-black">{{ formatRupiah(totalSaldo) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex bg-white rounded-xl shadow-sm border border-slate-200 p-1">
+                        <button @click="exportData" class="w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition flex items-center justify-center md:gap-2" title="Export">
+                            <i class="ri-download-cloud-2-line text-lg md:text-sm"></i> <span class="hidden md:inline">Export</span>
+                        </button>
+                        <div class="w-px bg-slate-200 my-1"></div>
+                        <button @click="triggerImport" class="w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-brand-600 transition flex items-center justify-center md:gap-2" title="Import">
+                            <i class="ri-upload-cloud-2-line text-lg md:text-sm"></i> <span class="hidden md:inline">Import</span>
+                        </button>
+                        <input type="file" ref="fileInput" class="hidden" accept=".json" @change="handleImport">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-2 rounded-[1.5rem] shadow-sm border border-slate-200 flex flex-col xl:flex-row gap-2 items-start xl:items-center">
+                <div class="flex overflow-x-auto gap-1 p-1 bg-slate-50/50 rounded-2xl xl:w-fit custom-scrollbar max-w-full">
+                    <button v-for="s in statuses" :key="s.key" 
+                        @click="activeStatus = s.key; currentPage = 1"
+                        :class="activeStatus === s.key ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/30' : 'bg-white text-slate-500 hover:bg-white/60 hover:text-slate-700'"
+                        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 border border-transparent">
+                        <i :class="s.icon"></i> {{ s.label }} 
+                        <span v-if="activeStatus === s.key" class="bg-white/20 text-white px-1.5 py-0.5 rounded text-[10px]">{{ getCount(s.key) }}</span>
+                    </button>
+                </div>
+
+                <div class="flex-1 flex flex-col md:flex-row gap-2 items-center w-full">
+                    <div class="relative w-full flex-1 group">
+                        <i class="ri-search-2-line absolute left-4 top-3 text-slate-400 group-focus-within:text-brand-600 transition-colors"></i>
+                        <input v-model="searchQuery" type="text" placeholder="Cari ID Invoice, Produk, User..." class="w-full bg-slate-50 border border-transparent pl-11 pr-4 py-2.5 rounded-2xl text-sm font-bold text-slate-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-200 transition-all">
+                    </div>
+                    
+                    <div class="flex gap-2 w-full md:w-auto items-center">
+                        <div v-if="timeFilter === 'Custom'" class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-1 rounded-xl animate-fade-in">
+                            <input type="date" class="bg-transparent text-xs font-bold text-slate-600 focus:outline-none px-2 h-full">
+                            <span class="text-slate-300">-</span>
+                            <input type="date" class="bg-transparent text-xs font-bold text-slate-600 focus:outline-none px-2 h-full">
+                        </div>
+
+                        <select v-model="timeFilter" class="bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 text-slate-600 text-xs font-bold rounded-2xl px-4 py-2.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all h-[42px]">
+                            <option v-for="t in timeFilters" :value="t">{{ t }}</option>
+                        </select>
+                        <button class="bg-brand-600 hover:bg-brand-700 text-white w-[42px] h-[42px] rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/30 transition-all active:scale-95 flex-shrink-0">
+                            <i class="ri-filter-3-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 flex flex-col overflow-hidden px-4 md:px-8 py-6">
+            <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col flex-1 overflow-hidden relative">
+                
+                <div class="overflow-auto flex-1 custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs uppercase tracking-wider sticky top-0 z-20 shadow-md">
+                            <tr>
+                                <th @click="sortBy('date')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition">Invoice & Waktu <i class="ri-sort-asc ml-1 opacity-50"></i></th>
+                                <th @click="sortBy('product')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition">Produk <i class="ri-sort-asc ml-1 opacity-50"></i></th>
+                                <th @click="sortBy('total')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition">Harga & Metode <i class="ri-sort-asc ml-1 opacity-50"></i></th>
+                                <th class="px-6 py-5 font-extrabold">Member</th>
+                                <th class="px-6 py-5 font-extrabold">Status</th>
+                                <th class="px-6 py-5 font-extrabold text-right rounded-tr-none">Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm font-medium text-slate-600 divide-y divide-slate-50">
+                            <tr v-for="(trx, idx) in paginatedData" :key="trx.id" class="table-row-hover group transition-colors duration-200 bg-white">
+                                
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-mono font-bold text-xs text-brand-600 bg-brand-50 px-2 py-1 rounded border border-brand-100">{{ trx.id }}</span>
+                                        <button @click="copyToClipboard(trx.id)" class="w-6 h-6 rounded flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-brand-600 hover:text-white transition shadow-sm" title="Salin Invoice ID">
+                                            <i class="ri-file-copy-line text-xs"></i>
+                                        </button>
+                                    </div>
+                                    <div class="text-[11px] text-slate-400 font-bold mt-1.5 flex items-center gap-1">
+                                        <i class="ri-time-line"></i> {{ formatDate(trx.date) }}
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="flex items-start gap-3">
+                                        <img :src="trx.img" class="w-10 h-10 rounded-lg object-cover shadow-sm border border-slate-100">
+                                        <div>
+                                            <div class="font-bold text-slate-800 line-clamp-1 max-w-[180px]">{{ trx.product }}</div>
+                                            <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold border border-slate-200 inline-block mt-0.5">{{ trx.category }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="font-extrabold text-slate-800 text-[13px] mb-1.5">{{ formatRupiah(trx.total) }}</div>
+                                    <div class="flex items-center justify-start">
+                                        <img :src="getBankLogo(trx.method)" class="h-6 w-auto object-contain" :title="trx.method">
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="mb-1.5 flex items-center gap-1 group/member">
+                                        <span class="font-bold text-slate-800 text-xs">{{ trx.user.name }}</span>
+                                        <span :class="getRoleClass(trx.user.role)" class="text-[9px] px-1 py-0.5 rounded font-bold border ml-1">{{ trx.user.role }}</span>
+                                        <button @click="copyToClipboard(trx.user.name)" class="opacity-0 group-hover/member:opacity-100 text-slate-300 hover:text-brand-600 transition ml-1">
+                                            <i class="ri-file-copy-line text-xs"></i>
+                                        </button>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="relative w-[110px]">
+                                        <div :class="getStatusBtnClass(trx.status)" class="flex items-center justify-center px-3 py-1.5 rounded-full shadow-md border border-white/20 select-none">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider">{{ trx.status }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button @click="openDetail(trx)" class="w-8 h-8 rounded-lg bg-blue-50 text-brand-600 hover:bg-brand-600 hover:text-white transition shadow-sm flex items-center justify-center" title="Detail">
+                                            <i class="ri-eye-line"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="paginatedData.length === 0">
+                                <td colspan="6" class="py-20 text-center">
+                                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400 text-3xl"><i class="ri-inbox-line"></i></div>
+                                    <p class="font-bold text-slate-500">Tidak ada data transaksi.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-white border-t border-slate-100 p-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0">
+                    <div class="flex items-center gap-4">
+                        <p class="text-xs font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                            Total Data: <span class="text-brand-600">{{ filteredData.length }}</span>
+                        </p>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Tampilkan</span>
+                            <select v-model="itemsPerPage" @change="currentPage = 1" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2 py-1.5 focus:outline-none cursor-pointer">
+                                <option :value="10">10</option>
+                                <option :value="50">50</option>
+                                <option :value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap justify-center">
+                        <button @click="currentPage = 1" :disabled="currentPage === 1" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-50"><i class="ri-skip-back-line"></i></button>
+                        <button @click="currentPage--" :disabled="currentPage === 1" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-50"><i class="ri-arrow-left-s-line"></i></button>
+                        
+                        <span class="text-xs font-bold text-slate-700 mx-2">Page {{ currentPage }} / {{ totalPages }}</span>
+                        
+                        <button @click="currentPage++" :disabled="currentPage === totalPages" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-50"><i class="ri-arrow-right-s-line"></i></button>
+                        <button @click="currentPage = totalPages" :disabled="currentPage === totalPages" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-50"><i class="ri-skip-forward-line"></i></button>
+
+                        <div class="flex items-center gap-1 ml-2 pl-2 border-l border-slate-200">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Go to</span>
+                            <input type="number" v-model.number="jumpPageInput" @keyup.enter="jumpToPage" class="w-12 h-8 rounded-lg border border-slate-200 text-center text-xs font-bold text-slate-700 focus:outline-none focus:border-brand-500" min="1" :max="totalPages">
+                            <button @click="jumpToPage" class="h-8 px-2 rounded-lg bg-brand-50 text-brand-600 text-[10px] font-bold hover:bg-brand-600 hover:text-white transition">Go</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div v-if="modals.detail" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div @click="modals.detail = null" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"></div>
+        <div class="bg-[#F2F2F7] w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col relative animate-slide-up z-10 border border-white/20">
+            
+            <div class="bg-white/80 backdrop-blur-md px-8 py-5 flex justify-between items-center border-b border-slate-200 sticky top-0 z-20">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-indigo-600 text-white flex items-center justify-center text-2xl shadow-lg shadow-brand-500/30">
+                        <i class="ri-file-list-3-fill"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-black text-xl text-slate-900">Detail Pesanan</h2>
+                        <div class="flex items-center gap-2">
+                            <p class="text-xs font-bold text-slate-500 font-mono">{{ activeTrx.id }}</p>
+                            <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+                            <p class="text-xs font-bold text-slate-400">{{ formatDate(activeTrx.date) }}</p>
+                        </div>
+                    </div>
+                </div>
+                <button @click="modals.detail = null" class="w-10 h-10 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 text-slate-600 flex items-center justify-center transition"><i class="ri-close-line text-xl"></i></button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-fit">
+                        <h3 class="font-bold text-slate-900 text-base mb-5 flex items-center gap-2 border-b border-slate-50 pb-3">
+                            <i class="ri-box-3-fill text-brand-500"></i> Informasi Produk
+                        </h3>
+                        
+                        <div class="flex gap-4 mb-6">
+                            <img :src="activeTrx.img" class="w-20 h-20 rounded-xl object-cover shadow-sm border border-slate-100 flex-shrink-0">
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm leading-snug mb-1">{{ activeTrx.product }}</div>
+                                <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-bold border border-slate-200 inline-block">{{ activeTrx.category }}</span>
+                                <div class="mt-2 text-xs font-bold text-slate-500">Variant: <span class="text-slate-800">Premium License</span></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200/60">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-2 mb-2">
+                                Data Inputan <i class="ri-file-copy-line cursor-pointer hover:text-brand-600" @click="copyToClipboard(activeTrx.inputData)"></i>
+                            </label>
+                            <div class="font-mono text-xs font-bold text-slate-700 break-all select-all">
+                                {{ activeTrx.inputData }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-6">
+                        
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                             <h3 class="font-bold text-slate-900 text-base mb-5 flex items-center gap-2 border-b border-slate-50 pb-3">
+                                <i class="ri-shield-check-fill text-green-500"></i> Status Transaksi
+                            </h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Status Pesanan</span>
+                                    <div :class="getStatusBtnClass(activeTrx.status)" class="inline-block px-3 py-1 rounded-lg text-[10px] font-bold uppercase shadow-sm">
+                                        {{ activeTrx.status }}
+                                    </div>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Status Pembayaran</span>
+                                    <div :class="activeTrx.paymentStatus === 'Paid' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'" class="inline-block px-3 py-1 rounded-lg text-[10px] font-bold uppercase border shadow-sm">
+                                        {{ activeTrx.paymentStatus === 'Paid' ? 'LUNAS' : 'BELUM LUNAS' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex-1">
+                            <h3 class="font-bold text-slate-900 text-base mb-5 flex items-center gap-2 border-b border-slate-50 pb-3">
+                                <i class="ri-user-smile-fill text-orange-500"></i> Data Pembeli
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs">{{ activeTrx.user.initial }}</div>
+                                    <div class="flex-1">
+                                        <p class="text-[10px] text-slate-400 font-bold uppercase">Nama</p>
+                                        <p class="text-sm font-bold text-slate-800">{{ activeTrx.user.name }}</p>
+                                    </div>
+                                    <button @click="copyToClipboard(activeTrx.user.name)" class="text-slate-300 hover:text-brand-600"><i class="ri-file-copy-line"></i></button>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs"><i class="ri-mail-fill"></i></div>
+                                    <div class="flex-1">
+                                        <p class="text-[10px] text-slate-400 font-bold uppercase">Email</p>
+                                        <p class="text-sm font-bold text-slate-800">{{ activeTrx.user.email }}</p>
+                                    </div>
+                                    <button @click="copyToClipboard(activeTrx.user.email)" class="text-slate-300 hover:text-brand-600"><i class="ri-file-copy-line"></i></button>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xs"><i class="ri-whatsapp-fill"></i></div>
+                                    <div class="flex-1">
+                                        <p class="text-[10px] text-slate-400 font-bold uppercase">WhatsApp</p>
+                                        <p class="text-sm font-bold text-slate-800">{{ activeTrx.user.phone }}</p>
+                                    </div>
+                                    <button @click="copyToClipboard(activeTrx.user.phone)" class="text-slate-300 hover:text-brand-600"><i class="ri-file-copy-line"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white/80 backdrop-blur-md px-8 py-4 border-t border-slate-200 flex justify-end gap-3 sticky bottom-0 z-20">
+                <button @click="modals.detail = null" class="w-full py-3.5 rounded-xl font-bold text-white bg-slate-800 hover:bg-slate-700 transition shadow-lg shadow-slate-500/20">Tutup Detail</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                searchQuery: '',
+                activeStatus: 'Paid',
+                timeFilter: 'All Time',
+                currentPage: 1,
+                itemsPerPage: 10,
+                jumpPageInput: '',
+                
+                // DATA TAMBAHAN
+                totalSaldo: 14500000, 
+
+                // Modals & Toast State
+                toast: { show: false, timer: null, title: 'Berhasil', message: '', type: 'success' },
+                modals: { detail: null, note: null, deleteConfirm: null, send: null, sendConfirm: null },
+                activeTrx: null, 
+                
+                // SEND MODAL DATA (Data structures kept but not used in UI)
+                sendModalTab: 'akun',
+                sendData: {
+                    username: '', password: '', pin: '', profile: '', note: '',
+                    linkUrl: '', rarPass: '',
+                    accountExtras: [],
+                    linkExtras: [],
+                    customFields: [{ title: 'Lisensi', value: '' }]
+                },
+                notifyOptions: { wa: true, email: true },
+
+                // Data Static - EDITED: Removed Complain & Trash
+                statuses: [
+                    { key: 'Paid', label: 'Paid', icon: 'ri-check-double-line' },
+                    { key: 'Proses', label: 'Proses', icon: 'ri-loader-4-line' },
+                    { key: 'Done', label: 'Done', icon: 'ri-checkbox-circle-line' },
+                    { key: 'Cancel', label: 'Cancel', icon: 'ri-close-circle-line' },
+                    { key: 'Unpaid', label: 'Unpaid', icon: 'ri-time-line' },
+                    { key: 'All', label: 'Semua', icon: 'ri-list-check' }
+                ],
+                statusOptions: ['Paid', 'Proses', 'Done', 'Cancel', 'Unpaid', 'Complain'],
+                timeFilters: ['All Time', 'Yearly', 'Monthly', 'Weekly', 'Daily', 'Custom'],
+                
+                // Database
+                transactions: [],
+                sortKey: 'date',
+                sortAsc: true,
+            }
+        },
+        computed: {
+            filteredData() {
+                let data = this.transactions.filter(t => {
+                    if (this.activeStatus === 'Trash') return t.status === 'Trash';
+                    if (t.status === 'Trash') return false; 
+                    if (this.activeStatus !== 'All' && t.status !== this.activeStatus) return false;
+
+                    if (this.searchQuery) {
+                        const lower = this.searchQuery.toLowerCase();
+                        return t.id.toLowerCase().includes(lower) || 
+                               t.product.toLowerCase().includes(lower) || 
+                               t.user.name.toLowerCase().includes(lower) ||
+                               (t.note && t.note.toLowerCase().includes(lower));
+                    }
+                    return true;
+                });
+
+                return data.sort((a, b) => {
+                    let valA = a[this.sortKey];
+                    let valB = b[this.sortKey];
+                    if (this.sortKey === 'total') { valA = a.total; valB = b.total; }
+                    
+                    if (valA < valB) return this.sortAsc ? -1 : 1;
+                    if (valA > valB) return this.sortAsc ? 1 : -1;
+                    return 0;
+                });
+            },
+            paginatedData() {
+                const start = (this.currentPage - 1) * this.itemsPerPage;
+                return this.filteredData.slice(start, start + this.itemsPerPage);
+            },
+            totalPages() {
+                return Math.ceil(this.filteredData.length / this.itemsPerPage) || 1;
+            },
+            calculateProfit() {
+                if (!this.activeTrx) return 0;
+                const cost = parseInt(this.activeTrx.costPriceInput.replace(/\./g, '')) || 0;
+                return this.activeTrx.total - cost;
+            }
+        },
+        methods: {
+            showToast(title, message, type = 'success') {
+                this.toast.title = title;
+                this.toast.message = message;
+                this.toast.type = type;
+                this.toast.show = true;
+                clearTimeout(this.toast.timer);
+                this.toast.timer = setTimeout(() => { this.toast.show = false; }, 3000);
+            },
+            copyToClipboard(text) {
+                if (!text) return;
+                navigator.clipboard.writeText(text);
+                this.showToast('Berhasil Disalin!', 'Data telah disimpan ke clipboard.');
+            },
+            jumpToPage() {
+                if (this.jumpPageInput >= 1 && this.jumpPageInput <= this.totalPages) {
+                    this.currentPage = this.jumpPageInput;
+                    this.jumpPageInput = '';
+                } else {
+                    this.showToast('Error', 'Halaman tidak ditemukan!', 'error');
+                }
+            },
+            exportData() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.transactions, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                const date = new Date().toISOString().slice(0,10);
+                downloadAnchorNode.setAttribute("download", `transaction_backup_${date}.json`);
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                this.showToast('Export Berhasil', 'Data transaksi telah diunduh.');
+            },
+            triggerImport() {
+                this.$refs.fileInput.click();
+            },
+            handleImport(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (Array.isArray(importedData)) {
+                            this.transactions = importedData;
+                            this.currentPage = 1;
+                            this.showToast('Import Berhasil', `${importedData.length} data transaksi dimuat.`);
+                        } else {
+                            this.showToast('Gagal', 'Format file JSON tidak valid.', 'error');
+                        }
+                    } catch (error) {
+                        this.showToast('Gagal', 'Terjadi kesalahan saat membaca file.', 'error');
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = ''; 
+            },
+
+            // -- CORE ACTIONS --
+            openDetail(trx) {
+                this.activeTrx = JSON.parse(JSON.stringify(trx));
+                if (!this.activeTrx.costPriceInput) this.activeTrx.costPriceInput = "0";
+                this.modals.detail = true;
+            },
+            saveChanges() {
+                const idx = this.transactions.findIndex(t => t.id === this.activeTrx.id);
+                if (idx !== -1) {
+                    this.transactions[idx] = JSON.parse(JSON.stringify(this.activeTrx));
+                }
+                this.modals.detail = null;
+            },
+            sortBy(key) {
+                if (this.sortKey === key) this.sortAsc = !this.sortAsc;
+                else { this.sortKey = key; this.sortAsc = true; }
+            },
+            getCount(status) {
+                if (status === 'All') return this.transactions.filter(t => t.status !== 'Trash').length;
+                return this.transactions.filter(t => t.status === status).length;
+            },
+            formatRupiah(num) {
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+            },
+            formatDate(iso) {
+                return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+            },
+            formatCostPrice(e) {
+                let val = e.target.value.replace(/\D/g, '');
+                this.activeTrx.costPriceInput = new Intl.NumberFormat('id-ID').format(val);
+            },
+            getRoleClass(role) {
+                if(role.includes('VIP')) return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                if(role === 'Reseller') return 'bg-blue-50 text-blue-700 border-blue-200';
+                return 'bg-slate-50 text-slate-600 border-slate-200';
+            },
+            getStatusBtnClass(status) {
+                const map = {
+                    'Paid': 'bg-emerald-500 shadow-emerald-500/30 text-white',
+                    'Proses': 'bg-yellow-500 shadow-yellow-500/30 text-white',
+                    'Done': 'bg-blue-600 shadow-blue-600/30 text-white',
+                    'Cancel': 'bg-rose-600 shadow-rose-600/30 text-white',
+                    'Unpaid': 'bg-slate-500 shadow-slate-500/30 text-white',
+                    'Complain': 'bg-black shadow-lg shadow-slate-900/20 text-white',
+                    'Trash': 'bg-yellow-400 shadow-yellow-400/40 text-yellow-950 font-extrabold'
+                };
+                return map[status] || 'bg-slate-500';
+            },
+            getBankLogo(method) {
+                const logos = {
+                    'BCA': 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg',
+                    'DANA': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Logo_dana_blue.svg',
+                    'GoPay': 'https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg',
+                    'QRIS': 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Logo_QRIS.svg'
+                };
+                return logos[method] || 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Old_Visa_Logo.svg/1200px-Old_Visa_Logo.svg.png';
+            },
+            getFlagUrl(flag) {
+                if(flag === '🇮🇩') return 'https://upload.wikimedia.org/wikipedia/commons/9/9f/Flag_of_Indonesia.svg';
+                return 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Flag_of_the_United_Nations.svg';
+            },
+
+            generateData() {
+                const products = [
+                    {n: 'MLBB 86 Diamonds', c: 'Game Topup', p: 20000, img: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Source Code Web Berita', c: 'Source Code', p: 150000, img: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Followers IG 1000', c: 'SMM Panel', p: 35000, img: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=100'},
+                    {n: 'Netflix 1 Bulan 4K', c: 'Premium Acc', p: 30000, img: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&q=80&w=100'}
+                ];
+                const users = ['Andi Saputra', 'Budi Santoso', 'Citra Kirana', 'Dewi Persik'];
+                
+                this.transactions = Array.from({length: 40}, (_, i) => {
+                    const prod = products[Math.floor(Math.random() * products.length)];
+                    return {
+                        id: `INV-${2026000 + i}`,
+                        date: new Date(Date.now() - Math.floor(Math.random() * 1000000000)).toISOString(),
+                        product: prod.n,
+                        category: prod.c,
+                        img: prod.img,
+                        total: prod.p,
+                        costPriceInput: (prod.p * 0.8).toString(),
+                        method: ['QRIS', 'BCA', 'DANA', 'GoPay'][Math.floor(Math.random()*4)],
+                        status: this.statusOptions[Math.floor(Math.random() * this.statusOptions.length)],
+                        paymentStatus: 'Paid',
+                        note: Math.random() > 0.7 ? 'Tolong dipercepat ya min' : '',
+                        inputData: '81239123 (Server 2021)',
+                        user: {
+                            name: users[Math.floor(Math.random() * users.length)],
+                            role: ['Member', 'Reseller', 'Reseller VIP'][Math.floor(Math.random()*3)],
+                            email: `user${i}@gmail.com`,
+                            phone: `0812-${Math.floor(Math.random()*9000)}-${Math.floor(Math.random()*9000)}`,
+                            initial: 'U'
+                        },
+                        ip: `192.168.1.${Math.floor(Math.random()*255)}`,
+                        flag: '🇮🇩'
+                    };
+                });
+            }
+        },
+        mounted() {
+            this.generateData();
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

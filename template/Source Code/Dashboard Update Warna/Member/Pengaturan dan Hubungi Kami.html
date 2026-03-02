@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Member Area (Full Blue Header)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        // PALET UTAMA: #0033AA
+                        brand: { 
+                            50: '#EEF2FF', 
+                            100: '#E0E7FF', 
+                            500: '#0033AA', 
+                            600: '#002B96', 
+                            700: '#00227A', 
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'slide-up-fade': 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'scale-in': 'scaleIn 0.2s ease-out forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' }
+                        },
+                        slideUpFade: {
+                            '0%': { opacity: 0, transform: 'translateY(30px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' }
+                        },
+                        scaleIn: {
+                            '0%': { opacity: 0, transform: 'scale(0.9)' },
+                            '100%': { opacity: 1, transform: 'scale(1)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F8FAFC; overflow-x: hidden; }
+        
+        .bg-blobs { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #F8FAFC; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.4; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px 0 rgba(0, 51, 170, 0.05);
+        }
+
+        .card-bounce { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .card-bounce:hover { transform: translateY(-5px); box-shadow: 0 20px 40px -10px rgba(0, 51, 170, 0.1); border-color: #0033AA; }
+        
+        .nav-item {
+            display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 1rem;
+            border-radius: 0.8rem; font-weight: 600; font-size: 0.9rem;
+            color: #64748b; margin-bottom: 0.4rem; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .nav-item:hover { background: #EEF2FF; color: #0033AA; transform: translateX(4px); }
+        
+        .nav-active {
+            background-color: #0033AA !important;
+            color: white !important;
+            box-shadow: 0 10px 20px -5px rgba(0, 51, 170, 0.4);
+        }
+        
+        .nav-section {
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            color: #94a3b8; margin-top: 1.5rem; margin-bottom: 0.5rem; padding-left: 0.5rem;
+        }
+
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0033AA; }
+        
+        .form-input { 
+            border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.6rem 1rem; font-size: 0.9rem; outline: none; transition: all 0.2s; width: 100%;
+        }
+        .form-input:focus { border-color: #0033AA; box-shadow: 0 0 0 3px rgba(0, 51, 170, 0.1); }
+        
+        .toast-enter-active, .toast-leave-active { transition: all 0.5s ease; }
+        .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(20px); }
+    </style>
+</head>
+<body class="antialiased selection:bg-[#0033AA] selection:text-white text-slate-800">
+
+<div class="bg-blobs">
+    <div class="blob bg-blue-100 w-[500px] h-[500px] top-[-10%] left-[-10%]"></div>
+    <div class="blob bg-slate-200 w-[400px] h-[400px] bottom-[-10%] right-[-10%]"></div>
+</div>
+
+<div id="app" class="flex h-screen overflow-hidden w-full font-sans">
+
+    <transition name="toast">
+        <div v-if="toast.show" class="fixed bottom-6 right-6 z-[100] bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 border-l-4 border-[#0033AA]">
+            <i class="ri-checkbox-circle-fill text-[#0033AA] text-xl"></i>
+            <div>
+                <h4 class="font-bold text-sm">Berhasil!</h4>
+                <p class="text-xs text-slate-300">{{ toast.message }}</p>
+            </div>
+        </div>
+    </transition>
+
+    <div v-if="confirmModal.show" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="closeConfirm"></div>
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm relative overflow-hidden animate-scale-in p-6 text-center border border-slate-100">
+            <div class="w-16 h-16 bg-blue-50 text-[#0033AA] rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100">
+                <i class="ri-question-mark text-3xl font-bold"></i>
+            </div>
+            <h3 class="font-bold text-lg text-slate-800">{{ confirmModal.title }}</h3>
+            <p class="text-xs text-slate-500 mt-2 mb-6 leading-relaxed">{{ confirmModal.message }}</p>
+            <div class="flex gap-3">
+                <button @click="closeConfirm" class="flex-1 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition text-sm">Batal</button>
+                <button @click="processAction" class="flex-1 py-2.5 bg-[#0033AA] text-white font-bold rounded-xl hover:bg-[#002B96] transition text-sm shadow-lg shadow-blue-900/20">Ya, Proses</button>
+            </div>
+        </div>
+    </div>
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 glass-panel transition-transform duration-300 lg:translate-x-0 flex flex-col flex-shrink-0 border-r border-slate-200 bg-white">
+        <div class="h-24 flex items-center px-8 flex-shrink-0 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-[#0033AA] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-900/20 animate-float">
+                    <i class="ri-rocket-2-fill text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Marspedia</h1>
+                    <span class="text-[10px] font-bold text-[#0033AA] bg-blue-50 border border-blue-100 px-2 py-0.5 rounded shadow-sm">MEMBER</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar flex flex-col pb-20">
+            <p class="nav-section">Utama</p>
+            <a @click="switchPage('dashboard')" :class="['nav-item', activePage === 'dashboard' ? 'nav-active' : '']">
+                <i class="ri-layout-grid-fill text-lg"></i> Dashboard
+            </a>
+            
+            <p class="nav-section">Akun & Bantuan</p>
+            <a @click="switchPage('profile')" :class="['nav-item', activePage === 'profile' ? 'nav-active' : '']">
+                <i class="ri-user-settings-line text-lg"></i> Profile Akun
+            </a>
+            <a @click="switchPage('cs')" :class="['nav-item', activePage === 'cs' ? 'nav-active' : '']">
+                <i class="ri-customer-service-2-line text-lg"></i> Bantuan / CS
+            </a>
+
+            <div class="mt-8 mb-4 border-t border-slate-100 pt-4">
+                <a href="#" class="nav-item text-red-500 hover:text-red-600 hover:bg-red-50">
+                    <i class="ri-logout-box-line text-lg"></i> Logout
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden w-full bg-[#F8FAFC]">
+        
+        <header class="h-24 px-8 flex items-center justify-between sticky top-0 z-30 flex-shrink-0 m-4 rounded-3xl bg-[#0033AA] shadow-lg shadow-blue-900/10 text-white">
+            <div class="flex items-center gap-4">
+                <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 text-white/80 hover:bg-white/10 rounded-xl transition-colors"><i class="ri-menu-2-line text-xl"></i></button>
+                <div class="hidden md:block">
+                    <h2 class="font-bold text-lg text-white">{{ pageTitle }}</h2>
+                    <p class="text-xs text-blue-200 font-bold">Marspedia Pro Dashboard</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="hidden sm:block text-right">
+                    <p class="text-[10px] text-blue-200 font-bold uppercase tracking-wider">Status</p>
+                    <p class="text-sm font-bold text-white flex items-center gap-1 justify-end"><i class="ri-vip-crown-fill text-yellow-400"></i> {{ profile.level }}</p>
+                </div>
+                <img :src="profile.avatar" class="w-11 h-11 rounded-full shadow-md border-2 border-[#0044CC] cursor-pointer hover:scale-110 transition-transform bg-white">
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 pt-0 scroll-smooth custom-scrollbar">
+
+            <div v-if="activePage === 'dashboard'" class="animate-slide-up-fade">
+                <div class="bg-white border border-slate-200 p-10 rounded-[2rem] text-center shadow-sm">
+                    <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100">
+                        <i class="ri-home-smile-2-line text-4xl text-[#0033AA]"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800">Selamat Datang di Member Area</h3>
+                    <p class="text-slate-500 mt-2 max-w-md mx-auto text-sm">Silahkan pilih menu <span class="font-bold text-[#0033AA]">Profile Akun</span> untuk mengubah data diri atau <span class="font-bold text-[#0033AA]">Bantuan / CS</span> jika mengalami kendala.</p>
+                    
+                    <div class="flex justify-center gap-4 mt-6">
+                        <button @click="switchPage('profile')" class="px-6 py-2 bg-[#0033AA] text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-900/20 hover:bg-[#002B96] transition">Ke Profile</button>
+                        <button @click="switchPage('cs')" class="px-6 py-2 bg-white text-slate-600 border border-slate-200 rounded-xl font-bold text-sm hover:bg-slate-50 hover:text-[#0033AA] hover:border-[#0033AA] transition">Hubungi CS</button>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="activePage === 'profile'" class="animate-slide-up-fade">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    <div class="bg-white border border-slate-200 rounded-[2rem] p-0 overflow-hidden h-fit shadow-sm">
+                        <div class="h-32 bg-[#0033AA] relative">
+                            <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                        </div>
+                        <div class="px-6 pb-6 text-center -mt-12 relative">
+                            <div class="relative inline-block">
+                                <img :src="profile.avatar" class="w-24 h-24 rounded-2xl border-4 border-white shadow-xl object-cover bg-white">
+                                <button class="absolute bottom-[-5px] right-[-5px] w-8 h-8 bg-slate-800 text-white rounded-lg flex items-center justify-center hover:scale-110 transition shadow-md border border-white" title="Ganti Foto">
+                                    <i class="ri-camera-fill text-xs"></i>
+                                </button>
+                            </div>
+                            <h3 class="font-extrabold text-lg text-slate-800 mt-3">{{ profile.name }}</h3>
+                            <div class="mt-2">
+                                <span class="bg-blue-50 text-[#0033AA] font-bold text-xs px-3 py-1 rounded-full border border-blue-100 inline-flex items-center gap-1">
+                                    <i class="ri-vip-crown-fill"></i> {{ profile.level }}
+                                </span>
+                            </div>
+
+                            <div class="mt-6 flex justify-around border-t border-slate-100 pt-4">
+                                <div><p class="text-xs text-slate-400 font-bold uppercase">Member Sejak</p><p class="font-bold text-slate-700 text-sm">Jan 2026</p></div>
+                                <div><p class="text-xs text-slate-400 font-bold uppercase">Status</p><p class="font-bold text-[#0033AA] text-sm flex items-center gap-1 justify-center"><i class="ri-verified-badge-fill"></i> Verified</p></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="flex gap-2 p-1 bg-white rounded-xl w-fit border border-slate-200">
+                            <button @click="profileTab = 'bio'" :class="profileTab === 'bio' ? 'bg-[#0033AA] shadow text-white' : 'text-slate-500 hover:text-[#0033AA] hover:bg-slate-50'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">Biodata Diri</button>
+                            <button @click="profileTab = 'security'" :class="profileTab === 'security' ? 'bg-[#0033AA] shadow text-white' : 'text-slate-500 hover:text-[#0033AA] hover:bg-slate-50'" class="px-4 py-2 rounded-lg text-sm font-bold transition-all">Keamanan & PIN</button>
+                        </div>
+
+                        <div v-if="profileTab === 'bio'" class="bg-white border border-slate-200 p-6 rounded-[2rem] animate-slide-up-fade shadow-sm">
+                            <h4 class="font-bold text-lg text-slate-800 mb-6 flex items-center gap-2"><i class="ri-user-edit-fill text-[#0033AA]"></i> Edit Informasi Pribadi</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-slate-500 ml-1">Nama Lengkap</label>
+                                    <input v-model="profile.name" type="text" class="form-input">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-slate-500 ml-1">Username</label>
+                                    <input v-model="profile.username" type="text" class="form-input bg-slate-50 text-slate-400 cursor-not-allowed" readonly>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-slate-500 ml-1">Email Address</label>
+                                    <input v-model="profile.email" type="email" class="form-input">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-slate-500 ml-1">Nomor WhatsApp</label>
+                                    <input v-model="profile.phone" type="text" class="form-input">
+                                </div>
+                                <div class="md:col-span-2 space-y-1">
+                                    <label class="text-xs font-bold text-slate-500 ml-1">Alamat</label>
+                                    <textarea v-model="profile.address" rows="3" class="form-input"></textarea>
+                                </div>
+                            </div>
+                            <div class="mt-6 flex justify-end">
+                                <button @click="askConfirm('saveProfile', 'Simpan Data Diri', 'Apakah Anda yakin ingin menyimpan perubahan pada data diri Anda?')" class="px-8 py-2.5 bg-[#0033AA] text-white rounded-xl font-bold text-sm shadow-lg hover:bg-[#002B96] hover:scale-[1.02] transition-all">Simpan Perubahan</button>
+                            </div>
+                        </div>
+
+                        <div v-if="profileTab === 'security'" class="bg-white border border-slate-200 p-6 rounded-[2rem] animate-slide-up-fade shadow-sm">
+                            
+                            <h4 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2"><i class="ri-shield-keyhole-fill text-[#0033AA]"></i> Ganti Password Login</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-slate-500 ml-1">Password Lama</label>
+                                    <div class="relative">
+                                        <input :type="showPass.old ? 'text' : 'password'" class="form-input pr-10" placeholder="••••••••">
+                                        <i :class="showPass.old ? 'ri-eye-line text-[#0033AA]' : 'ri-eye-off-line text-slate-400'" @click="showPass.old = !showPass.old" class="absolute right-3 top-2.5 cursor-pointer hover:text-[#0033AA] transition-colors"></i>
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-slate-500 ml-1">Password Baru</label>
+                                    <div class="relative">
+                                        <input :type="showPass.new ? 'text' : 'password'" class="form-input pr-10" placeholder="••••••••">
+                                        <i :class="showPass.new ? 'ri-eye-line text-[#0033AA]' : 'ri-eye-off-line text-slate-400'" @click="showPass.new = !showPass.new" class="absolute right-3 top-2.5 cursor-pointer hover:text-[#0033AA] transition-colors"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end">
+                                <button @click="askConfirm('savePassword', 'Update Password', 'Apakah Anda yakin ingin mengubah password login Anda?')" class="px-6 py-2 bg-[#0033AA] text-white rounded-xl font-bold text-xs shadow-lg hover:bg-[#002B96] hover:scale-[1.02] transition-all">Update Password</button>
+                            </div>
+
+                            <div class="mt-8 pt-6 border-t border-slate-200">
+                                <h4 class="font-bold text-lg text-slate-800 mb-4 flex items-center gap-2"><i class="ri-lock-password-fill text-[#0033AA]"></i> Ganti PIN Transaksi</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div class="space-y-1">
+                                        <label class="text-xs font-bold text-slate-500 ml-1">PIN Lama</label>
+                                        <div class="relative">
+                                            <input :type="showPass.oldPin ? 'text' : 'password'" v-model="forms.pinOld" @input="onlyNumbers('pinOld')" class="form-input pr-10" placeholder="6 Digit Angka" maxlength="6" inputmode="numeric">
+                                            <i :class="showPass.oldPin ? 'ri-eye-line text-[#0033AA]' : 'ri-eye-off-line text-slate-400'" @click="showPass.oldPin = !showPass.oldPin" class="absolute right-3 top-2.5 cursor-pointer hover:text-[#0033AA] transition-colors"></i>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-xs font-bold text-slate-500 ml-1">PIN Baru</label>
+                                        <div class="relative">
+                                            <input :type="showPass.newPin ? 'text' : 'password'" v-model="forms.pinNew" @input="onlyNumbers('pinNew')" class="form-input pr-10" placeholder="6 Digit Angka" maxlength="6" inputmode="numeric">
+                                            <i :class="showPass.newPin ? 'ri-eye-line text-[#0033AA]' : 'ri-eye-off-line text-slate-400'" @click="showPass.newPin = !showPass.newPin" class="absolute right-3 top-2.5 cursor-pointer hover:text-[#0033AA] transition-colors"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex justify-end">
+                                    <button @click="askConfirm('savePin', 'Simpan PIN Baru', 'Apakah Anda yakin ingin mengganti PIN Transaksi?')" class="px-6 py-2 bg-[#0033AA] text-white rounded-xl font-bold text-xs shadow-lg hover:bg-[#002B96] hover:scale-[1.02] transition-all">Simpan PIN</button>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 pt-4 border-t border-slate-200">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h5 class="font-bold text-slate-800 text-sm">Two-Factor Authentication (2FA)</h5>
+                                        <p class="text-xs text-slate-500 mt-1">Tambahkan keamanan ekstra saat login.</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" value="" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0033AA]"></div>
+                                    </label>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="activePage === 'cs'" class="animate-slide-up-fade">
+                
+                <div class="mb-8 text-center">
+                    <h2 class="text-2xl font-bold text-slate-800">Pusat Bantuan & Social Media</h2>
+                    <p class="text-slate-500 text-sm mt-1">Hubungi kami melalui platform resmi di bawah ini</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    
+                    <a v-for="social in socials" :key="social.name" :href="social.link" target="_blank" class="bg-white border border-slate-200 p-6 rounded-[2rem] flex flex-col items-center justify-center text-center card-bounce group h-full shadow-sm">
+                        <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-4 transition-transform group-hover:scale-110 shadow-lg bg-slate-50 text-[#0033AA]">
+                            <i :class="social.icon"></i>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-lg">{{ social.name }}</h4>
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1 mb-4">{{ social.handle }}</p>
+                        <span class="text-xs font-bold px-4 py-2 rounded-xl w-full transition-colors border border-slate-200 text-slate-600 group-hover:bg-[#0033AA] group-hover:text-white group-hover:border-[#0033AA]">
+                            {{ social.action }}
+                        </span>
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                activePage: 'profile', // Default page
+                profileTab: 'bio',
+                toast: { show: false, message: '' },
+                
+                confirmModal: {
+                    show: false,
+                    title: '',
+                    message: '',
+                    actionType: ''
+                },
+
+                profile: {
+                    name: 'Member Marspedia',
+                    username: 'member_pro',
+                    email: 'member@marspedia.id',
+                    phone: '0812-3456-7890',
+                    address: 'Jl. Digital No. 1, Tangerang, Banten',
+                    avatar: 'https://ui-avatars.com/api/?name=Member+Pro&background=EEF2FF&color=0033AA&size=128',
+                    level: 'Gold Member'
+                },
+
+                showPass: {
+                    old: false,
+                    new: false,
+                    oldPin: false,
+                    newPin: false
+                },
+                
+                forms: {
+                    pinOld: '',
+                    pinNew: ''
+                },
+
+                socials: [
+                    { 
+                        name: 'Email Support', 
+                        handle: 'help@marspedia.id', 
+                        icon: 'ri-mail-send-fill', 
+                        link: '#', 
+                        action: 'Kirim Email' 
+                    },
+                    { 
+                        name: 'WhatsApp', 
+                        handle: 'Admin Support', 
+                        icon: 'ri-whatsapp-fill', 
+                        link: '#', 
+                        action: 'Chat Sekarang' 
+                    },
+                    { 
+                        name: 'Telegram', 
+                        handle: '@marspedia_bot', 
+                        icon: 'ri-telegram-fill', 
+                        link: '#', 
+                        action: 'Gabung Channel' 
+                    },
+                    { 
+                        name: 'Facebook', 
+                        handle: 'Marspedia Official', 
+                        icon: 'ri-facebook-circle-fill', 
+                        link: '#', 
+                        action: 'Ikuti Halaman' 
+                    },
+                    { 
+                        name: 'Instagram', 
+                        handle: '@marspedia.id', 
+                        icon: 'ri-instagram-fill', 
+                        link: '#', 
+                        action: 'Follow Kami' 
+                    },
+                    { 
+                        name: 'TikTok', 
+                        handle: '@marspedia', 
+                        icon: 'ri-tiktok-fill', 
+                        link: '#', 
+                        action: 'Tonton Video' 
+                    },
+                    { 
+                        name: 'YouTube', 
+                        handle: 'Marspedia TV', 
+                        icon: 'ri-youtube-fill', 
+                        link: '#', 
+                        action: 'Subscribe' 
+                    },
+                    { 
+                        name: 'Threads', 
+                        handle: '@marspedia.id', 
+                        icon: 'ri-at-line', 
+                        link: '#', 
+                        action: 'Lihat Threads' 
+                    }
+                ]
+            }
+        },
+        computed: {
+            pageTitle() {
+                if(this.activePage === 'dashboard') return 'Dashboard';
+                if(this.activePage === 'profile') return 'Pengaturan Akun';
+                if(this.activePage === 'cs') return 'Pusat Bantuan';
+                return '';
+            }
+        },
+        methods: {
+            switchPage(page) {
+                this.activePage = page;
+                this.sidebarOpen = false;
+            },
+            
+            showToast(msg) {
+                this.toast.message = msg;
+                this.toast.show = true;
+                setTimeout(() => { this.toast.show = false; }, 3000);
+            },
+
+            onlyNumbers(field) {
+                this.forms[field] = this.forms[field].replace(/[^0-9]/g, '');
+            },
+
+            askConfirm(type, title, msg) {
+                this.confirmModal.actionType = type;
+                this.confirmModal.title = title;
+                this.confirmModal.message = msg;
+                this.confirmModal.show = true;
+            },
+            
+            closeConfirm() {
+                this.confirmModal.show = false;
+            },
+
+            processAction() {
+                this.closeConfirm();
+                
+                setTimeout(() => {
+                    if (this.confirmModal.actionType === 'saveProfile') {
+                        this.showToast('Data profile berhasil disimpan!');
+                    } else if (this.confirmModal.actionType === 'savePassword') {
+                        this.showToast('Password berhasil diperbarui!');
+                    } else if (this.confirmModal.actionType === 'savePin') {
+                        this.showToast('PIN Transaksi berhasil diperbarui!');
+                        this.forms.pinOld = '';
+                        this.forms.pinNew = '';
+                    }
+                }, 500);
+            }
+        },
+        mounted() {
+            gsap.from("#app", { opacity: 0, duration: 0.5 });
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

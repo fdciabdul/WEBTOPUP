@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Pro - File Manager</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+                        pop: { '0%': { transform: 'scale(0.9)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F8FAFC; overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 0.8rem; padding: 0.75rem 1rem;
+            border-radius: 0.8rem; font-weight: 600; font-size: 0.9rem;
+            color: #64748b; margin-bottom: 0.4rem; transition: all 0.3s; cursor: pointer;
+        }
+        .nav-item:hover { background: white; color: #2563eb; transform: translateX(4px); }
+        .nav-active {
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+            color: white !important;
+            box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+        }
+        .nav-section {
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            color: #94a3b8; margin-top: 1.5rem; margin-bottom: 0.5rem; padding-left: 0.5rem;
+        }
+        .sort-active { border-color: #3b82f6; background-color: #eff6ff; color: #2563eb; }
+    </style>
+</head>
+<body class="antialiased text-slate-800 font-sans selection:bg-brand-500 selection:text-white">
+
+<div id="app" class="flex h-screen w-full relative">
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 glass-panel transition-transform duration-300 lg:translate-x-0 flex flex-col flex-shrink-0 border-r border-white/50 bg-white">
+        <div class="h-24 flex items-center px-8 flex-shrink-0 border-b border-slate-100/50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-tr from-brand-600 to-cyan-400 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/40">
+                    <i class="ri-rocket-2-fill text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Marspedia</h1>
+                    <span class="text-[10px] font-bold text-white bg-brand-600 px-2 py-0.5 rounded shadow-sm">ADMIN</span>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar flex flex-col pb-10">
+            <p class="nav-section">Menu Utama</p>
+            <div @click="switchView('dashboard')" :class="currentView === 'dashboard' ? 'nav-active' : ''" class="nav-item"><i class="ri-dashboard-line text-lg"></i> Dashboard</div>
+            <div @click="switchView('orders')" :class="currentView === 'orders' ? 'nav-active' : ''" class="nav-item"><i class="ri-shopping-cart-2-line text-lg"></i> Order Baru</div>
+            <div @click="switchView('transaction')" :class="currentView === 'transaction' ? 'nav-active' : ''" class="nav-item"><i class="ri-file-list-3-line text-lg"></i> Riwayat Transaksi</div>
+            <div @click="switchView('deposit')" :class="currentView === 'deposit' ? 'nav-active' : ''" class="nav-item"><i class="ri-wallet-3-line text-lg"></i> Deposit Saldo</div>
+            <div @click="switchView('files')" :class="currentView === 'files' ? 'nav-active' : ''" class="nav-item"><i class="ri-folder-open-line text-lg"></i> File Manager</div>
+
+            <p class="nav-section">Lainnya</p>
+            <div class="nav-item"><i class="ri-user-settings-line text-lg"></i> Profile</div>
+            <div class="mt-auto pt-4"><div class="nav-item text-red-500 hover:text-red-600 hover:bg-red-50"><i class="ri-logout-box-line text-lg"></i> Logout</div></div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden w-full bg-[#F8FAFC]">
+        
+        <header class="p-4 md:p-8 pb-0 flex flex-col gap-6 z-20 flex-shrink-0">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 bg-white rounded-xl shadow-sm text-slate-500"><i class="ri-menu-2-line"></i></button>
+                    <div>
+                        <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">{{ pageTitle }}</h2>
+                        <p class="text-[10px] md:text-xs text-slate-500 font-medium hidden md:block">{{ pageSubtitle }}</p>
+                    </div>
+                </div>
+                
+                </div>
+        </header>
+
+        <div class="flex-1 flex flex-col overflow-hidden px-4 md:px-8 py-6">
+            
+            <div v-if="currentView === 'files'" class="flex flex-col h-full gap-6 animate-fade-in">
+                
+                <div class="bg-white p-4 rounded-3xl border border-slate-200 shadow-lg shadow-slate-200/50 flex flex-col md:flex-row gap-4 items-center">
+                    
+                    <div class="relative w-full flex-1 group">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i class="ri-search-2-line text-slate-400 group-focus-within:text-brand-500 transition-colors text-lg"></i>
+                        </div>
+                        <input type="text" 
+                               v-model="fileSearchQuery" 
+                               class="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border-0 text-slate-900 text-sm rounded-2xl ring-1 ring-slate-200 focus:ring-2 focus:ring-brand-500 focus:bg-white placeholder:text-slate-400 font-semibold transition-all" 
+                               placeholder="Cari nama file, ekstensi, atau tipe...">
+                    </div>
+
+                    <div class="w-full md:w-auto relative min-w-[200px]">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="ri-sort-desc text-slate-500"></i>
+                        </div>
+                        <select v-model="fileSortBy" class="appearance-none block w-full pl-10 pr-10 py-3.5 bg-white border border-slate-200 text-slate-700 text-sm rounded-2xl focus:ring-brand-500 focus:border-brand-500 font-bold cursor-pointer hover:bg-slate-50 transition">
+                            <option value="newest">Waktu: Terbaru</option>
+                            <option value="oldest">Waktu: Terlama</option>
+                            <option value="az">Nama: A - Z</option>
+                            <option value="za">Nama: Z - A</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <i class="ri-arrow-down-s-line text-slate-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto custom-scrollbar pb-10">
+                    
+                    <div v-if="filteredFiles.length === 0" class="flex flex-col items-center justify-center h-64 text-center">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                            <i class="ri-file-search-line text-3xl text-slate-400"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-600">File tidak ditemukan</h3>
+                        <p class="text-xs text-slate-400 mt-1">Coba kata kunci pencarian lain.</p>
+                    </div>
+
+                    <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+                        <div v-for="file in filteredFiles" :key="file.id" 
+                             @click="openFile(file.url)"
+                             class="group bg-white rounded-[1.5rem] p-4 border border-slate-100 hover:border-brand-300 hover:shadow-xl hover:shadow-brand-500/10 transition-all cursor-pointer relative overflow-hidden flex flex-col items-center text-center h-[13.5rem] justify-between">
+                            
+                            <div :class="getFileColorBg(file.type)" class="absolute top-0 inset-x-0 h-16 opacity-10 rounded-b-[2rem]"></div>
+
+                            <div class="mt-3 relative z-10 w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <i :class="[getFileIcon(file.type), getFileColorText(file.type)]" class="text-2xl"></i>
+                            </div>
+
+                            <div class="w-full relative z-10 mt-1">
+                                <h4 class="font-bold text-slate-700 text-xs line-clamp-2 leading-tight mb-1 group-hover:text-brand-600 transition-colors" :title="file.name">{{ file.name }}</h4>
+                                <div class="flex items-center justify-center gap-1 text-[9px] font-bold text-slate-400">
+                                    <span>{{ file.size }}</span>
+                                    <span>•</span>
+                                    <span class="uppercase">{{ file.ext }}</span>
+                                </div>
+                                <div class="text-[9px] text-slate-400 mt-1 font-medium bg-slate-50 inline-block px-2 py-0.5 rounded-full border border-slate-100">
+                                    {{ formatDate(file.date) }}
+                                </div>
+                            </div>
+
+                            <div class="w-full mt-1">
+                                <button class="w-full py-1.5 rounded-lg bg-slate-50 text-[10px] font-bold text-slate-500 group-hover:bg-brand-600 group-hover:text-white transition-all">
+                                    <i class="ri-download-cloud-2-line mr-1"></i> Download
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="['dashboard', 'orders', 'transaction', 'deposit'].includes(currentView)" class="flex-1 flex flex-col items-center justify-center text-slate-400 font-bold animate-fade-in bg-white/50 rounded-3xl border border-dashed border-slate-300">
+                <div class="text-center p-8">
+                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                        <i class="ri-database-2-line text-4xl text-slate-400"></i>
+                    </div>
+                    <h3 class="text-lg text-slate-600">Data Kosong</h3>
+                    <p class="text-xs font-medium max-w-xs mx-auto mt-2 text-slate-400">
+                        Data riwayat transaksi dan deposit telah dihapus sesuai permintaan.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                currentView: 'files',
+                
+                // File Manager States
+                fileSearchQuery: '',
+                fileSortBy: 'newest', 
+
+                // Empty Data
+                transactions: [], 
+                deposits: [],
+                
+                // Files Data
+                files: [
+                    { id: 1, name: 'Source Code Web Berita', size: '25 MB', ext: 'ZIP', type: 'archive', url: '#', date: '2026-01-15 10:30' },
+                    { id: 2, name: 'Logo Pack 2026', size: '12 MB', ext: 'AI', type: 'image', url: '#', date: '2026-01-14 15:00' },
+                    { id: 3, name: 'Panduan Instalasi', size: '2 MB', ext: 'PDF', type: 'doc', url: '#', date: '2026-01-13 09:00' },
+                    { id: 4, name: 'Database Backup', size: '5 MB', ext: 'SQL', type: 'code', url: '#', date: '2026-01-15 08:00' },
+                    { id: 5, name: 'Banner Promo', size: '3 MB', ext: 'PNG', type: 'image', url: '#', date: '2026-01-10 12:00' },
+                    { id: 6, name: 'Script Topup Game', size: '15 MB', ext: 'RAR', type: 'archive', url: '#', date: '2026-01-12 14:20' },
+                    { id: 7, name: 'Config Server', size: '1 KB', ext: 'JSON', type: 'code', url: '#', date: '2026-01-15 11:00' },
+                    { id: 8, name: 'Invoice Template', size: '1 MB', ext: 'DOCX', type: 'doc', url: '#', date: '2026-01-05 08:00' },
+                    { id: 9, name: 'Marketing Kit', size: '50 MB', ext: 'ZIP', type: 'archive', url: '#', date: '2026-01-01 10:00' },
+                    { id: 10, name: 'E-Book Premium', size: '10 MB', ext: 'PDF', type: 'doc', url: '#', date: '2025-12-25 20:00' },
+                    { id: 11, name: 'Landing Page HTML', size: '8 MB', ext: 'HTML', type: 'code', url: '#', date: '2026-01-15 11:15' },
+                ]
+            }
+        },
+        computed: {
+            pageTitle() {
+                const titles = {
+                    'transaction': 'Riwayat Transaksi',
+                    'deposit': 'Deposit Saldo Member',
+                    'files': 'File Manager',
+                    'dashboard': 'Dashboard',
+                    'orders': 'Order Baru'
+                };
+                return titles[this.currentView] || 'Admin Panel';
+            },
+            pageSubtitle() {
+                const subs = {
+                    'files': 'Kelola file, cari source code, dan urutkan berdasarkan waktu.',
+                    'transaction': 'Data transaksi kosong.',
+                    'deposit': 'Data deposit kosong.',
+                    'dashboard': 'Statistik toko.',
+                    'orders': 'Pesanan baru.'
+                };
+                return subs[this.currentView] || '';
+            },
+            
+            // Logic Filtering & Sorting (Added Z-A)
+            filteredFiles() {
+                let result = this.files;
+
+                // 1. Filter by Search Query
+                if (this.fileSearchQuery) {
+                    const lower = this.fileSearchQuery.toLowerCase();
+                    result = result.filter(f => 
+                        f.name.toLowerCase().includes(lower) || 
+                        f.ext.toLowerCase().includes(lower)
+                    );
+                }
+
+                // 2. Sort Logic
+                return result.sort((a, b) => {
+                    if (this.fileSortBy === 'az') {
+                        return a.name.localeCompare(b.name);
+                    }
+                    if (this.fileSortBy === 'za') { // Tambahan Sortir Z-A
+                        return b.name.localeCompare(a.name);
+                    }
+                    
+                    const dateA = new Date(a.date);
+                    const dateB = new Date(b.date);
+
+                    if (this.fileSortBy === 'newest') {
+                        return dateB - dateA; 
+                    } else if (this.fileSortBy === 'oldest') {
+                        return dateA - dateB; 
+                    }
+                    return 0;
+                });
+            }
+        },
+        methods: {
+            switchView(view) {
+                this.currentView = view;
+                this.sidebarOpen = false; 
+            },
+            formatDate(dateString) {
+                const date = new Date(dateString);
+                const today = new Date();
+                if (date.toDateString() === today.toDateString()) {
+                    return 'Hari ini, ' + date.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+                }
+                return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+            },
+            // Updated Open File: Opens New Tab
+            openFile(url) {
+                window.open(url, '_blank'); 
+            },
+            getFileIcon(type) {
+                const icons = {
+                    'archive': 'ri-file-zip-fill',
+                    'image': 'ri-image-2-fill',
+                    'doc': 'ri-file-text-fill',
+                    'code': 'ri-code-s-slash-line'
+                };
+                return icons[type] || 'ri-file-fill';
+            },
+            getFileColorBg(type) {
+                const colors = {
+                    'archive': 'bg-orange-500',
+                    'image': 'bg-purple-500',
+                    'doc': 'bg-blue-500',
+                    'code': 'bg-emerald-500'
+                };
+                return colors[type] || 'bg-slate-500';
+            },
+            getFileColorText(type) {
+                const colors = {
+                    'archive': 'text-orange-500',
+                    'image': 'text-purple-500',
+                    'doc': 'text-blue-500',
+                    'code': 'text-emerald-500'
+                };
+                return colors[type] || 'text-slate-500';
+            }
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

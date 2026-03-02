@@ -43,6 +43,7 @@ class SendEmailNotificationJob implements ShouldQueue
                 'total_amount' => $this->transaction->total_amount,
                 'email' => $this->transaction->customer_email,
                 'created_at' => $this->transaction->created_at,
+                'transaction' => $this->transaction,
             ];
 
             $sent = match($this->type) {
@@ -55,6 +56,9 @@ class SendEmailNotificationJob implements ShouldQueue
                 ])),
                 'topup_failed' => $emailService->sendTopUpFailed(array_merge($data, [
                     'message' => $this->transaction->result_data['message'] ?? 'Failed',
+                ])),
+                'order_delivered' => $emailService->sendOrderDelivered(array_merge($data, [
+                    'delivery_data' => $this->transaction->delivery_data ?? [],
                 ])),
                 default => false,
             };

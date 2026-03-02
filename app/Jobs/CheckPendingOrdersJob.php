@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Transaction;
-use App\Services\DigiFlazzService;
+use App\Services\ApiGamesService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -18,7 +18,7 @@ class CheckPendingOrdersJob implements ShouldQueue
     public $tries = 1;
     public $timeout = 300;
 
-    public function handle(DigiFlazzService $digiFlazzService): void
+    public function handle(ApiGamesService $apiGamesService): void
     {
         try {
             $pendingOrders = Transaction::where('status', 'processing')
@@ -32,10 +32,11 @@ class CheckPendingOrdersJob implements ShouldQueue
 
             foreach ($pendingOrders as $transaction) {
                 try {
-                    $response = $digiFlazzService->checkOrderStatus(
-                        $transaction->order_id,
-                        $transaction->product->provider_code
-                    );
+                    $response = $apiGamesService->checkOrderStatus($transaction->order_id);
+
+                    // NOTE: The implementation of checkOrderStatus in ApiGamesService is a placeholder.
+                    // The following logic is based on the previous implementation and may not work
+                    // as expected until a real status check endpoint is available.
 
                     $status = strtolower($response['status'] ?? 'pending');
 

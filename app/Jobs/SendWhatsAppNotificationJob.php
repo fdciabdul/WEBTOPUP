@@ -48,6 +48,9 @@ class SendWhatsAppNotificationJob implements ShouldQueue
                 'topup_failed' => $whatsAppService->sendTopUpFailed(array_merge($data, [
                     'message' => $this->transaction->result_data['message'] ?? 'Failed',
                 ])),
+                'order_delivered' => $whatsAppService->sendOrderDelivered(array_merge($data, [
+                    'delivery_data' => $this->transaction->delivery_data ?? [],
+                ])),
                 default => false,
             };
 

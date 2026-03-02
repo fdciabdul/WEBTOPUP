@@ -16,6 +16,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'pin',
         'phone',
         'role',
         'level',
@@ -29,6 +30,7 @@ class User extends Authenticatable
 
     protected $hidden = [
         'password',
+        'pin',
         'remember_token',
     ];
 
@@ -70,7 +72,7 @@ class User extends Authenticatable
         return $this->role === 'member';
     }
 
-    public function addBalance(float $amount, string $referenceType = null, int $referenceId = null, string $description = null): void
+    public function addBalance(float $amount, ?string $referenceType = null, ?int $referenceId = null, ?string $description = null): void
     {
         $balanceBefore = $this->balance;
         $this->increment('balance', $amount);
@@ -89,7 +91,7 @@ class User extends Authenticatable
         ]);
     }
 
-    public function deductBalance(float $amount, string $referenceType = null, int $referenceId = null, string $description = null): void
+    public function deductBalance(float $amount, ?string $referenceType = null, ?int $referenceId = null, ?string $description = null): void
     {
         $balanceBefore = $this->balance;
         $this->decrement('balance', $amount);

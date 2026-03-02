@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Pro - Deposit Saldo (Unified Blue)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        // Mengatur Brand Color Utama menjadi #0033AA
+                        brand: { 
+                            50: '#F0F4FF', 
+                            100: '#E0E9FF', 
+                            200: '#C2D6FF',
+                            300: '#94BCFF',
+                            400: '#5E9BFF',
+                            500: '#0033AA', // PRIMARY COLOR
+                            600: '#002B94', // Hover
+                            700: '#00237A', // Active
+                            800: '#001C61',
+                            900: '#001447',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F8FAFC; overflow-x: hidden; }
+        
+        /* Custom Scrollbar - Unified Blue */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0033AA; }
+        
+        /* Glass Panel Styling */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.98);
+            border-right: 1px solid #E2E8F0;
+        }
+
+        /* Sidebar Styling */
+        .nav-item {
+            display: flex; align-items: center; gap: 0.8rem; padding: 0.75rem 1rem;
+            border-radius: 0.8rem; font-weight: 600; font-size: 0.9rem;
+            color: #64748b; margin-bottom: 0.4rem; transition: all 0.3s;
+        }
+        .nav-item:hover { background: #F0F4FF; color: #0033AA; transform: translateX(4px); }
+        
+        /* Active Nav - Solid Blue #0033AA */
+        .nav-active {
+            background-color: #0033AA;
+            color: white !important;
+            box-shadow: 0 4px 12px -2px rgba(0, 51, 170, 0.4);
+        }
+        
+        /* Table Styles - Header Solid Blue */
+        .table-header { 
+            background-color: #0033AA; 
+            color: white; 
+        }
+        .table-row-hover:hover { background-color: #F8FAFC; }
+        
+        /* Payment Card Selection - Blue Accent */
+        .payment-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+        }
+        .payment-card.selected {
+            border-color: #0033AA;
+            background-color: #F0F4FF;
+            box-shadow: 0 4px 12px -2px rgba(0, 51, 170, 0.15);
+        }
+        .check-badge {
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.2s;
+            background-color: #0033AA;
+        }
+        .payment-card.selected .check-badge {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-800 font-sans selection:bg-brand-500 selection:text-white">
+
+<div id="app" class="flex h-screen w-full relative">
+
+    <transition 
+        enter-active-class="transition ease-out duration-300" 
+        enter-from-class="opacity-0" 
+        enter-to-class="opacity-100" 
+        leave-active-class="transition ease-in duration-200" 
+        leave-from-class="opacity-100" 
+        leave-to-class="opacity-0">
+        
+        <div v-if="toast.show" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="toast.show = false"></div>
+
+            <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm p-8 relative z-10 transform transition-all scale-100 flex flex-col items-center text-center">
+                
+                <div class="w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-lg"
+                    :class="toast.type === 'success' ? 'bg-brand-50 text-brand-600 shadow-brand-500/20' : 'bg-red-50 text-red-500 shadow-red-500/20'">
+                    <i :class="toast.type === 'success' ? 'ri-checkbox-circle-fill' : 'ri-error-warning-fill'" class="text-4xl"></i>
+                </div>
+
+                <h3 class="text-2xl font-black text-slate-800 mb-2">{{ toast.title }}</h3>
+                <p class="text-slate-500 font-medium leading-relaxed mb-8">{{ toast.message }}</p>
+
+                <button @click="toast.show = false" 
+                    class="w-full py-3.5 rounded-xl font-bold text-white transition-all active:scale-95 shadow-lg flex items-center justify-center gap-2"
+                    :class="toast.type === 'success' ? 'bg-brand-500 hover:bg-brand-600 shadow-brand-500/30' : 'bg-red-500 hover:bg-red-600 shadow-red-500/30'">
+                    <span>Mengerti</span>
+                </button>
+
+            </div>
+        </div>
+    </transition>
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 glass-panel transition-transform duration-300 lg:translate-x-0 flex flex-col flex-shrink-0 bg-white">
+        <div class="h-24 flex items-center px-8 flex-shrink-0 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                    <i class="ri-rocket-2-fill text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Marspedia</h1>
+                    <span class="text-[10px] font-bold text-white bg-brand-500 px-2 py-0.5 rounded shadow-sm">MEMBER PRO</span>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar flex flex-col gap-1 pb-10">
+            <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-2 px-2">Menu Utama</p>
+            <a href="#" class="nav-item"><i class="ri-dashboard-line text-lg"></i> Dashboard</a>
+            <a href="#" class="nav-item"><i class="ri-shopping-cart-2-line text-lg"></i> Order Baru</a>
+            <a href="#" class="nav-item"><i class="ri-file-list-3-line text-lg"></i> Riwayat Transaksi</a>
+            <a href="#" class="nav-item nav-active"><i class="ri-wallet-3-line text-lg"></i> Deposit Saldo</a>
+            <a href="#" class="nav-item"><i class="ri-folder-open-line text-lg"></i> File Manager</a>
+            <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mt-6 mb-2 px-2">Lainnya</p>
+            <a href="#" class="nav-item"><i class="ri-user-settings-line text-lg"></i> Profile (Pengaturan)</a>
+            <a href="#" class="nav-item"><i class="ri-customer-service-2-line text-lg"></i> Bantuan / CS</a>
+            <div class="mt-auto pt-4 border-t border-slate-100">
+                <a href="#" class="nav-item text-red-500 hover:text-red-600 hover:bg-red-50"><i class="ri-logout-box-line text-lg"></i> Logout</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden w-full bg-[#F8FAFC]">
+        
+        <header class="p-4 md:px-8 md:py-6 flex flex-col gap-6 z-20 flex-shrink-0 bg-white/50 backdrop-blur-sm border-b border-slate-200">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 bg-white rounded-xl shadow-sm text-slate-500"><i class="ri-menu-2-line"></i></button>
+                    <div>
+                        <h2 class="text-xl md:text-2xl font-extrabold text-slate-800">Deposit Saldo</h2>
+                        <p class="text-xs text-slate-500 font-medium">Isi saldo akun untuk bertransaksi lebih cepat.</p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2 items-center">
+                    <div class="flex items-center gap-3 bg-brand-500 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl shadow-lg shadow-brand-500/30 mr-1 md:mr-3 animate-fade-in hover:-translate-y-0.5 transition-transform duration-300">
+                        <div class="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-lg hidden md:flex">
+                            <i class="ri-wallet-3-fill"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[8px] md:text-[9px] font-bold text-brand-100 uppercase tracking-wider">Total Saldo</span>
+                            <span class="text-xs md:text-sm font-black">{{ formatRupiah(currentBalance) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex bg-white rounded-xl shadow-sm border border-slate-200 p-1">
+                        <button @click="exportData" class="w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center justify-center md:gap-2" title="Export">
+                            <i class="ri-download-cloud-2-line text-lg md:text-sm"></i> <span class="hidden md:inline">Export</span>
+                        </button>
+                        <div class="w-px bg-slate-200 my-1"></div>
+                        <button @click="triggerImport" class="w-8 h-8 md:w-auto md:h-auto md:px-4 md:py-2 rounded-lg text-xs font-bold text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition flex items-center justify-center md:gap-2" title="Import">
+                            <i class="ri-upload-cloud-2-line text-lg md:text-sm"></i> <span class="hidden md:inline">Import</span>
+                        </button>
+                        <input type="file" ref="fileInput" class="hidden" accept=".json">
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-4 md:px-8 py-6 custom-scrollbar pb-20">
+            
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+                
+                <div class="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-100 h-fit">
+                    <h3 class="font-bold text-slate-800 text-lg mb-6 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center text-sm">1</span>
+                        Masukkan Nominal
+                    </h3>
+
+                    <div class="relative mb-5">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-brand-500">Rp</span>
+                        <input type="text" v-model="inputAmountFormatted" @input="handleInputAmount" placeholder="0" class="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-2xl font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all placeholder:text-slate-300">
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                        <button v-for="amount in presetAmounts" :key="amount" 
+                            @click="setAmount(amount)"
+                            :class="depositAmount === amount ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30 border-transparent' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600'"
+                            class="py-2.5 rounded-xl font-bold text-xs border transition-all active:scale-95">
+                            {{ formatK(amount) }}
+                        </button>
+                    </div>
+
+                    <button @click="createDeposit" class="w-full py-4 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold shadow-lg shadow-brand-500/30 transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <i class="ri-secure-payment-line"></i> 
+                        <span v-if="depositAmount > 0">Deposit {{ formatRupiah(depositAmount) }}</span>
+                        <span v-else>Proses Deposit Sekarang</span>
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-slate-800 text-lg mb-6 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center text-sm">2</span>
+                        Pilih Pembayaran
+                    </h3>
+
+                    <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Scan QR (Instant)</p>
+                            <div class="grid grid-cols-1 gap-3">
+                                <div v-for="method in methods.qris" :key="method.code" @click="selectedMethod = method.code" 
+                                    :class="['relative cursor-pointer p-3 rounded-xl border bg-white flex items-center gap-3 payment-card', selectedMethod === method.code ? 'selected' : 'border-slate-200 hover:border-brand-300']">
+                                    
+                                    <div class="w-10 h-10 rounded-lg bg-white border border-slate-100 flex items-center justify-center p-1">
+                                        <img :src="method.logo" class="w-full h-full object-contain">
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-slate-800 text-sm">{{ method.name }}</div>
+                                        <div class="text-[10px] text-slate-500">Otomatis Terkonfirmasi</div>
+                                    </div>
+                                    
+                                    <div class="w-6 h-6 rounded-full bg-brand-500 text-white flex items-center justify-center check-badge shadow-md shadow-brand-500/40">
+                                        <i class="ri-check-line font-bold"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1 mt-2">Virtual Account (Auto Check)</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div v-for="method in methods.va" :key="method.code" @click="selectedMethod = method.code" 
+                                    :class="['relative cursor-pointer p-3 rounded-xl border bg-white flex items-center gap-3 payment-card', selectedMethod === method.code ? 'selected' : 'border-slate-200 hover:border-brand-300']">
+                                    
+                                    <div class="w-10 h-10 rounded-lg bg-white border border-slate-100 flex items-center justify-center p-1">
+                                        <img :src="method.logo" class="w-full h-full object-contain">
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-slate-800 text-xs">{{ method.name }}</div>
+                                        <div class="text-[10px] text-slate-500">Bebas Biaya</div>
+                                    </div>
+
+                                    <div class="w-5 h-5 rounded-full bg-brand-500 text-white flex items-center justify-center check-badge shadow-md shadow-brand-500/40 absolute top-2 right-2">
+                                        <i class="ri-check-line text-xs font-bold"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col overflow-hidden relative">
+                
+                <div class="p-6 border-b border-slate-100 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white sticky top-0 z-10">
+                    <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                        <i class="ri-history-line text-brand-600"></i> Riwayat Deposit
+                    </h3>
+                    
+                    <div class="flex flex-col md:flex-row gap-2 w-full xl:w-auto">
+                        <div class="relative w-full md:w-56">
+                            <i class="ri-search-2-line absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                            <input v-model="searchQuery" type="text" placeholder="Cari ID, Metode..." class="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:border-brand-500 focus:bg-white transition">
+                        </div>
+
+                        <div class="relative w-full md:w-32">
+                             <select v-model="filterStatus" class="w-full bg-slate-50 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg px-3 py-2 focus:outline-none cursor-pointer hover:bg-slate-100 transition h-[34px] appearance-none focus:border-brand-500">
+                                <option value="All">Semua Status</option>
+                                <option value="Paid">Berhasil (Paid)</option>
+                                <option value="Pending">Menunggu</option>
+                                <option value="Cancel">Gagal</option>
+                            </select>
+                            <i class="ri-arrow-down-s-line absolute right-3 top-2.5 text-slate-400 text-xs pointer-events-none"></i>
+                        </div>
+
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <select v-model="timeFilter" class="w-full md:w-auto bg-slate-50 border border-slate-200 text-slate-600 text-xs font-bold rounded-lg px-3 py-2 focus:outline-none cursor-pointer hover:bg-slate-100 transition h-[34px] focus:border-brand-500">
+                                <option value="All Time">All Time</option>
+                                <option value="Yearly">Yearly</option>
+                                <option value="Monthly">Monthly</option>
+                                <option value="Weekly">Weekly</option>
+                                <option value="Daily">Daily</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="table-header text-xs uppercase tracking-wider sticky top-0 shadow-md">
+                            <tr>
+                                <th @click="sortBy('id')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition select-none group">
+                                    ID & Waktu <i :class="getSortIcon('id')" class="ml-1 opacity-50 group-hover:opacity-100"></i>
+                                </th>
+                                <th @click="sortBy('method')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition select-none group">
+                                    Metode <i :class="getSortIcon('method')" class="ml-1 opacity-50 group-hover:opacity-100"></i>
+                                </th>
+                                <th @click="sortBy('amount')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition select-none group">
+                                    Nominal <i :class="getSortIcon('amount')" class="ml-1 opacity-50 group-hover:opacity-100"></i>
+                                </th>
+                                <th @click="sortBy('status')" class="px-6 py-5 font-extrabold cursor-pointer hover:bg-white/10 transition select-none group">
+                                    Status <i :class="getSortIcon('status')" class="ml-1 opacity-50 group-hover:opacity-100"></i>
+                                </th>
+                                <th class="px-6 py-5 font-extrabold text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm font-medium text-slate-600 divide-y divide-slate-50">
+                            <tr v-for="trx in paginatedHistory" :key="trx.id" class="table-row-hover group transition-colors duration-200 bg-white">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-mono font-bold text-xs text-brand-600 bg-brand-50 px-2 py-1 rounded border border-brand-100">{{ trx.id }}</span>
+                                        <button @click="copyToClipboard(trx.id)" class="w-6 h-6 rounded flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-brand-500 hover:text-white transition shadow-sm" title="Salin ID">
+                                            <i class="ri-file-copy-line text-xs"></i>
+                                        </button>
+                                    </div>
+                                    <div class="text-[11px] text-slate-400 font-bold mt-1.5 flex items-center gap-1">
+                                        <i class="ri-time-line"></i> {{ formatDate(trx.date) }}
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <img :src="getMethodLogo(trx.method)" class="w-10 h-10 rounded-lg object-contain shadow-sm border border-slate-100 bg-white p-1">
+                                        <div>
+                                            <div class="font-bold text-slate-800">{{ getMethodName(trx.method) }}</div>
+                                            <span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold border border-slate-200 inline-block mt-0.5">Virtual Account</span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="font-extrabold text-slate-800 text-[13px] mb-1">{{ formatRupiah(trx.amount) }}</div>
+                                    <div class="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                                        <i class="ri-shield-check-line text-brand-500"></i> Bebas Biaya Admin
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div :class="getStatusBtnClass(trx.status)" class="inline-flex items-center px-3 py-1.5 rounded-full shadow-sm border border-white/20">
+                                        <span class="text-[10px] font-bold uppercase tracking-wider">{{ trx.status }}</span>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4 text-right">
+                                    <button v-if="trx.status === 'Pending'" class="bg-brand-500 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-brand-600 shadow-lg shadow-brand-500/30 transition">
+                                        <i class="ri-secure-payment-line mr-1"></i> Bayar
+                                    </button>
+                                    <button v-else class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white transition shadow-sm flex items-center justify-center ml-auto" title="Detail">
+                                        <i class="ri-eye-line"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                             <tr v-if="paginatedHistory.length === 0">
+                                <td colspan="5" class="py-12 text-center text-slate-400 font-medium">Data tidak ditemukan.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-white border-t border-slate-100 p-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0">
+                    <div class="flex items-center gap-4">
+                        <p class="text-xs font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                            Total Data: <span class="text-brand-600">{{ filteredHistory.length }}</span>
+                        </p>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Show</span>
+                            <select v-model="itemsPerPage" @change="currentPage = 1" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2 py-1.5 focus:outline-none cursor-pointer focus:border-brand-500">
+                                <option :value="10">10</option>
+                                <option :value="25">25</option>
+                                <option :value="50">50</option>
+                                <option :value="100">100</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 flex-wrap justify-center">
+                        <button @click="setPage(1)" :disabled="currentPage === 1" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-500 disabled:opacity-50 transition" title="First"><i class="ri-skip-back-line"></i></button>
+                        <button @click="setPage(currentPage - 1)" :disabled="currentPage === 1" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-500 disabled:opacity-50 transition" title="Previous"><i class="ri-arrow-left-s-line"></i></button>
+                        
+                        <span class="text-xs font-bold text-slate-700 mx-2">Page {{ currentPage }} / {{ totalPages }}</span>
+                        
+                        <button @click="setPage(currentPage + 1)" :disabled="currentPage === totalPages" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-500 disabled:opacity-50 transition" title="Next"><i class="ri-arrow-right-s-line"></i></button>
+                        <button @click="setPage(totalPages)" :disabled="currentPage === totalPages" class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-500 disabled:opacity-50 transition" title="Last"><i class="ri-skip-forward-line"></i></button>
+
+                        <div class="flex items-center gap-1 ml-2 pl-2 border-l border-slate-200">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Go to</span>
+                            <input type="number" v-model.number="jumpPageInput" @keyup.enter="jumpToPage" class="w-12 h-8 rounded-lg border border-slate-200 text-center text-xs font-bold text-slate-700 focus:outline-none focus:border-brand-500" min="1" :max="totalPages">
+                            <button @click="jumpToPage" class="h-8 px-2 rounded-lg bg-brand-50 text-brand-600 text-[10px] font-bold hover:bg-brand-500 hover:text-white transition">Go</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                currentBalance: 450000,
+                depositAmount: 0,
+                inputAmountFormatted: '',
+                selectedMethod: null,
+
+                // Presets
+                presetAmounts: [25000, 50000, 100000, 250000, 500000, 1000000, 2500000, 5000000],
+
+                // Table & Filter State
+                searchQuery: '',
+                timeFilter: 'All Time',
+                filterStatus: 'All', 
+                sortKey: 'date',
+                sortAsc: false,
+                itemsPerPage: 10,
+                currentPage: 1,
+                jumpPageInput: '',
+
+                // Methods Data
+                methods: {
+                    qris: [
+                        { code: 'QRIS', name: 'QRIS All Payment', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Logo_QRIS.svg' }
+                    ],
+                    va: [
+                        { code: 'BCA_VA', name: 'BCA Virtual Account', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg' },
+                        { code: 'BRI_VA', name: 'BRI Virtual Account', logo: 'https://upload.wikimedia.org/wikipedia/commons/6/68/BANK_BRI_logo.svg' },
+                        { code: 'BNI_VA', name: 'BNI Virtual Account', logo: 'https://upload.wikimedia.org/wikipedia/id/5/55/BNI_logo.svg' },
+                        { code: 'MANDIRI_VA', name: 'Mandiri Virtual Account', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg' },
+                        { code: 'BSI_VA', name: 'BSI Virtual Account', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a0/Bank_Syariah_Indonesia.svg' },
+                        { code: 'CIMB_VA', name: 'CIMB Niaga Virtual Account', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b5/Bank_CIMB_Niaga_logo.svg' },
+                    ]
+                },
+
+                // Data
+                history: [],
+                toast: { show: false, title: '', message: '', type: 'success' }
+            }
+        },
+        computed: {
+            filteredHistory() {
+                let data = this.history;
+
+                // 1. Search Filter
+                if (this.searchQuery) {
+                    const lower = this.searchQuery.toLowerCase();
+                    data = data.filter(t => 
+                        t.id.toLowerCase().includes(lower) || 
+                        t.method.toLowerCase().includes(lower)
+                    );
+                }
+
+                // 2. Status Filter
+                if (this.filterStatus !== 'All') {
+                    data = data.filter(t => t.status === this.filterStatus);
+                }
+
+                // 3. Time Filter
+                const now = new Date();
+                if (this.timeFilter !== 'All Time') {
+                    data = data.filter(t => {
+                        const date = new Date(t.date);
+                        if(this.timeFilter === 'Daily') return date.toDateString() === now.toDateString();
+                        if(this.timeFilter === 'Weekly') {
+                             const oneWeekAgo = new Date();
+                             oneWeekAgo.setDate(now.getDate() - 7);
+                             return date >= oneWeekAgo;
+                        }
+                        if(this.timeFilter === 'Monthly') return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                        if(this.timeFilter === 'Yearly') return date.getFullYear() === now.getFullYear();
+                        return true;
+                    });
+                }
+
+                // 4. Sorting
+                return data.sort((a, b) => {
+                    let valA = a[this.sortKey];
+                    let valB = b[this.sortKey];
+
+                    if (this.sortKey === 'amount') {
+                        return this.sortAsc ? valA - valB : valB - valA;
+                    } else {
+                        if (valA < valB) return this.sortAsc ? -1 : 1;
+                        if (valA > valB) return this.sortAsc ? 1 : -1;
+                        return 0;
+                    }
+                });
+            },
+            paginatedHistory() {
+                const start = (this.currentPage - 1) * this.itemsPerPage;
+                return this.filteredHistory.slice(start, start + this.itemsPerPage);
+            },
+            totalPages() {
+                return Math.ceil(this.filteredHistory.length / this.itemsPerPage) || 1;
+            }
+        },
+        methods: {
+            handleInputAmount(e) {
+                let val = e.target.value.replace(/\D/g, '');
+                if(val === '') {
+                    this.depositAmount = 0;
+                    this.inputAmountFormatted = '';
+                    return;
+                }
+                this.depositAmount = parseInt(val);
+                this.inputAmountFormatted = new Intl.NumberFormat('id-ID').format(this.depositAmount);
+            },
+            setAmount(amount) {
+                this.depositAmount = amount;
+                this.inputAmountFormatted = new Intl.NumberFormat('id-ID').format(amount);
+            },
+            formatRupiah(num) {
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+            },
+            formatK(num) {
+                if(num >= 1000000) return (num / 1000000) + ' Juta';
+                if(num >= 1000) return (num / 1000) + ' Ribu';
+                return num;
+            },
+            formatDate(iso) {
+                return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+            },
+            getMethodLogo(code) {
+                let all = [...this.methods.qris, ...this.methods.va];
+                let m = all.find(x => x.code === code);
+                return m ? m.logo : 'https://placehold.co/100x100?text=Bank';
+            },
+            getMethodName(code) {
+                let all = [...this.methods.qris, ...this.methods.va];
+                let m = all.find(x => x.code === code);
+                return m ? m.name : code;
+            },
+            getStatusBtnClass(status) {
+                const map = {
+                    'Paid': 'bg-emerald-500 text-white shadow-emerald-500/30',
+                    'Pending': 'bg-yellow-500 text-white shadow-yellow-500/30',
+                    'Cancel': 'bg-rose-600 text-white shadow-rose-600/30',
+                };
+                return map[status] || 'bg-slate-500 text-white';
+            },
+            copyToClipboard(text) {
+                navigator.clipboard.writeText(text);
+                this.toast.title = 'Berhasil Disalin';
+                this.toast.message = 'ID Transaksi: ' + text;
+                this.toast.type = 'success';
+                this.toast.show = true;
+                setTimeout(() => this.toast.show = false, 3000);
+            },
+            createDeposit() {
+                // 1. Cek Nominal
+                if (this.depositAmount < 10000) {
+                    this.toast.title = 'Nominal Kurang';
+                    this.toast.message = 'Minimal deposit adalah Rp 10.000 agar dapat diproses.';
+                    this.toast.type = 'error'; 
+                    this.toast.show = true;
+                    setTimeout(() => this.toast.show = false, 4000);
+                    return; 
+                }
+
+                // 2. Cek Metode Pembayaran
+                if (!this.selectedMethod) {
+                    this.toast.title = 'Pilih Metode';
+                    this.toast.message = 'Metode pembayaran belum dipilih. Silakan pilih salah satu metode yang tersedia.';
+                    this.toast.type = 'error'; 
+                    this.toast.show = true;
+                    setTimeout(() => this.toast.show = false, 4000);
+                    return; 
+                }
+
+                // --- Proses Lanjut Jika Valid ---
+                const newTrx = {
+                    id: 'DEP-' + Math.floor(2026000 + Math.random() * 999),
+                    date: new Date().toISOString(),
+                    method: this.selectedMethod,
+                    amount: this.depositAmount,
+                    status: 'Pending'
+                };
+                
+                this.history.unshift(newTrx);
+                this.toast.title = 'Deposit Dibuat';
+                this.toast.message = 'Silakan lakukan pembayaran sesuai nominal yang tertera untuk menyelesaikan transaksi.';
+                this.toast.type = 'success';
+                this.toast.show = true;
+                setTimeout(() => this.toast.show = false, 5000);
+                
+                // Reset
+                this.depositAmount = 0;
+                this.inputAmountFormatted = '';
+                this.selectedMethod = null;
+            },
+            
+            // --- Sort & Actions ---
+            exportData() {
+                this.toast.title = 'Exporting...';
+                this.toast.message = 'Data sedang didownload ke perangkat Anda.';
+                this.toast.type = 'success';
+                this.toast.show = true;
+                setTimeout(() => this.toast.show = false, 2000);
+            },
+            triggerImport() {
+                this.$refs.fileInput.click();
+            },
+            sortBy(key) {
+                if (this.sortKey === key) {
+                    this.sortAsc = !this.sortAsc;
+                } else {
+                    this.sortKey = key;
+                    this.sortAsc = true;
+                }
+            },
+            getSortIcon(key) {
+                if (this.sortKey !== key) return 'ri-arrow-up-down-line';
+                return this.sortAsc ? 'ri-arrow-up-s-fill' : 'ri-arrow-down-s-fill';
+            },
+            setPage(p) {
+                if (p >= 1 && p <= this.totalPages) {
+                    this.currentPage = p;
+                }
+            },
+            jumpToPage() {
+                if (this.jumpPageInput >= 1 && this.jumpPageInput <= this.totalPages) {
+                    this.currentPage = this.jumpPageInput;
+                    this.jumpPageInput = '';
+                } else {
+                    this.toast.title = 'Error Halaman';
+                    this.toast.message = 'Nomor halaman yang Anda masukkan tidak valid.';
+                    this.toast.type = 'error';
+                    this.toast.show = true;
+                    setTimeout(() => { this.toast.show = false; this.toast.type = 'success' }, 3000);
+                }
+            },
+            generateDummyData() {
+                const methods = ['QRIS', 'BCA_VA', 'BNI_VA', 'BRI_VA', 'MANDIRI_VA'];
+                const statuses = ['Paid', 'Pending', 'Cancel'];
+                
+                for(let i=0; i<65; i++) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - Math.floor(Math.random() * 60)); 
+                    
+                    this.history.push({
+                        id: `DEP-${2026000 + i}`,
+                        date: date.toISOString(),
+                        method: methods[Math.floor(Math.random() * methods.length)],
+                        amount: [50000, 100000, 150000, 250000, 500000, 1000000][Math.floor(Math.random() * 6)],
+                        status: statuses[Math.floor(Math.random() * statuses.length)]
+                    });
+                }
+            }
+        },
+        mounted() {
+            this.generateDummyData();
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

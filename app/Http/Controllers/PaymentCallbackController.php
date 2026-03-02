@@ -61,7 +61,10 @@ class PaymentCallbackController extends Controller
                 SendWhatsAppNotificationJob::dispatch($transaction, 'payment_success');
                 SendEmailNotificationJob::dispatch($transaction, 'payment_success');
 
-                ProcessTopUpJob::dispatch($transaction);
+                // NOTE: Tidak auto-process, masuk antrian dulu untuk diproses manual oleh admin
+                Log::info('Transaction paid, waiting in queue for admin processing', [
+                    'order_id' => $orderId,
+                ]);
             } elseif (in_array($newStatus, ['cancelled', 'failed'])) {
                 SendWhatsAppNotificationJob::dispatch($transaction, 'topup_failed');
                 SendEmailNotificationJob::dispatch($transaction, 'topup_failed');

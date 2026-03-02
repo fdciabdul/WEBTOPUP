@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Transaction;
+use App\Models\Product;
+use App\Models\Category;
 use App\Models\BonusFile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
@@ -18,12 +21,9 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        $stats = [
-            'balance' => $user->balance,
-            'total_transactions' => $user->total_transactions,
-            'total_spending' => $user->total_spending,
-            'level' => $user->level,
-        ];
+        $pendingTransactions = Transaction::where('user_id', $user->id)->where('status', 'pending')->count();
+        $completedTransactions = Transaction::where('user_id', $user->id)->where('status', 'completed')->count();
+        $totalProducts = Product::where('status', 'active')->count();
 
         $recentTransactions = Transaction::where('user_id', $user->id)
             ->with('product')
@@ -31,12 +31,28 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return view('dashboard.index', compact('stats', 'recentTransactions'));
+        // Best sellers: top products by transaction count for this user
+        $bestSellers = Product::withCount(['transactions' => function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            }])
+            ->whereHas('transactions', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->orderByDesc('transactions_count')
+            ->limit(5)
+            ->get();
+
+        return view('dashboard.index', compact(
+            'pendingTransactions', 'completedTransactions', 'totalProducts',
+            'recentTransactions', 'bestSellers'
+        ));
     }
 
     public function transactions(Request $request)
     {
-        $query = Transaction::where('user_id', auth()->id())
+        $userId = auth()->id();
+
+        $query = Transaction::where('user_id', $userId)
             ->with('product');
 
         if ($request->has('status')) {
@@ -53,7 +69,16 @@ class DashboardController extends Controller
 
         $transactions = $query->latest()->paginate(20);
 
-        return view('dashboard.transactions', compact('transactions'));
+        // Status counts for filter tabs
+        $allCount = Transaction::where('user_id', $userId)->count();
+        $pendingCount = Transaction::where('user_id', $userId)->where('status', 'pending')->count();
+        $processingCount = Transaction::where('user_id', $userId)->whereIn('status', ['processing', 'paid'])->count();
+        $completedCount = Transaction::where('user_id', $userId)->where('status', 'completed')->count();
+        $failedCount = Transaction::where('user_id', $userId)->whereIn('status', ['failed', 'cancelled', 'expired'])->count();
+
+        return view('dashboard.transactions', compact(
+            'transactions', 'allCount', 'pendingCount', 'processingCount', 'completedCount', 'failedCount'
+        ));
     }
 
     public function transactionDetail($orderId)
@@ -117,19 +142,53 @@ class DashboardController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'phone' => 'required|string|unique:users,phone,' . $user->id,
-            'password' => 'nullable|string|min:8|confirmed',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|unique:users,phone,' . $user->id,
         ]);
-
-        if (!empty($validated['password'])) {
-            $validated['password'] = \Hash::make($validated['password']);
-        } else {
-            unset($validated['password']);
-        }
 
         $user->update($validated);
 
         return redirect()->route('dashboard.profile')
-            ->with('success', 'Profile updated successfully');
+            ->with('success', 'Profil berhasil diperbarui');
+    }
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = auth()->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->withErrors(['current_password' => 'Password lama tidak sesuai']);
+        }
+
+        $user->update(['password' => Hash::make($request->password)]);
+
+        return redirect()->route('dashboard.profile')
+            ->with('success', 'Password berhasil diubah');
+    }
+
+    public function topup(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:10000',
+            'payment_method' => 'required|in:midtrans,bank_transfer',
+        ]);
+
+        // TODO: Integrate with payment gateway
+        return back()->with('success', 'Fitur top up saldo akan segera tersedia');
+    }
+
+    public function deleteAccount()
+    {
+        $user = auth()->user();
+        auth()->logout();
+        $user->delete();
+
+        return redirect()->route('home')
+            ->with('success', 'Akun Anda berhasil dihapus');
     }
 }

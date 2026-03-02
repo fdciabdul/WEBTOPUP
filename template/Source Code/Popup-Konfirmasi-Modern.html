@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Action System (Final)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    animation: { 
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'slide-in': 'slideIn 0.4s ease-out forwards',
+                        'fade-out': 'fadeOut 0.4s ease-in forwards'
+                    },
+                    keyframes: { 
+                        pop: { '0%': { transform: 'scale(0.9)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } },
+                        slideIn: { '0%': { transform: 'translateX(100%)', opacity: 0 }, '100%': { transform: 'translateX(0)', opacity: 1 } },
+                        fadeOut: { '0%': { transform: 'translateX(0)', opacity: 1 }, '100%': { transform: 'translateX(100%)', opacity: 0 } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style> 
+        body { background-color: #F8FAFC; } 
+        /* Transisi Toast */
+        .toast-enter-active { animation: slideIn 0.4s ease-out; }
+        .toast-leave-active { animation: fadeOut 0.4s ease-in; position: absolute; }
+        .toast-move { transition: all 0.4s ease; }
+    </style>
+</head>
+<body class="antialiased text-slate-800">
+
+<div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="text-center mb-8 space-y-2">
+        <h1 class="text-3xl font-extrabold text-slate-900">10 Tipe Aksi Modern</h1>
+        <p class="text-slate-500">Lengkap dengan <b>Input Prompt</b> & <b>Download</b></p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 w-full max-w-6xl">
+        
+        <button @click="askAction('prompt')" class="p-3 bg-white rounded-xl border border-teal-100 hover:border-teal-500 hover:shadow-lg transition group flex flex-col items-center gap-2 text-center">
+            <div class="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center text-lg group-hover:scale-110 transition"><i class="ri-edit-2-fill"></i></div>
+            <div><h4 class="font-bold text-sm text-slate-800">Input</h4><p class="text-[10px] text-slate-400">Prompt Text</p></div>
+        </button>
+
+        <button @click="askAction('download')" class="p-3 bg-white rounded-xl border border-indigo-100 hover:border-indigo-500 hover:shadow-lg transition group flex flex-col items-center gap-2 text-center">
+            <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg group-hover:scale-110 transition"><i class="ri-download-cloud-2-fill"></i></div>
+            <div><h4 class="font-bold text-sm text-slate-800">Download</h4><p class="text-[10px] text-slate-400">Export Data</p></div>
+        </button>
+
+        <button @click="askAction('confirm')" class="p-3 bg-white rounded-xl border border-blue-100 hover:border-blue-500 hover:shadow-lg transition group flex flex-col items-center gap-2 text-center">
+            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-lg group-hover:scale-110 transition"><i class="ri-question-fill"></i></div>
+            <div><h4 class="font-bold text-sm text-slate-800">Konfirmasi</h4><p class="text-[10px] text-slate-400">Yes / No</p></div>
+        </button>
+
+        <button @click="askAction('warning')" class="p-3 bg-white rounded-xl border border-orange-100 hover:border-orange-500 hover:shadow-lg transition group flex flex-col items-center gap-2 text-center">
+            <div class="w-10 h-10 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center text-lg group-hover:scale-110 transition"><i class="ri-alert-fill"></i></div>
+            <div><h4 class="font-bold text-sm text-slate-800">Peringatan</h4><p class="text-[10px] text-slate-400">Hati-hati</p></div>
+        </button>
+
+        <button @click="askAction('delete')" class="p-3 bg-white rounded-xl border border-red-100 hover:border-red-500 hover:shadow-lg transition group flex flex-col items-center gap-2 text-center">
+            <div class="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-lg group-hover:scale-110 transition"><i class="ri-delete-bin-2-fill"></i></div>
+            <div><h4 class="font-bold text-sm text-slate-800">Hapus</h4><p class="text-[10px] text-slate-400">Destructive</p></div>
+        </button>
+
+        <button @click="askAction('success')" class="p-3 bg-white rounded-xl border border-emerald-100 hover:border-emerald-500 hover:shadow-lg transition group flex flex-col items-center gap-2 text-center">
+            <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg group-hover:scale-110 transition"><i class="ri-checkbox-circle-fill"></i></div>
+            <div><h4 class="font-bold text-sm text-slate-800">Sukses</h4><p class="text-[10px] text-slate-400">Berhasil</p></div>
+        </button>
+
+        <button @click="askAction('error')" class="p-3 bg-white rounded-xl border border-rose-100 hover:border-rose-500 hover:shadow-lg transition group flex flex-col items-center gap-2 text-center">
+            <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center text-lg group-hover:scale-110 transition"><i class="ri-close-circle-fill"></i></div>
+            <div><h4 class="font-bold text-sm text-slate-800">Error</h4><p class="text-[10px] text-slate-400">Gagal</p></div>
+        </button>
+
+        <button @click="askAction('info')" class="p-3 bg-white rounded-xl border border-cyan-100 hover:border-cyan-500 hover:shadow-lg transition group flex flex-col items-center gap-2 text-center">
+            <div class="w-10 h-10 rounded-full bg-cyan-50 text-cyan-600 flex items-center justify-center text-lg group-hover:scale-110 transition"><i class="ri-information-fill"></i></div>
+            <div><h4 class="font-bold text-sm text-slate-800">Info</h4><p class="text-[10px] text-slate-400">Notifikasi</p></div>
+        </button>
+
+        <button @click="askAction('premium')" class="p-3 bg-white rounded-xl border border-purple-100 hover:border-purple-500 hover:shadow-lg transition group flex flex-col items-center gap-2 text-center">
+            <div class="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-lg group-hover:scale-110 transition"><i class="ri-vip-crown-fill"></i></div>
+            <div><h4 class="font-bold text-sm text-slate-800">Premium</h4><p class="text-[10px] text-slate-400">Upsell</p></div>
+        </button>
+
+        <button @click="askAction('logout')" class="p-3 bg-white rounded-xl border border-slate-200 hover:border-slate-500 hover:shadow-lg transition group flex flex-col items-center gap-2 text-center">
+            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-lg group-hover:scale-110 transition"><i class="ri-logout-box-r-fill"></i></div>
+            <div><h4 class="font-bold text-sm text-slate-800">Logout</h4><p class="text-[10px] text-slate-400">System</p></div>
+        </button>
+
+    </div>
+
+    <div v-if="modal.isOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-all">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl animate-pop text-center relative overflow-hidden">
+            
+            <div :class="[config.bgIcon, config.textIcon]" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 text-4xl shadow-sm transition-all">
+                <i :class="config.icon"></i>
+            </div>
+            
+            <h3 class="font-black text-2xl text-slate-800 mb-2">{{ modal.title }}</h3>
+            
+            <p class="text-sm text-slate-500 mb-6 font-medium px-2 leading-relaxed">{{ modal.msg }}</p>
+            
+            <div v-if="config.showInput" class="mb-6 text-left">
+                <label class="text-xs font-bold text-slate-700 ml-1 mb-1 block">Alasan / Catatan:</label>
+                <textarea v-model="inputValue" ref="inputField" rows="2" 
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition"
+                    placeholder="Tulis sesuatu di sini..."></textarea>
+            </div>
+
+            <div class="flex gap-3">
+                <button v-if="config.showCancel" @click="closeModal" :disabled="isLoading"
+                    class="flex-1 py-3.5 font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition disabled:opacity-50">
+                    {{ modal.cancelText || 'Batal' }}
+                </button>
+                
+                <button @click="processAction" :disabled="isLoading || (config.showInput && !inputValue)"
+                    :class="[config.btnBg, config.btnHover]"
+                    class="flex-1 py-3.5 font-bold text-white rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                    
+                    <span v-if="isLoading" class="animate-spin text-xl"><i class="ri-loader-4-line"></i></span>
+                    <span v-else>{{ modal.btnText }}</span>
+                
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="fixed top-5 right-5 z-[200] flex flex-col gap-3 w-full max-w-xs pointer-events-none">
+        <transition-group name="toast">
+            <div v-for="toast in toasts" :key="toast.id" 
+                class="pointer-events-auto bg-white p-4 rounded-xl shadow-xl border-l-4 flex items-start gap-3 backdrop-blur-md bg-opacity-95"
+                :class="getToastBorder(toast.type)">
+                
+                <div class="mt-0.5 text-lg" :class="getToastColor(toast.type)">
+                    <i :class="getToastIcon(toast.type)"></i>
+                </div>
+                
+                <div class="flex-1">
+                    <h5 class="font-bold text-sm text-slate-800">{{ toast.title }}</h5>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">{{ toast.msg }}</p>
+                </div>
+                <button @click="removeToast(toast.id)" class="text-slate-400 hover:text-slate-600"><i class="ri-close-line"></i></button>
+            </div>
+        </transition-group>
+    </div>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                isLoading: false,
+                inputValue: '', // Penampung text input (Prompt)
+                
+                modal: { isOpen: false, type: 'info', title: '', msg: '', btnText: 'Oke', cancelText: 'Batal' },
+                toasts: [],
+                toastCounter: 0,
+
+                // --- 10 TIPE STYLE KONFIGURASI ---
+                styles: {
+                    // 1. INPUT PROMPT (Teal) - NEW
+                    prompt: {
+                        icon: 'ri-edit-2-line', bgIcon: 'bg-teal-50', textIcon: 'text-teal-600',
+                        btnBg: 'bg-teal-500', btnHover: 'hover:bg-teal-600 hover:shadow-teal-500/30', 
+                        showCancel: true, showInput: true 
+                    },
+                    // 2. DOWNLOAD (Indigo) - NEW
+                    download: {
+                        icon: 'ri-download-cloud-2-line', bgIcon: 'bg-indigo-50', textIcon: 'text-indigo-600',
+                        btnBg: 'bg-indigo-500', btnHover: 'hover:bg-indigo-600 hover:shadow-indigo-500/30', 
+                        showCancel: false // Biasanya download otomatis jalan
+                    },
+                    // 3-10: Tipe Lama
+                    confirm: {
+                        icon: 'ri-question-fill', bgIcon: 'bg-blue-50', textIcon: 'text-blue-600',
+                        btnBg: 'bg-blue-600', btnHover: 'hover:bg-blue-700 hover:shadow-blue-600/30', showCancel: true
+                    },
+                    warning: {
+                        icon: 'ri-alert-fill', bgIcon: 'bg-orange-50', textIcon: 'text-orange-500',
+                        btnBg: 'bg-orange-500', btnHover: 'hover:bg-orange-600 hover:shadow-orange-500/30', showCancel: true
+                    },
+                    delete: {
+                        icon: 'ri-delete-bin-2-fill', bgIcon: 'bg-red-50', textIcon: 'text-red-500',
+                        btnBg: 'bg-red-500', btnHover: 'hover:bg-red-600 hover:shadow-red-500/30', showCancel: true
+                    },
+                    success: {
+                        icon: 'ri-checkbox-circle-fill', bgIcon: 'bg-emerald-50', textIcon: 'text-emerald-500',
+                        btnBg: 'bg-emerald-500', btnHover: 'hover:bg-emerald-600 hover:shadow-emerald-500/30', showCancel: false
+                    },
+                    error: {
+                        icon: 'ri-close-circle-fill', bgIcon: 'bg-rose-50', textIcon: 'text-rose-500',
+                        btnBg: 'bg-rose-500', btnHover: 'hover:bg-rose-600 hover:shadow-rose-500/30', showCancel: false
+                    },
+                    info: {
+                        icon: 'ri-information-fill', bgIcon: 'bg-cyan-50', textIcon: 'text-cyan-600',
+                        btnBg: 'bg-cyan-500', btnHover: 'hover:bg-cyan-600 hover:shadow-cyan-500/30', showCancel: false
+                    },
+                    premium: {
+                        icon: 'ri-vip-crown-fill', bgIcon: 'bg-purple-50', textIcon: 'text-purple-600',
+                        btnBg: 'bg-purple-600', btnHover: 'hover:bg-purple-700 hover:shadow-purple-600/30', showCancel: true
+                    },
+                    logout: {
+                        icon: 'ri-logout-box-r-fill', bgIcon: 'bg-slate-100', textIcon: 'text-slate-600',
+                        btnBg: 'bg-slate-700', btnHover: 'hover:bg-slate-800 hover:shadow-slate-600/30', showCancel: true
+                    }
+                }
+            }
+        },
+        computed: {
+            config() { return this.styles[this.modal.type] || this.styles.info; }
+        },
+        methods: {
+            askAction(type) {
+                this.modal.type = type;
+                this.modal.isOpen = true;
+                this.modal.cancelText = 'Batal'; 
+                this.inputValue = ''; // Reset input field
+
+                const contents = {
+                    prompt: { t: 'Pembatalan Pesanan', m: 'Mohon isi alasan kenapa Anda membatalkan pesanan ini agar kami bisa mengevaluasi.', b: 'Kirim Alasan' },
+                    download: { t: 'Unduh Laporan?', m: 'File laporan bulanan (PDF) siap diunduh. Ukuran file sekitar 2.5MB.', b: 'Unduh Sekarang' },
+                    confirm: { t: 'Konfirmasi', m: 'Lanjutkan ke langkah berikutnya?', b: 'Ya, Lanjut' },
+                    warning: { t: 'Peringatan', m: 'Baterai perangkat Anda lemah (10%).', b: 'Mengerti' },
+                    delete: { t: 'Hapus Item', m: 'Yakin hapus data ini secara permanen?', b: 'Hapus' },
+                    success: { t: 'Berhasil', m: 'Data tersimpan dengan aman.', b: 'Oke' },
+                    error: { t: 'Gagal', m: 'Koneksi internet terputus.', b: 'Coba Lagi' },
+                    info: { t: 'Info', m: 'Versi aplikasi terbaru v2.0 tersedia.', b: 'Lihat' },
+                    premium: { t: 'Fitur PRO', m: 'Buka akses fitur ini dengan upgrade.', b: 'Upgrade' },
+                    logout: { t: 'Logout', m: 'Anda akan keluar dari sesi ini.', b: 'Keluar' }
+                };
+
+                const c = contents[type];
+                this.modal.title = c.t;
+                this.modal.msg = c.m;
+                this.modal.btnText = c.b;
+
+                // Focus otomatis ke input field jika tipe prompt
+                if(type === 'prompt') {
+                    this.$nextTick(() => {
+                        if(this.$refs.inputField) this.$refs.inputField.focus();
+                    });
+                }
+            },
+
+            closeModal() {
+                this.modal.isOpen = false;
+            },
+
+            processAction() {
+                // Skip loading untuk tipe notifikasi simple
+                if(['success', 'info', 'error'].includes(this.modal.type)) {
+                    this.closeModal();
+                    return;
+                }
+
+                this.isLoading = true;
+                
+                // DELAY DIATUR JADI 200ms (0.2 Detik)
+                setTimeout(() => {
+                    this.isLoading = false;
+                    this.closeModal();
+                    
+                    // Pesan Toast Dinamis
+                    let toastMsg = 'Aksi berhasil dijalankan';
+                    if (this.modal.type === 'prompt') toastMsg = `Input diterima: "${this.inputValue}"`;
+                    if (this.modal.type === 'download') toastMsg = 'Mulai mengunduh file...';
+                    if (this.modal.type === 'delete') toastMsg = 'Data berhasil dihapus';
+
+                    this.addToast(toastMsg, this.modal.type);
+
+                }, 200); // <-- Delay 600ms
+            },
+
+            // --- TOAST SYSTEM ---
+            addToast(msg, type) {
+                const id = this.toastCounter++;
+                const titles = {
+                    prompt: 'Input Saved', download: 'Downloading', confirm: 'Confirmed', 
+                    warning: 'Warning', delete: 'Deleted', success: 'Success', 
+                    error: 'Error', info: 'Info', premium: 'Upgraded', logout: 'Goodbye'
+                };
+                this.toasts.push({ id, type, msg, title: titles[type] || 'Notification' });
+                setTimeout(() => this.removeToast(id), 3000);
+            },
+            removeToast(id) { this.toasts = this.toasts.filter(t => t.id !== id); },
+            
+            // --- HELPERS STYLE TOAST ---
+            getToastBorder(type) {
+                const map = { prompt: 'border-teal-500', download: 'border-indigo-500', confirm: 'border-blue-500', warning: 'border-orange-500', delete: 'border-red-500', success: 'border-emerald-500', error: 'border-rose-500', info: 'border-cyan-500', premium: 'border-purple-500', logout: 'border-slate-500' };
+                return map[type] || 'border-slate-300';
+            },
+            getToastColor(type) {
+                const map = { prompt: 'text-teal-500', download: 'text-indigo-500', confirm: 'text-blue-500', warning: 'text-orange-500', delete: 'text-red-500', success: 'text-emerald-500', error: 'text-rose-500', info: 'text-cyan-500', premium: 'text-purple-500', logout: 'text-slate-500' };
+                return map[type] || 'text-slate-500';
+            },
+            getToastIcon(type) { return this.styles[type]?.icon || 'ri-notification-3-line'; }
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>

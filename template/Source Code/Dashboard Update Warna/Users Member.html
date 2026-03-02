@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Pro - Member Management (Unified Blue)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        // Mendefinisikan warna Brand utama menjadi #0033AA
+                        brand: { 
+                            DEFAULT: '#0033AA', 
+                            50: '#F0F4FF', 
+                            100: '#E0E8FF', 
+                            500: '#0033AA', 
+                            600: '#002B99', 
+                            700: '#002277' 
+                        },
+                    },
+                    animation: {
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        pop: { '0%': { transform: 'scale(0.9)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } },
+                        slideUp: { '0%': { transform: 'translateY(30px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F8FAFC; overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0033AA; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.98);
+            border-right: 1px solid #E2E8F0;
+        }
+        
+        /* Table Header #0033AA */
+        .table-header-blue { 
+            background-color: #0033AA; 
+            color: white; 
+        }
+
+        .table-header-soft {
+            background: #F8FAFC;
+            color: #64748B;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        
+        /* Table Row Hover Gradient - Subtle Blue */
+        .hover-gradient:hover {
+            background-color: #F0F4FF; /* Very light brand blue */
+        }
+
+        .sort-icon { display: inline-block; transition: transform 0.2s; opacity: 0.4; margin-left: 4px; }
+        .sort-active { opacity: 1; color: white; } /* Icon white on header */
+        .table-header-soft .sort-active { color: #0033AA; } /* Icon blue on soft header */
+        
+        .copy-hover { position: relative; cursor: pointer; transition: all 0.2s; }
+        .copy-hover:hover { color: #0033AA; }
+        .copy-hover:active { transform: scale(0.95); }
+        
+        .nav-item {
+            display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 1rem;
+            border-radius: 0.5rem; font-weight: 600; font-size: 0.9rem;
+            color: #64748B; margin-bottom: 0.2rem; transition: all 0.3s;
+        }
+        .nav-item:hover { background: #F0F4FF; color: #0033AA; }
+        .nav-active {
+            background: #0033AA; color: white !important;
+            box-shadow: 0 4px 12px rgba(0, 51, 170, 0.3);
+        }
+        .nav-section {
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            color: #94A3B8; margin-top: 1.5rem; margin-bottom: 0.5rem; padding-left: 0.5rem;
+        }
+
+        .pagination-btn {
+            width: 2rem; height: 2rem;
+            border-radius: 0.5rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.875rem; font-weight: 700;
+            transition: all 0.2s;
+            border: 1px solid #E2E8F0;
+            background: white; color: #64748B;
+        }
+        .pagination-btn:hover:not(:disabled) { background: #0033AA; color: white; border-color: #0033AA; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .input-group:focus-within label { color: #0033AA; }
+        .input-group:focus-within i { color: #0033AA; }
+        .input-group:focus-within .custom-input { border-color: #0033AA; background-color: #fff; }
+
+        /* Unified Badge Color #0033AA */
+        .badge-unified { 
+            background-color: #0033AA; 
+            color: white; 
+            box-shadow: 0 2px 4px rgba(0, 51, 170, 0.2);
+            border: 1px solid #002B99;
+        }
+
+        /* Unified Modal Header */
+        .modal-header-unified {
+            background-color: #0033AA;
+            color: white;
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-800 font-sans">
+
+<div id="app" class="flex h-screen w-full relative">
+
+    <transition name="pop">
+        <div v-if="toast.show" class="fixed top-6 right-6 z-[120] pointer-events-none">
+            <div class="bg-white/95 backdrop-blur-xl border-l-4 py-4 pl-4 pr-8 rounded-xl shadow-2xl flex items-start gap-4 animate-pop pointer-events-auto min-w-[320px]"
+                :class="toast.type === 'success' ? 'border-brand' : 'border-red-500'">
+                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white shadow-sm" 
+                    :class="toast.type === 'success' ? 'bg-brand' : 'bg-red-500'">
+                    <i :class="toast.type === 'success' ? 'ri-checkbox-circle-fill' : 'ri-error-warning-fill'"></i>
+                </div>
+                <div>
+                    <h4 class="font-extrabold text-slate-800 text-sm">{{ toast.title }}</h4>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5 leading-relaxed">{{ toast.message }}</p>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 glass-panel transition-transform duration-300 lg:translate-x-0 flex flex-col flex-shrink-0 bg-white">
+        <div class="h-24 flex items-center px-8 flex-shrink-0 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand/30">
+                    <i class="ri-rocket-2-fill text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Marspedia</h1>
+                    <span class="text-[10px] font-bold text-white bg-brand px-2 py-0.5 rounded shadow-sm">PRO ADMIN</span>
+                </div>
+            </div>
+        </div>
+        <nav class="flex-1 overflow-y-auto px-6 py-4 flex flex-col pb-10">
+            <p class="nav-section">Overview</p>
+            <a href="#" class="nav-item"><i class="ri-layout-grid-line text-lg"></i> Dashboard</a>
+            <a href="#" class="nav-item"><i class="ri-file-text-line text-lg"></i> Transaksi</a>
+            <a href="#" class="nav-item"><i class="ri-truck-line text-lg"></i> Pengiriman</a>
+            <a href="#" class="nav-item"><i class="ri-shopping-bag-3-line text-lg"></i> Produk</a>
+            <a href="#" class="nav-item nav-active"><i class="ri-user-smile-fill text-lg"></i> Member</a>
+            <p class="nav-section">System</p>
+            <a href="#" class="nav-item"><i class="ri-settings-4-line text-lg"></i> Setting</a>
+            <div class="mt-8 border-t border-slate-100 pt-4">
+                <a href="#" class="nav-item text-slate-400 hover:text-red-600 hover:bg-red-50"><i class="ri-logout-box-line text-lg"></i> Sign Out</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden w-full bg-[#F8FAFC]">
+        
+        <header class="p-6 md:p-8 pb-0 flex flex-col gap-6 z-20 flex-shrink-0">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 bg-white rounded-xl shadow-sm text-slate-500"><i class="ri-menu-2-line"></i></button>
+                    <div>
+                        <h2 class="text-3xl font-black text-slate-800 tracking-tight">Member</h2>
+                        <p class="text-sm text-slate-500 font-medium mt-1">Kelola Pengguna, PIN, & Level Akses</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 items-center self-end md:self-auto flex-wrap justify-end">
+                    <button @click="modals.adminLog = true" class="bg-white border border-slate-200 text-slate-600 hover:border-brand hover:text-brand px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition-all active:scale-95 group">
+                        <div class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center group-hover:bg-brand group-hover:text-white transition">
+                            <i class="ri-history-line"></i>
+                        </div>
+                        Log Admin
+                    </button>
+
+                    <button v-if="history.length > 0" @click="triggerUndo" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-slate-500/20 flex items-center gap-2 animate-pop transition-all active:scale-95 group" title="Undo (Ctrl+Z)">
+                        <i class="ri-arrow-go-back-line group-hover:-translate-x-1 transition-transform"></i> Undo
+                    </button>
+
+                    <button @click="openModal('add')" class="bg-brand hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-brand/30 flex items-center gap-2 transition-all active:scale-95">
+                        <i class="ri-user-add-line text-lg"></i> Tambah Member
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-2 rounded-[1.2rem] shadow-sm border border-slate-200 flex flex-col md:flex-row gap-2">
+                <div class="relative flex-1 group">
+                    <i class="ri-search-2-line absolute left-4 top-3 text-slate-400 group-focus-within:text-brand transition-colors"></i>
+                    <input v-model="filters.search" type="text" placeholder="Cari Nama, Email, ID, atau No HP..." class="w-full bg-slate-50 border-none pl-11 pr-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:bg-white transition-all">
+                </div>
+                
+                <div class="flex gap-2 overflow-x-auto pb-1 md:pb-0">
+                    <select v-model="filters.level" class="bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-bold rounded-xl px-4 py-2.5 cursor-pointer focus:outline-none min-w-[120px]">
+                        <option value="All">Semua Level</option>
+                        <option value="Member">Member</option>
+                        <option value="Reseller">Reseller</option>
+                        <option value="Reseller VIP">Reseller VIP</option>
+                        <option value="Reseller VVIP">Reseller VVIP</option>
+                    </select>
+
+                    <select v-model="filters.time" class="bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-bold rounded-xl px-4 py-2.5 cursor-pointer focus:outline-none min-w-[120px]">
+                        <option value="All">All Time</option>
+                        <option value="Daily">Today</option>
+                        <option value="Weekly">This Week</option>
+                        <option value="Monthly">This Month</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 flex flex-col overflow-hidden px-4 md:px-8 py-6">
+            <div class="bg-white rounded-[1.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col flex-1 overflow-hidden relative">
+                
+                <div class="overflow-auto flex-1 custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="table-header-blue text-xs uppercase tracking-wider sticky top-0 z-20 shadow-md">
+                            <tr>
+                                <th @click="sortBy('name')" class="px-5 py-4 font-extrabold cursor-pointer hover:bg-white/10 transition select-none">
+                                    Member Info <i class="ri-expand-up-down-fill ml-1 opacity-60"></i>
+                                </th>
+                                <th class="px-5 py-4 font-extrabold">Kontak</th>
+                                <th @click="sortBy('level')" class="px-5 py-4 font-extrabold cursor-pointer hover:bg-white/10 transition select-none">
+                                    Level <i class="ri-expand-up-down-fill ml-1 opacity-60"></i>
+                                </th>
+                                <th @click="sortBy('saldo')" class="px-5 py-4 font-extrabold cursor-pointer hover:bg-white/10 transition select-none text-right">
+                                    Sisa Saldo <i class="ri-expand-up-down-fill ml-1 opacity-60"></i>
+                                </th>
+                                <th @click="sortBy('totalUsage')" class="px-5 py-4 font-extrabold cursor-pointer hover:bg-white/10 transition select-none text-right">
+                                    Pemakaian <i class="ri-expand-up-down-fill ml-1 opacity-60"></i>
+                                </th>
+                                <th @click="sortBy('totalTrx')" class="px-5 py-4 font-extrabold cursor-pointer hover:bg-white/10 transition select-none text-center">
+                                    Total Trx <i class="ri-expand-up-down-fill ml-1 opacity-60"></i>
+                                </th>
+                                <th class="px-5 py-4 font-extrabold text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm font-medium text-slate-600 divide-y divide-slate-50">
+                            <tr v-for="user in paginatedData" :key="user.id" class="hover-gradient transition-colors duration-200 bg-white group">
+                                <td class="px-5 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-brand text-white font-bold flex items-center justify-center text-sm shadow-md">
+                                            {{ getInitial(user.name) }}
+                                        </div>
+                                        <div @click="openEdit(user)" class="cursor-pointer group-hover/name:opacity-80 transition">
+                                            <div class="font-bold text-slate-800 hover:text-brand hover:underline w-fit decoration-2 underline-offset-2">
+                                                {{ user.name }}
+                                            </div>
+                                            <div class="text-[10px] text-slate-400 font-mono mt-0.5 w-fit">
+                                                {{ user.id }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4">
+                                    <div class="flex flex-col gap-1.5">
+                                        <div class="flex items-center gap-2 text-xs copy-hover w-fit" @click.stop="copy(user.phone, 'Nomor HP')">
+                                            <i class="ri-whatsapp-fill text-green-500 text-sm"></i> <span class="font-mono text-slate-700 font-bold">{{ user.phone }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 text-xs copy-hover w-fit" @click.stop="copy(user.email, 'Email')">
+                                            <i class="ri-mail-fill text-slate-400 text-sm"></i> <span class="text-slate-500">{{ user.email }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4">
+                                    <span class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider badge-unified hover:scale-105 transition-transform inline-block">
+                                        {{ user.level }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-4 text-right">
+                                    <div class="font-bold text-slate-800 copy-hover inline-block" @click.stop="copy(formatRupiah(user.saldo), 'Saldo')">{{ formatRupiah(user.saldo) }}</div>
+                                </td>
+                                <td class="px-5 py-4 text-right">
+                                    <div class="font-bold text-slate-500 copy-hover inline-block" @click.stop="copy(formatRupiah(user.totalUsage), 'Total Pemakaian')">
+                                        {{ formatRupiah(user.totalUsage) }}
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 text-center">
+                                    <div class="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full inline-block border border-slate-200">
+                                        {{ user.totalTrx }} Order
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <button @click="openActivity(user)" class="w-8 h-8 rounded-lg bg-white text-brand hover:bg-brand hover:text-white transition border border-brand/20 flex items-center justify-center shadow-sm" title="Riwayat Aktivitas">
+                                            <i class="ri-time-line"></i>
+                                        </button>
+                                        <button @click="openAddSaldo(user)" class="w-8 h-8 rounded-lg bg-white text-brand hover:bg-brand hover:text-white transition border border-brand/20 flex items-center justify-center shadow-sm" title="Kelola Saldo">
+                                            <i class="ri-wallet-3-fill"></i>
+                                        </button>
+                                        <button @click="openEdit(user)" class="w-8 h-8 rounded-lg bg-white text-brand hover:bg-brand hover:text-white transition border border-brand/20 flex items-center justify-center shadow-sm" title="Edit Data User">
+                                            <i class="ri-pencil-fill"></i>
+                                        </button>
+                                        <button @click="askDelete(user)" class="w-8 h-8 rounded-lg bg-white text-brand hover:bg-brand hover:text-white transition border border-brand/20 flex items-center justify-center shadow-sm" title="Hapus">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-white border-t border-slate-100 p-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0 z-10">
+                    <div class="flex items-center gap-3">
+                        <select v-model="pagination.perPage" class="bg-slate-50 border border-slate-200 text-xs font-bold rounded-lg px-2 py-1.5 focus:outline-none focus:border-brand">
+                            <option :value="10">10 Data</option>
+                            <option :value="25">25 Data</option>
+                            <option :value="50">50 Data</option>
+                            <option :value="100">100 Data</option>
+                        </select>
+                        <p class="text-xs font-bold text-slate-500">Total: <span class="text-brand">{{ filteredUsers.length }}</span></p>
+                    </div>
+
+                    <div class="flex items-center gap-1.5">
+                        <button @click="pagination.page = 1" :disabled="pagination.page === 1" class="pagination-btn" title="First"><i class="ri-skip-back-mini-line"></i></button>
+                        <button @click="pagination.page--" :disabled="pagination.page === 1" class="pagination-btn" title="Prev"><i class="ri-arrow-left-s-line"></i></button>
+                        
+                        <div class="flex items-center gap-1 mx-2">
+                            <input type="number" v-model.number="jumpPage.main" @change="goToPage('main', jumpPage.main)" class="w-10 text-center border border-slate-200 rounded text-xs py-1 font-bold focus:outline-none focus:border-brand" min="1" :max="totalPages">
+                            <span class="text-xs font-bold text-slate-500">/ {{ totalPages }}</span>
+                        </div>
+
+                        <button @click="pagination.page++" :disabled="pagination.page === totalPages" class="pagination-btn" title="Next"><i class="ri-arrow-right-s-line"></i></button>
+                        <button @click="pagination.page = totalPages" :disabled="pagination.page === totalPages" class="pagination-btn" title="Last"><i class="ri-skip-forward-mini-line"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div v-if="modals.user" class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+            <div class="px-8 py-5 border-b border-brand/20 flex justify-between items-center modal-header-unified">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg shadow-md bg-white/20 backdrop-blur-sm">
+                        <i :class="formMode === 'add' ? 'ri-user-add-line' : 'ri-user-settings-line'"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-xl text-white">{{ formMode === 'add' ? 'Tambah Member Baru' : 'Edit Member' }}</h3>
+                        <p class="text-xs text-blue-100/90 font-medium">Lengkapi data informasi member di bawah ini</p>
+                    </div>
+                </div>
+                <button @click="modals.user = false" class="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition"><i class="ri-close-line"></i></button>
+            </div>
+            
+            <div class="p-8 overflow-y-auto custom-scrollbar bg-[#FAFAFA]">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2">Informasi Pribadi</h4>
+                        
+                        <div class="input-group">
+                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Nama Lengkap</label>
+                            <div class="relative">
+                                <i class="ri-user-line absolute left-4 top-3.5 text-slate-400 transition-colors z-10"></i>
+                                <input v-model="formData.name" type="text" class="custom-input w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand/20 transition shadow-sm placeholder:text-slate-300" placeholder="Contoh: Budi Santoso">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Alamat Email</label>
+                            <div class="relative">
+                                <i class="ri-mail-line absolute left-4 top-3.5 text-slate-400 transition-colors z-10"></i>
+                                <input v-model="formData.email" type="email" class="custom-input w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand/20 transition shadow-sm placeholder:text-slate-300" placeholder="nama@email.com">
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Nomor WhatsApp</label>
+                            <div class="relative">
+                                <i class="ri-whatsapp-line absolute left-4 top-3.5 text-slate-400 transition-colors z-10"></i>
+                                <input v-model="formData.phone" type="text" class="custom-input w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand/20 transition shadow-sm placeholder:text-slate-300" placeholder="0812xxxx">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2">Akun & Keamanan</h4>
+                        
+                        <div class="input-group">
+                            <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Level Akses</label>
+                            <div class="relative">
+                                <i class="ri-vip-crown-line absolute left-4 top-3.5 text-slate-400 transition-colors z-10"></i>
+                                <select v-model="formData.level" class="custom-input w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand/20 transition shadow-sm cursor-pointer appearance-none">
+                                    <option value="Member">Member</option>
+                                    <option value="Reseller">Reseller</option>
+                                    <option value="Reseller VIP">Reseller VIP</option>
+                                    <option value="Reseller VVIP">Reseller VVIP</option>
+                                </select>
+                                <i class="ri-arrow-down-s-line absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100/50 space-y-3">
+                            <div class="input-group">
+                                <label class="block text-xs font-bold text-blue-800 mb-1.5 flex items-center gap-1">
+                                    <i class="ri-lock-password-fill"></i> Password Login
+                                </label>
+                                <div class="relative">
+                                    <input v-model="formData.password" :type="showPass ? 'text' : 'password'" class="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:border-brand transition pr-10 shadow-sm" :placeholder="formMode === 'edit' ? '(Biarkan kosong jika tidak ubah)' : '******'">
+                                    <button @click="showPass = !showPass" class="absolute right-3 top-2.5 text-brand hover:text-blue-800"><i :class="showPass ? 'ri-eye-off-line' : 'ri-eye-line'"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label class="block text-xs font-bold text-blue-800 mb-1.5 flex items-center gap-1">
+                                    <i class="ri-shield-keyhole-fill"></i> PIN Transaksi
+                                </label>
+                                <div class="relative">
+                                    <input v-model="formData.pin" :type="showPin ? 'text' : 'password'" maxlength="6" class="w-full bg-white border border-blue-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:border-brand transition pr-10 shadow-sm tracking-widest" :placeholder="formMode === 'edit' ? '(Biarkan kosong jika tidak ubah)' : '123456'">
+                                    <button @click="showPin = !showPin" class="absolute right-3 top-2.5 text-brand hover:text-blue-800"><i :class="showPin ? 'ri-eye-off-line' : 'ri-eye-line'"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="formMode === 'add'" class="mt-6 pt-6 border-t border-slate-200">
+                    <h4 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-3">Saldo Awal (Opsional)</h4>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3.5 text-slate-500 font-extrabold text-sm">Rp</span>
+                        <input v-model="formData.initialSaldo" @input="formatInputMoney('initialSaldo', $event)" type="text" class="w-full bg-white border border-slate-300 rounded-xl pl-10 pr-4 py-3 text-lg font-black text-slate-800 focus:outline-none focus:border-brand transition shadow-inner" placeholder="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5 border-t border-slate-100 bg-white flex justify-end gap-3 z-10">
+                <button @click="modals.user = false" class="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition">Batal</button>
+                <button @click="askSaveUser" class="px-8 py-3 bg-brand hover:bg-brand-600 text-white font-bold rounded-xl shadow-lg shadow-brand/30 transition transform active:scale-[0.98] flex items-center gap-2">
+                    <i class="ri-save-3-line"></i> Simpan Data Member
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modals.memberActivity" class="fixed inset-0 z-[85] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl overflow-hidden animate-slide-up flex flex-col max-h-[85vh]">
+            <div class="p-6 border-b border-brand/20 flex flex-col md:flex-row justify-between items-center gap-4 modal-header-unified">
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <div class="w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center text-xl font-bold flex-shrink-0 backdrop-blur-sm">
+                        {{ getInitial(selectedUser.name) }}
+                    </div>
+                    <div>
+                        <h3 class="font-black text-xl text-white">{{ selectedUser.name }}</h3>
+                        <p class="text-xs text-blue-100 font-bold opacity-90">{{ selectedUser.id }} • {{ selectedUser.level }}</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <div class="relative flex-1 md:w-64">
+                        <i class="ri-search-line absolute left-3 top-2.5 text-brand"></i>
+                        <input v-model="activitySearch" type="text" placeholder="Cari aktivitas..." class="w-full pl-9 pr-4 py-2 text-xs font-bold bg-white/95 border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-brand text-brand placeholder:text-brand/50">
+                    </div>
+                    <button @click="modals.memberActivity = false" class="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition flex-shrink-0"><i class="ri-close-line"></i></button>
+                </div>
+            </div>
+
+            <div class="flex border-b border-slate-100 bg-white">
+                <button @click="activityTab = 'trx'; activityPage = 1" :class="activityTab === 'trx' ? 'border-b-2 border-brand text-brand bg-brand-50' : 'text-slate-500 hover:bg-slate-50'" class="flex-1 py-4 text-sm font-bold transition">
+                    <i class="ri-shopping-cart-line mr-1"></i> Transaksi
+                </button>
+                <button @click="activityTab = 'saldo'; activityPage = 1" :class="activityTab === 'saldo' ? 'border-b-2 border-brand text-brand bg-brand-50' : 'text-slate-500 hover:bg-slate-50'" class="flex-1 py-4 text-sm font-bold transition">
+                    <i class="ri-wallet-3-line mr-1"></i> History Saldo
+                </button>
+                <button @click="activityTab = 'security'; activityPage = 1" :class="activityTab === 'security' ? 'border-b-2 border-brand text-brand bg-brand-50' : 'text-slate-500 hover:bg-slate-50'" class="flex-1 py-4 text-sm font-bold transition">
+                    <i class="ri-shield-keyhole-line mr-1"></i> Security Log
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar bg-white p-0">
+                <table class="w-full text-left">
+                    <thead class="table-header-soft sticky top-0 z-10 shadow-sm">
+                        <tr>
+                            <th @click="sortActivity('detail')" class="px-6 py-4 cursor-pointer hover:bg-slate-100 transition select-none">
+                                Detail / Keterangan <i class="ri-arrow-up-down-line sort-icon" :class="{'sort-active': activitySort.key === 'detail'}"></i>
+                            </th>
+                            <th v-if="activityTab !== 'security'" @click="sortActivity('amount')" class="px-6 py-4 text-right cursor-pointer hover:bg-slate-100 transition select-none">
+                                Nominal <i class="ri-arrow-up-down-line sort-icon" :class="{'sort-active': activitySort.key === 'amount'}"></i>
+                            </th>
+                            <th @click="sortActivity('date')" class="px-6 py-4 text-right cursor-pointer hover:bg-slate-100 transition select-none">
+                                Waktu <i class="ri-arrow-up-down-line sort-icon" :class="{'sort-active': activitySort.key === 'date'}"></i>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm">
+                        <tr v-for="(log, i) in filteredMemberLogs" :key="i" class="hover:bg-slate-50 transition duration-150 group">
+                            <td class="px-6 py-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm bg-brand-50 text-brand">
+                                        <i class="text-sm" :class="{
+                                            'ri-arrow-up-circle-fill': log.type === 'in',
+                                            'ri-arrow-down-circle-fill': log.type === 'out',
+                                            'ri-shield-keyhole-fill': activityTab === 'security',
+                                            'ri-shopping-bag-3-fill': activityTab === 'trx'
+                                        }"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-700">{{ log.detail || log.title }}</div>
+                                        <div v-if="activityTab === 'saldo'" class="text-[10px] uppercase font-extrabold mt-1 tracking-wide" :class="log.type === 'in' ? 'text-green-600' : 'text-red-600'">
+                                            {{ log.type === 'in' ? 'Uang Masuk' : 'Uang Keluar' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-right" v-if="activityTab !== 'security'">
+                                <div class="font-mono font-bold tracking-tight text-base" :class="activityTab === 'trx' ? 'text-slate-700' : (log.type === 'in' ? 'text-green-600' : 'text-red-500')">
+                                    {{ activityTab === 'trx' ? '-' : (log.type === 'in' ? '+' : '-') }} {{ formatRupiah(log.amount) }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex flex-col items-end">
+                                    <div class="font-bold text-slate-700 text-xs">{{ log.date.split(' ')[0] }}</div>
+                                    <div class="text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1">{{ log.date.split(' ')[1] || '00:00' }}</div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr v-if="filteredMemberLogs.length === 0">
+                            <td :colspan="activityTab === 'security' ? 2 : 3" class="p-8 text-center text-slate-400 italic">Tidak ada data ditemukan.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center" v-if="memberLogsTotalPages > 0">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400">Show:</span>
+                    <select v-model="itemsPerPage.activity" class="bg-white border border-slate-200 text-xs font-bold rounded-lg px-2 py-1 focus:outline-none">
+                        <option :value="10">10</option>
+                        <option :value="25">25</option>
+                        <option :value="50">50</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button @click="activityPage = 1" :disabled="activityPage === 1" class="pagination-btn"><i class="ri-skip-back-mini-line"></i></button>
+                    <button @click="activityPage--" :disabled="activityPage === 1" class="pagination-btn"><i class="ri-arrow-left-s-line"></i></button>
+                    <div class="flex items-center gap-1 mx-2">
+                        <input type="number" v-model.number="jumpPage.activity" @change="goToPage('activity', jumpPage.activity)" class="w-8 text-center border border-slate-200 rounded text-xs py-1 focus:outline-none font-bold text-slate-600" min="1" :max="memberLogsTotalPages">
+                        <span class="text-xs font-bold text-slate-400">/ {{ memberLogsTotalPages }}</span>
+                    </div>
+                    <button @click="activityPage++" :disabled="activityPage === memberLogsTotalPages" class="pagination-btn"><i class="ri-arrow-right-s-line"></i></button>
+                    <button @click="activityPage = memberLogsTotalPages" :disabled="activityPage === memberLogsTotalPages" class="pagination-btn"><i class="ri-skip-forward-mini-line"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modals.adminLog" class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-6xl overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+            <div class="px-8 py-5 border-b border-brand/20 flex flex-col md:flex-row justify-between items-center modal-header-unified gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center shadow-sm backdrop-blur-sm">
+                        <i class="ri-history-line text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-xl text-white">Riwayat Aktivitas Admin</h3>
+                        <p class="text-xs text-blue-100 font-bold opacity-90">Log perubahan data member & saldo</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <div class="relative flex-1 md:w-64">
+                        <i class="ri-search-line absolute left-3 top-2.5 text-brand"></i>
+                        <input v-model="adminLogSearch" type="text" placeholder="Cari Log..." class="w-full pl-9 pr-4 py-2 text-xs font-bold bg-white/95 border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-brand text-brand placeholder:text-brand/40">
+                    </div>
+                    
+                    <button @click="askClearAdminLog" v-if="adminHistory.length > 0" class="text-xs font-bold text-white bg-white/20 px-3 py-1.5 rounded-lg hover:bg-white/30 transition whitespace-nowrap border border-white/10 backdrop-blur-sm">
+                        <i class="ri-delete-bin-2-line mr-1"></i> Clear Log
+                    </button>
+                    <button @click="modals.adminLog = false" class="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition flex-shrink-0"><i class="ri-close-line"></i></button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-auto custom-scrollbar p-0 bg-slate-50/50">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-white sticky top-0 uppercase tracking-wider z-10 border-b border-slate-200 shadow-sm table-header-soft">
+                        <tr>
+                            <th @click="sortAdminLog('time')" class="px-6 py-4 font-bold w-40 cursor-pointer hover:bg-slate-50 transition select-none">
+                                Waktu <i class="ri-arrow-up-down-line sort-icon" :class="{'sort-active': adminLogSort.key === 'time'}"></i>
+                            </th>
+                            <th @click="sortAdminLog('action')" class="px-6 py-4 font-bold w-32 cursor-pointer hover:bg-slate-50 transition select-none">
+                                Aksi <i class="ri-arrow-up-down-line sort-icon" :class="{'sort-active': adminLogSort.key === 'action'}"></i>
+                            </th>
+                            <th @click="sortAdminLog('user')" class="px-6 py-4 font-bold cursor-pointer hover:bg-slate-50 transition select-none">
+                                Target User <i class="ri-arrow-up-down-line sort-icon" :class="{'sort-active': adminLogSort.key === 'user'}"></i>
+                            </th>
+                            <th class="px-6 py-4 font-bold">Detail Perubahan</th>
+                            <th class="px-6 py-4 font-bold text-right">Restore</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-slate-100 bg-white">
+                        <tr v-for="(log, index) in filteredAdminLogs" :key="log.id" class="hover:bg-brand-50/20 transition duration-150 group">
+                            <td class="px-6 py-4 whitespace-nowrap text-slate-500">
+                                <div class="font-bold text-slate-700 text-xs">{{ log.time.split(' ')[0] }}</div>
+                                <div class="text-[10px] font-medium text-slate-400 mt-1">{{ log.time.split(' ')[1] }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide shadow-sm border border-opacity-20 badge-unified">
+                                    {{ log.action }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 font-bold text-slate-700">{{ log.user }}</td>
+                            <td class="px-6 py-4 text-slate-600">{{ log.detail }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <button v-if="log.action !== 'RESTORE' && log.action !== 'UNDO'" @click="askRestore(log)" class="text-[10px] font-bold text-slate-400 hover:text-brand bg-white border border-slate-200 px-3 py-1.5 rounded-lg hover:shadow-md transition transform active:scale-95 flex items-center gap-1 ml-auto" title="Kembalikan perubahan ini">
+                                    <i class="ri-restart-line"></i> Restore
+                                </button>
+                                <span v-else class="text-[10px] text-slate-300 italic pr-2">No Action</span>
+                            </td>
+                        </tr>
+                        <tr v-if="filteredAdminLogs.length === 0">
+                            <td colspan="5" class="px-6 py-10 text-center text-slate-400 italic text-xs">Data log tidak ditemukan.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="p-4 border-t border-slate-100 bg-white flex justify-between items-center" v-if="adminLogsTotalPages > 0">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400">Show:</span>
+                    <select v-model="itemsPerPage.admin" class="bg-white border border-slate-200 text-xs font-bold rounded-lg px-2 py-1 focus:outline-none">
+                        <option :value="10">10</option>
+                        <option :value="25">25</option>
+                        <option :value="50">50</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button @click="adminLogPage = 1" :disabled="adminLogPage === 1" class="pagination-btn"><i class="ri-skip-back-mini-line"></i></button>
+                    <button @click="adminLogPage--" :disabled="adminLogPage === 1" class="pagination-btn"><i class="ri-arrow-left-s-line"></i></button>
+                    <div class="flex items-center gap-1 mx-2">
+                         <input type="number" v-model.number="jumpPage.admin" @change="goToPage('admin', jumpPage.admin)" class="w-8 text-center border border-slate-200 rounded text-xs py-1 focus:outline-none font-bold text-slate-600" min="1" :max="adminLogsTotalPages">
+                         <span class="text-xs font-bold text-slate-500">/ {{ adminLogsTotalPages }}</span>
+                    </div>
+                    <button @click="adminLogPage++" :disabled="adminLogPage === adminLogsTotalPages" class="pagination-btn"><i class="ri-arrow-right-s-line"></i></button>
+                    <button @click="adminLogPage = adminLogsTotalPages" :disabled="adminLogPage === adminLogsTotalPages" class="pagination-btn"><i class="ri-skip-forward-mini-line"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="modals.confirm" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl animate-pop text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-brand"></div>
+            <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 text-3xl shadow-lg ring-4 ring-white bg-brand text-white">
+                <i :class="confirmData.icon"></i>
+            </div>
+            <h3 class="font-black text-xl text-slate-800 mb-2">{{ confirmData.title }}</h3>
+            <p class="text-sm text-slate-500 mb-8 font-medium px-2 leading-relaxed" v-html="confirmData.message"></p>
+            
+            <div class="flex gap-3">
+                <button @click="modals.confirm = null" class="flex-1 py-3.5 font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Batal</button>
+                <button @click="confirmAction" class="flex-1 py-3.5 font-bold text-white rounded-xl transition shadow-lg transform active:scale-[0.98] bg-brand hover:bg-brand-600">
+                    Ya, Lanjutkan
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div v-if="modals.saldo" class="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
+            <div class="bg-brand p-6 pb-8 text-white relative overflow-hidden flex-shrink-0">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-white rounded-full blur-[60px] opacity-10"></div>
+                <div class="flex justify-between items-start relative z-10">
+                    <div>
+                        <h3 class="font-black text-xl">Kelola Saldo Member</h3>
+                        <p class="text-xs text-blue-200 mt-1">Topup, Tarik, atau Atur Saldo Manual</p>
+                    </div>
+                    <button @click="modals.saldo = false" class="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition"><i class="ri-close-line"></i></button>
+                </div>
+                
+                <div class="mt-6 bg-white/10 rounded-xl p-4 border border-white/10 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-white text-brand font-bold flex items-center justify-center shadow-sm">
+                            {{ getInitial(selectedUser?.name) }}
+                        </div>
+                        <div>
+                            <div class="font-bold text-white text-sm">{{ selectedUser?.name }}</div>
+                            <div class="text-[10px] text-blue-200">{{ selectedUser?.id }}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] text-blue-200 uppercase">Saldo Saat Ini</div>
+                        <div class="font-black text-xl text-white">{{ formatRupiah(selectedUser?.saldo) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="selectedUser" class="p-6 bg-white flex-1 overflow-hidden flex flex-col">
+                <div class="flex p-1 bg-slate-100 rounded-xl mb-6 flex-shrink-0">
+                    <button @click="saldoTab = 'topup'" :class="saldoTab === 'topup' ? 'bg-white shadow text-brand' : 'text-slate-500'" class="flex-1 py-2 text-xs font-extrabold rounded-lg transition">TOPUP</button>
+                    <button @click="saldoTab = 'tarik'" :class="saldoTab === 'tarik' ? 'bg-white shadow text-brand' : 'text-slate-500'" class="flex-1 py-2 text-xs font-extrabold rounded-lg transition">TARIK</button>
+                    <button @click="saldoTab = 'set'" :class="saldoTab === 'set' ? 'bg-white shadow text-brand' : 'text-slate-500'" class="flex-1 py-2 text-xs font-extrabold rounded-lg transition">MANUAL</button>
+                </div>
+
+                <div class="space-y-4 overflow-y-auto">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Nominal (Rp)</label>
+                        <input v-model="saldoForm.amount" @input="formatInputMoney('amount', $event, true)" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-4 text-xl font-black text-slate-800 focus:outline-none focus:border-brand transition placeholder:text-slate-300" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Catatan (Opsional)</label>
+                        <input v-model="saldoForm.note" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:border-brand transition" placeholder="Contoh: Bonus Event / Refund">
+                    </div>
+                    
+                    <button @click="askConfirmSaldo" class="w-full py-4 rounded-xl font-bold text-white shadow-lg transition transform active:scale-[0.98] mt-2 bg-brand hover:bg-brand-600 shadow-brand/30">
+                        <span v-if="saldoTab === 'topup'">+ Tambah Saldo</span>
+                        <span v-else-if="saldoTab === 'tarik'">- Tarik Saldo</span>
+                        <span v-else>Simpan Perubahan</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                toast: { show: false, timer: null, title: '', message: '', type: 'success' },
+                
+                users: [],
+                history: [],
+                adminHistory: [], 
+                filters: { search: '', time: 'All', level: 'All' },
+                
+                // Pagination Configs
+                pagination: { page: 1, perPage: 10 },
+                itemsPerPage: { activity: 10, admin: 10 },
+                jumpPage: { main: 1, activity: 1, admin: 1 },
+
+                sort: { key: 'name', asc: true },
+
+                // Modals
+                modals: { user: false, saldo: false, confirm: null, adminLog: false, memberActivity: false },
+                formMode: 'add',
+                formData: {},
+                showPass: false,
+                showPin: false,
+
+                // Saldo
+                saldoMode: 'row', 
+                saldoSearch: '',
+                selectedUser: null,
+                saldoTab: 'topup',
+                saldoForm: { amount: '', note: '' },
+                
+                // Member Activity Features
+                activityTab: 'trx',
+                activitySearch: '', 
+                activityPage: 1,    
+                activitySort: { key: 'date', asc: false },
+
+                // Admin Log Features
+                adminLogSearch: '', 
+                adminLogPage: 1,   
+                adminLogSort: { key: 'time', asc: false },
+
+                confirmData: {},
+                pendingAction: null 
+            }
+        },
+        computed: {
+            filteredUsers() {
+                let data = this.users;
+                if (this.filters.search) {
+                    const q = this.filters.search.toLowerCase();
+                    data = data.filter(u => 
+                        u.name.toLowerCase().includes(q) || 
+                        u.email.toLowerCase().includes(q) || 
+                        u.phone.includes(q) ||
+                        u.id.toLowerCase().includes(q)
+                    );
+                }
+                if (this.filters.level !== 'All') {
+                    data = data.filter(u => u.level === this.filters.level);
+                }
+                return data.sort((a, b) => {
+                    let valA = a[this.sort.key];
+                    let valB = b[this.sort.key];
+                    if (typeof valA === 'string') valA = valA.toLowerCase();
+                    if (typeof valB === 'string') valB = valB.toLowerCase();
+                    if (valA < valB) return this.sort.asc ? -1 : 1;
+                    if (valA > valB) return this.sort.asc ? 1 : -1;
+                    return 0;
+                });
+            },
+            paginatedData() {
+                const start = (this.pagination.page - 1) * this.pagination.perPage;
+                return this.filteredUsers.slice(start, start + this.pagination.perPage);
+            },
+            totalPages() { return Math.ceil(this.filteredUsers.length / this.pagination.perPage) || 1; },
+
+            // FILTERED MEMBER LOGS
+            filteredMemberLogs() {
+                if(!this.selectedUser) return [];
+                
+                let logs = [];
+                if (this.activityTab === 'trx') logs = this.selectedUser.activityLog.filter(x => x.type === 'trx');
+                else if (this.activityTab === 'security') logs = this.selectedUser.activityLog.filter(x => x.type === 'security');
+                else if (this.activityTab === 'saldo') logs = this.selectedUser.trxHistory;
+
+                if(this.activitySearch) {
+                    const q = this.activitySearch.toLowerCase();
+                    logs = logs.filter(l => 
+                        (l.detail && l.detail.toLowerCase().includes(q)) ||
+                        (l.title && l.title.toLowerCase().includes(q)) ||
+                        (l.amount && l.amount.toString().includes(q))
+                    );
+                }
+
+                logs.sort((a, b) => {
+                    let valA = a[this.activitySort.key];
+                    let valB = b[this.activitySort.key];
+                    
+                    if(this.activitySort.key === 'detail') {
+                        valA = a.detail || a.title || '';
+                        valB = b.detail || b.title || '';
+                    }
+                    if(this.activitySort.key === 'date') {
+                        const dateA = this.parseDate(a.date);
+                        const dateB = this.parseDate(b.date);
+                        return this.activitySort.asc ? dateA - dateB : dateB - dateA;
+                    }
+                    if (valA < valB) return this.activitySort.asc ? -1 : 1;
+                    if (valA > valB) return this.activitySort.asc ? 1 : -1;
+                    return 0;
+                });
+
+                const start = (this.activityPage - 1) * this.itemsPerPage.activity;
+                return logs.slice(start, start + this.itemsPerPage.activity);
+            },
+            memberLogsTotalPages() {
+                if(!this.selectedUser) return 0;
+                let logs = [];
+                if (this.activityTab === 'trx') logs = this.selectedUser.activityLog.filter(x => x.type === 'trx');
+                else if (this.activityTab === 'security') logs = this.selectedUser.activityLog.filter(x => x.type === 'security');
+                else if (this.activityTab === 'saldo') logs = this.selectedUser.trxHistory;
+
+                if(this.activitySearch) {
+                    const q = this.activitySearch.toLowerCase();
+                    logs = logs.filter(l => (l.detail && l.detail.toLowerCase().includes(q)) || (l.title && l.title.toLowerCase().includes(q)));
+                }
+                return Math.ceil(logs.length / this.itemsPerPage.activity) || 1;
+            },
+
+            // FILTERED ADMIN LOGS
+            filteredAdminLogs() {
+                let logs = [...this.adminHistory];
+
+                if(this.adminLogSearch) {
+                    const q = this.adminLogSearch.toLowerCase();
+                    logs = logs.filter(l => 
+                        l.user.toLowerCase().includes(q) ||
+                        l.action.toLowerCase().includes(q) ||
+                        l.detail.toLowerCase().includes(q)
+                    );
+                }
+
+                logs.sort((a, b) => {
+                    if(this.adminLogSort.key === 'time') {
+                        const dateA = this.parseDate(a.time);
+                        const dateB = this.parseDate(b.time);
+                        return this.adminLogSort.asc ? dateA - dateB : dateB - dateA;
+                    }
+                    let valA = a[this.adminLogSort.key].toString().toLowerCase();
+                    let valB = b[this.adminLogSort.key].toString().toLowerCase();
+                    if (valA < valB) return this.adminLogSort.asc ? -1 : 1;
+                    if (valA > valB) return this.adminLogSort.asc ? 1 : -1;
+                    return 0;
+                });
+
+                const start = (this.adminLogPage - 1) * this.itemsPerPage.admin;
+                return logs.slice(start, start + this.itemsPerPage.admin);
+            },
+            adminLogsTotalPages() {
+                let logs = this.adminHistory;
+                if(this.adminLogSearch) {
+                    const q = this.adminLogSearch.toLowerCase();
+                    logs = logs.filter(l => l.user.toLowerCase().includes(q) || l.action.toLowerCase().includes(q) || l.detail.toLowerCase().includes(q));
+                }
+                return Math.ceil(logs.length / this.itemsPerPage.admin) || 1;
+            }
+        },
+        watch: {
+            'pagination.perPage'() { this.pagination.page = 1; },
+            'itemsPerPage.activity'() { this.activityPage = 1; },
+            'itemsPerPage.admin'() { this.adminLogPage = 1; }
+        },
+        methods: {
+            showToast(title, message, type = 'success') {
+                this.toast = { show: true, title, message, type };
+                if(this.toast.timer) clearTimeout(this.toast.timer);
+                this.toast.timer = setTimeout(() => this.toast.show = false, 3000);
+            },
+            copy(text, label) {
+                navigator.clipboard.writeText(text).then(() => {
+                    this.showToast('Berhasil Disalin', `${label} telah disalin ke clipboard.`);
+                });
+            },
+            formatRupiah(num) {
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+            },
+            getInitial(name) { return name ? name.charAt(0).toUpperCase() : '?'; },
+            
+            // --- NAVIGATION HELPERS ---
+            goToPage(type, page) {
+                if(type === 'main') {
+                    if(page >= 1 && page <= this.totalPages) this.pagination.page = page;
+                } else if (type === 'activity') {
+                    if(page >= 1 && page <= this.memberLogsTotalPages) this.activityPage = page;
+                } else if (type === 'admin') {
+                    if(page >= 1 && page <= this.adminLogsTotalPages) this.adminLogPage = page;
+                }
+            },
+
+            // --- SORTING HELPERS ---
+            sortActivity(key) {
+                if(this.activitySort.key === key) this.activitySort.asc = !this.activitySort.asc;
+                else { this.activitySort.key = key; this.activitySort.asc = true; }
+            },
+            sortAdminLog(key) {
+                if(this.adminLogSort.key === key) this.adminLogSort.asc = !this.adminLogSort.asc;
+                else { this.adminLogSort.key = key; this.adminLogSort.asc = true; }
+            },
+            parseDate(dateStr) {
+                if(!dateStr) return 0;
+                const parts = dateStr.split(/[\s/:]/); 
+                if(parts.length >= 3) {
+                    const d = parts[0], m = parts[1] - 1, y = parts[2];
+                    const h = parts[3] || 0, min = parts[4] || 0, s = parts[5] || 0;
+                    return new Date(y, m, d, h, min, s).getTime();
+                }
+                return 0;
+            },
+
+            // --- ADMIN LOGGING ---
+            logAdminAction(action, userObj, detail, previousData = null, restoreData = null) {
+                const now = new Date();
+                const timeString = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+                
+                const logEntry = {
+                    id: Date.now() + Math.random(),
+                    time: timeString,
+                    action: action,
+                    user: userObj.name,
+                    userId: userObj.id,
+                    detail: detail,
+                    previousData: previousData ? JSON.parse(JSON.stringify(previousData)) : null,
+                    restoreData: restoreData
+                };
+                
+                this.adminHistory.unshift(logEntry);
+            },
+
+            askClearAdminLog() {
+                this.setConfirmData(
+                    'Hapus Semua Log Admin?',
+                    'Riwayat aktivitas admin akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.',
+                    'ri-delete-bin-2-line'
+                );
+                this.pendingAction = () => {
+                    this.adminHistory = [];
+                    this.adminLogPage = 1;
+                    this.showToast('Log Dibersihkan', 'Riwayat aktivitas admin telah dikosongkan.');
+                };
+            },
+
+            // Ask Confirmation for Restore
+            askRestore(log) {
+                this.setConfirmData(
+                    'Kembalikan Data?',
+                    `Anda akan mengembalikan perubahan <b>${log.action}</b> pada user <b>${log.user}</b>. Lanjutkan?`,
+                    'ri-restart-line'
+                );
+                this.pendingAction = () => this.restoreFromLog(log);
+            },
+
+            restoreFromLog(log) {
+                const idx = this.users.findIndex(u => u.id === log.userId);
+                const user = this.users[idx];
+
+                if (log.action === 'ADD') {
+                    if(idx !== -1) {
+                        this.users = this.users.filter(u => u.id !== log.userId);
+                        this.showToast('Restore Berhasil', `Member ${log.user} dihapus kembali.`);
+                        this.logAdminAction('RESTORE', {name: log.user, id: log.userId}, `Membatalkan penambahan user.`);
+                    }
+                } 
+                else if (log.action === 'DELETE') {
+                    if(log.previousData) {
+                        this.users.push(log.previousData);
+                        this.showToast('Restore Berhasil', `Member ${log.user} dikembalikan.`);
+                        this.logAdminAction('RESTORE', log.previousData, `Mengembalikan user yang dihapus.`);
+                    }
+                } 
+                else if (log.action === 'EDIT') {
+                    if(idx !== -1 && log.previousData) {
+                        this.users[idx] = log.previousData;
+                        this.showToast('Restore Berhasil', `Data ${log.user} dikembalikan ke versi sebelumnya.`);
+                        this.logAdminAction('RESTORE', this.users[idx], `Revert perubahan profil.`);
+                    }
+                }
+                else if (['TOPUP', 'TARIK', 'MANUAL SET'].includes(log.action)) {
+                    if(idx !== -1 && log.restoreData) {
+                        if (log.action === 'TOPUP') user.saldo -= log.restoreData.amount;
+                        else if (log.action === 'TARIK') user.saldo += log.restoreData.amount;
+                        else if (log.action === 'MANUAL SET') user.saldo = log.restoreData.oldSaldo;
+                        
+                        const now = new Date();
+                        const timeString = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+                        user.trxHistory.unshift({ title: 'Restore Admin', type: log.action === 'TARIK' ? 'in' : 'out', amount: 0, date: timeString });
+                        
+                        this.showToast('Restore Berhasil', `Saldo ${log.user} dikembalikan.`);
+                        this.logAdminAction('RESTORE', user, `Mengembalikan saldo.`);
+                    }
+                }
+            },
+
+            generateData() {
+                const names = ['Andi Saputra', 'Budi Santoso', 'Citra Kirana', 'Dewi Persik', 'Eko Patrio', 'Fajar Sadboy', 'Gading Marten', 'Hesti Purwadinata'];
+                this.users = Array.from({length: 30}, (_, i) => ({
+                    id: `USR-${1000+i}`,
+                    name: names[i % names.length] + (i > 7 ? ` ${i}` : ''),
+                    email: `user${i}@marspedia.id`,
+                    phone: `0812${Math.floor(10000000 + Math.random() * 90000000)}`,
+                    level: ['Member', 'Reseller', 'Reseller VIP', 'Reseller VVIP'][Math.floor(Math.random() * 4)],
+                    saldo: Math.floor(Math.random() * 5000000),
+                    totalUsage: Math.floor(Math.random() * 10000000), 
+                    totalTrx: Math.floor(Math.random() * 100), 
+                    status: true,
+                    password: 'password123',
+                    pin: '123456', 
+                    trxHistory: [],
+                    activityLog: [] 
+                }));
+
+                // Populate Dummy Activity with TIME
+                this.users.forEach(u => {
+                    for(let k=0; k<5; k++) {
+                        const h = 10+k;
+                        const m = (k*10).toString().padStart(2,'0');
+                        u.activityLog.push({ type: 'trx', detail: `Pembelian Pulsa ${10+k}k`, amount: 10000 + (k*1000), date: `10/${(1+k).toString().padStart(2,'0')}/2026 ${h}:${m}:00` });
+                        if(k%2===0) u.trxHistory.push({ title: 'Topup Bank Transfer', type: 'in', amount: 500000, date: `01/${(1+k).toString().padStart(2,'0')}/2026 ${h+1}:${m}:00`});
+                    }
+                    u.activityLog.push({ type: 'security', detail: 'PIN Saldo diubah', date: '01/01/2026 08:00:00' });
+                });
+            },
+            
+            sortBy(key) {
+                if (this.sort.key === key) this.sort.asc = !this.sort.asc;
+                else { this.sort.key = key; this.sort.asc = true; }
+            },
+
+            // --- MEMBER ACTIVITY ---
+            openActivity(user) {
+                this.selectedUser = user;
+                this.activityTab = 'trx';
+                this.activitySearch = ''; 
+                this.activityPage = 1;  
+                this.activitySort = { key: 'date', asc: false }; 
+                this.modals.memberActivity = true;
+            },
+
+            // --- USER CRUD ---
+            openModal(mode) {
+                this.formMode = mode;
+                this.formData = mode === 'add' ? { name: '', email: '', phone: '', level: 'Member', password: '', pin: '123456', initialSaldo: '' } : {};
+                this.showPass = false;
+                this.showPin = false;
+                this.modals.user = true;
+            },
+            openEdit(user) {
+                this.formMode = 'edit';
+                this.formData = JSON.parse(JSON.stringify(user));
+                this.showPass = false;
+                this.showPin = false;
+                this.modals.user = true;
+            },
+            
+            askSaveUser() {
+                if(!this.formData.name || !this.formData.email) {
+                    return this.showToast('Gagal', 'Nama dan Email wajib diisi!', 'error');
+                }
+
+                this.setConfirmData(
+                    this.formMode === 'add' ? 'Simpan Member Baru?' : 'Simpan Perubahan?',
+                    `Pastikan data untuk <b>${this.formData.name || 'Member'}</b> sudah benar.`,
+                    'ri-save-line'
+                );
+                this.pendingAction = () => this.confirmSaveUser();
+            },
+
+            confirmSaveUser() {
+                if (this.formMode === 'add') {
+                    const initialSaldo = parseInt((this.formData.initialSaldo || '0').replace(/\./g, '')) || 0;
+                    const now = new Date();
+                    const timeString = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+
+                    const newUser = {
+                        ...this.formData,
+                        id: `USR-${Date.now()}`,
+                        saldo: initialSaldo,
+                        totalUsage: 0,
+                        totalTrx: 0,
+                        status: true,
+                        trxHistory: initialSaldo > 0 ? [{ title: 'Saldo Awal', type: 'in', amount: initialSaldo, date: timeString }] : [],
+                        activityLog: [{ type: 'security', detail: 'Akun dibuat', date: timeString }]
+                    };
+                    this.users.unshift(newUser);
+                    this.saveToHistory('add', newUser);
+                    this.logAdminAction('ADD', newUser, `Menambahkan member baru. Level: ${newUser.level}`);
+                    this.showToast('Berhasil', 'Member baru ditambahkan.');
+                } else {
+                    const idx = this.users.findIndex(u => u.id === this.formData.id);
+                    if (idx !== -1) {
+                        const oldData = this.users[idx];
+                        const now = new Date();
+                        const timeString = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+                        
+                        if(oldData.password !== this.formData.password) {
+                            oldData.activityLog.unshift({ type: 'security', detail: 'Password Login diubah admin', date: timeString });
+                        }
+                        if(oldData.pin !== this.formData.pin) {
+                            oldData.activityLog.unshift({ type: 'security', detail: 'PIN Saldo diubah admin', date: timeString });
+                        }
+
+                        this.saveToHistory('edit', oldData);
+                        this.logAdminAction('EDIT', this.formData, `Update data profile / security.`, oldData);
+                        this.users[idx] = { ...this.users[idx], ...this.formData };
+                        this.showToast('Berhasil', 'Data member diperbarui.');
+                    }
+                }
+                this.modals.user = false;
+            },
+            
+            // --- SALDO MANAGEMENT ---
+            openAddSaldo(user) {
+                this.saldoMode = 'row';
+                this.selectedUser = user;
+                this.saldoTab = 'topup';
+                this.saldoForm = { amount: '', note: '' };
+                this.modals.saldo = true;
+            },
+            formatInputMoney(key, e, isSaldoForm = false) {
+                let val = e.target.value.replace(/\D/g, '');
+                const formatted = new Intl.NumberFormat('id-ID').format(val);
+                if(isSaldoForm) this.saldoForm[key] = formatted;
+                else this.formData[key] = formatted;
+            },
+            askConfirmSaldo() {
+                const amount = parseInt(this.saldoForm.amount.replace(/\./g, '')) || 0;
+                if(amount <= 0 && this.saldoTab !== 'set') return this.showToast('Error', 'Masukkan nominal valid!', 'error');
+
+                let title = '', msg = '', icon = '';
+                
+                if(this.saldoTab === 'topup') {
+                    title = 'Konfirmasi Topup?';
+                    msg = `Tambah saldo <b>${this.formatRupiah(amount)}</b> ke user <b>${this.selectedUser.name}</b>?`;
+                    icon = 'ri-add-circle-line'; 
+                } else if(this.saldoTab === 'tarik') {
+                    title = 'Konfirmasi Penarikan?';
+                    msg = `Tarik saldo <b>${this.formatRupiah(amount)}</b> dari user <b>${this.selectedUser.name}</b>?`;
+                    icon = 'ri-indeterminate-circle-line';
+                } else {
+                    title = 'Ubah Saldo Manual?';
+                    msg = `Saldo user <b>${this.selectedUser.name}</b> akan diatur menjadi <b>${this.formatRupiah(amount)}</b>?`;
+                    icon = 'ri-settings-4-line';
+                }
+
+                this.setConfirmData(title, msg, icon);
+                this.pendingAction = () => this.executeSaldoChange(amount);
+            },
+            executeSaldoChange(amount) {
+                const idx = this.users.findIndex(u => u.id === this.selectedUser.id);
+                if(idx === -1) return;
+
+                const user = this.users[idx];
+                const oldSaldo = user.saldo; 
+                this.saveToHistory('saldo', user); 
+
+                const note = this.saldoForm.note || '-';
+                const now = new Date();
+                const timeString = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+
+                if(this.saldoTab === 'topup') {
+                    user.saldo += amount;
+                    user.trxHistory.unshift({ title: `Topup Manual (${note})`, type: 'in', amount: amount, date: timeString });
+                    this.logAdminAction('TOPUP', user, `Menambah Saldo ${this.formatRupiah(amount)}. Note: ${note}`, null, { amount });
+                    this.showToast('Sukses', `Saldo berhasil ditambah.`);
+                } else if(this.saldoTab === 'tarik') {
+                    if(user.saldo < amount) return this.showToast('Gagal', 'Saldo member tidak cukup!', 'error');
+                    user.saldo -= amount;
+                    user.trxHistory.unshift({ title: `Penarikan Manual (${note})`, type: 'out', amount: amount, date: timeString });
+                    this.logAdminAction('TARIK', user, `Menarik Saldo ${this.formatRupiah(amount)}. Note: ${note}`, null, { amount });
+                    this.showToast('Sukses', `Saldo berhasil ditarik.`);
+                } else if(this.saldoTab === 'set') {
+                    const diff = amount - user.saldo;
+                    user.saldo = amount;
+                    user.trxHistory.unshift({ title: `Koreksi Admin (${note})`, type: diff >= 0 ? 'in' : 'out', amount: Math.abs(diff), date: timeString });
+                    this.logAdminAction('MANUAL SET', user, `Set saldo ke ${this.formatRupiah(amount)}. Note: ${note}`, null, { oldSaldo });
+                    this.showToast('Sukses', `Saldo berhasil diatur.`);
+                }
+                
+                this.selectedUser = this.users[idx];
+                this.saldoForm = { amount: '', note: '' }; 
+            },
+
+            // --- DELETE & CONFIRMATION ---
+            askDelete(user) {
+                this.setConfirmData(
+                    'Hapus Member Permanen?',
+                    `Data member <b>${user.name}</b> beserta riwayat saldo akan dihapus dan tidak bisa dikembalikan kecuali Undo.`,
+                    'ri-delete-bin-line'
+                );
+                this.pendingAction = () => {
+                    this.saveToHistory('delete', user);
+                    this.logAdminAction('DELETE', user, `Menghapus user permanen.`, user);
+                    this.users = this.users.filter(u => u.id !== user.id);
+                    this.showToast('Terhapus', `Member ${user.name} dihapus.`);
+                };
+            },
+            setConfirmData(title, message, icon) {
+                // Unified Blue Confirmation
+                this.confirmData = { title, message, icon };
+                this.modals.confirm = true;
+            },
+            confirmAction() {
+                if(this.pendingAction) this.pendingAction();
+                this.modals.confirm = null;
+                this.pendingAction = null;
+            },
+
+            // --- HISTORY / UNDO ---
+            saveToHistory(type, data) {
+                this.history.push({ type, data: JSON.parse(JSON.stringify(data)) });
+                if(this.history.length > 20) this.history.shift();
+            },
+            triggerUndo() {
+                const lastAction = this.history.pop();
+                if (!lastAction) return;
+                const { type, data } = lastAction;
+                
+                if (type === 'edit' || type === 'saldo') {
+                    const idx = this.users.findIndex(u => u.id === data.id);
+                    if (idx !== -1) {
+                        this.users[idx] = data;
+                        this.showToast('Undo Berhasil', `Perubahan pada ${data.name} dibatalkan.`);
+                        this.logAdminAction('UNDO', data, `Undo aksi terakhir.`);
+                    }
+                } else if (type === 'delete') {
+                    this.users.push(data);
+                    this.logAdminAction('UNDO', data, `Memulihkan user yang dihapus.`);
+                    this.showToast('Undo Berhasil', `Member ${data.name} dipulihkan.`);
+                } else if (type === 'add') {
+                    this.users = this.users.filter(u => u.id !== data.id);
+                    this.logAdminAction('UNDO', data, `Membatalkan penambahan user.`);
+                    this.showToast('Undo Berhasil', `Penambahan member dibatalkan.`);
+                }
+            }
+        },
+        mounted() {
+            this.generateData();
+            window.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                    e.preventDefault();
+                    this.triggerUndo();
+                }
+            });
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

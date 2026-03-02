@@ -14,14 +14,14 @@ use Illuminate\Support\Str;
 
 class OrderService
 {
-    protected DigiFlazzService $digiFlazzService;
+    protected ApiGamesService $apiGamesService;
     protected MidtransService $midtransService;
 
     public function __construct(
-        DigiFlazzService $digiFlazzService,
+        ApiGamesService $apiGamesService,
         MidtransService $midtransService
     ) {
-        $this->digiFlazzService = $digiFlazzService;
+        $this->apiGamesService = $apiGamesService;
         $this->midtransService = $midtransService;
     }
 
@@ -123,11 +123,14 @@ class OrderService
         SendWhatsAppNotificationJob::dispatch($transaction, 'payment_success');
         SendEmailNotificationJob::dispatch($transaction, 'payment_success');
 
-        ProcessTopUpJob::dispatch($transaction);
+        // NOTE: Tidak auto-process, masuk antrian dulu untuk diproses manual oleh admin
+        Log::info('Balance payment successful, waiting in queue for admin processing', [
+            'order_id' => $transaction->order_id,
+        ]);
 
         return [
             'success' => true,
-            'message' => 'Payment successful',
+            'message' => 'Payment successful, order is in queue',
             'transaction' => $transaction->fresh(),
         ];
     }
@@ -162,20 +165,20 @@ class OrderService
             $product = $transaction->product;
             $orderData = $transaction->order_data;
 
-            $digiFlazzResponse = $this->digiFlazzService->createOrder([
+            $apiGamesResponse = $this->apiGamesService->createOrder([
                 'ref_id' => $transaction->order_id,
-                'buyer_sku_code' => $product->provider_code,
-                'customer_no' => $orderData['customer_no'] ?? $orderData['target'],
-                'msg' => $orderData['message'] ?? '',
+                'product_code' => $product->provider_code,
+                'customer_no' => $orderData['target'] ?? $orderData['user_id'], // Adjust based on frontend form names
+                'server_id' => $orderData['server_id'] ?? null,
             ]);
 
             $transaction->update([
-                'provider_order_id' => $digiFlazzResponse['ref_id'] ?? null,
-                'provider_status' => $digiFlazzResponse['status'] ?? null,
-                'provider_response' => $digiFlazzResponse,
+                'provider_order_id' => $apiGamesResponse['ref_id'] ?? $transaction->order_id,
+                'provider_status' => $apiGamesResponse['status'] ?? null,
+                'provider_response' => $apiGamesResponse,
             ]);
 
-            $this->handleProviderResponse($transaction, $digiFlazzResponse);
+            $this->handleProviderResponse($transaction, $apiGamesResponse);
 
         } catch (\Exception $e) {
             Log::error('TopUp processing failed', [
@@ -192,6 +195,11 @@ class OrderService
         }
     }
 
+    /**
+     * NOTE: The response format from ApiGames is not documented.
+     * This implementation assumes a 'status' field with values like 'success' or 'failed'.
+     * This may need to be adjusted based on the actual API response.
+     */
     protected function handleProviderResponse(Transaction $transaction, array $response): void
     {
         $status = strtolower($response['status'] ?? 'pending');
@@ -201,12 +209,14 @@ class OrderService
                 'status' => 'completed',
                 'completed_at' => now(),
                 'result_data' => [
-                    'serial_number' => $response['sn'] ?? null,
+                    'serial_number' => $response['sn'] ?? $response['kode_voucher'] ?? null,
                     'message' => $response['message'] ?? 'Top up successful',
                 ],
             ]);
 
-            $transaction->product->decrementStock($transaction->quantity);
+            if (!$product->is_unlimited_stock) {
+                $transaction->product->decrementStock($transaction->quantity);
+            }
 
             SendWhatsAppNotificationJob::dispatch($transaction, 'topup_success');
             SendEmailNotificationJob::dispatch($transaction, 'topup_success');

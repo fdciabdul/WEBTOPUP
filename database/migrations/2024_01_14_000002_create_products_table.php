@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('description')->nullable();
-            $table->string('provider')->default('digiflazz');
+            $table->string('provider')->default('apigames');
             $table->string('provider_code')->nullable();
             $table->decimal('price_visitor', 15, 2);
             $table->decimal('price_reseller', 15, 2);

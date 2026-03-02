@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marspedia Pro - Content Management V9.0 (Blue Theme)</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        // REVISED PALETTE: Anchored to #0033AA
+                        brand: { 
+                            50: '#EEF4FF', 
+                            100: '#D9E6FF', 
+                            200: '#BCD4FF', 
+                            300: '#8EB6FF', 
+                            400: '#5990FF', 
+                            500: '#2862FF', 
+                            600: '#0033AA', // PRIMARY COLOR (Biru Tegas)
+                            700: '#002685', 
+                            800: '#001F66',
+                            900: '#001445'
+                        },
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 40px -10px rgba(0, 51, 170, 0.05)',
+                        'glow': '0 0 20px rgba(0, 51, 170, 0.15)',
+                        'card': '0 0 0 1px rgba(0, 51, 170, 0.03), 0 2px 8px rgba(0, 51, 170, 0.04)',
+                        'floating': '0 20px 25px -5px rgba(0, 51, 170, 0.1), 0 10px 10px -5px rgba(0, 51, 170, 0.04)',
+                        'paper': '0 4px 24px rgba(0, 51, 170, 0.06)',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F6F8FC; overflow-x: hidden; }
+        
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+        /* Glass Sidebar */
+        .glass-panel { background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px); border-right: 1px solid rgba(255, 255, 255, 0.8); }
+        .nav-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.75rem 1rem; border-radius: 1rem; font-weight: 600; font-size: 0.9rem; color: #64748b; margin-bottom: 0.4rem; transition: all 0.3s; }
+        .nav-item:hover { background: #EEF4FF; color: #0033AA; transform: translateX(4px); box-shadow: 0 4px 12px rgba(0, 51, 170, 0.05); }
+        
+        /* UPDATED: Nav Active using #0033AA */
+        .nav-active { background: linear-gradient(135deg, #0033AA 0%, #002685 100%); color: white !important; box-shadow: 0 8px 20px -5px rgba(0, 51, 170, 0.3); }
+
+        /* Modern Input */
+        .search-input { background: #fff; border: 2px solid transparent; transition: all 0.3s; border-radius: 1rem; padding-left: 3.5rem; color: #1e293b; font-weight: 700; }
+        .search-input:focus { border-color: #0033AA; box-shadow: 0 0 0 4px rgba(0, 51, 170, 0.1); }
+        .form-input { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 600; outline: none; transition: all 0.2s; }
+        .form-input:focus { border-color: #0033AA; background: #fff; box-shadow: 0 0 0 3px rgba(0, 51, 170, 0.1); }
+
+        /* Rich Editor */
+        .rich-editor-wrapper { display: flex; flex-direction: column; height: 100%; background: #f1f5f9; position: relative; }
+        .rich-toolbar { display: flex; gap: 0.5rem; padding: 0.75rem 1.5rem; background: white; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; align-items: center; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 10px rgba(0,0,0,0.03); justify-content: center; }
+        .rich-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 0.5rem; color: #64748b; background: white; border: 1px solid #e2e8f0; transition: all 0.1s; cursor: pointer; }
+        .rich-btn:hover { background: #EEF4FF; color: #0033AA; border-color: #BCD4FF; }
+        .rich-btn:active { transform: scale(0.95); }
+        
+        .rich-content-container { flex-grow: 1; overflow-y: auto; padding: 2rem 1rem; display: flex; justify-content: center; }
+        .rich-content { 
+            width: 100%; max-width: 850px; /* A4 / Blog Width */
+            background: white; 
+            min-height: 80vh; 
+            padding: 3rem; 
+            box-shadow: 0 4px 24px rgba(0, 51, 170, 0.06); 
+            border-radius: 4px;
+            outline: none; 
+            font-size: 1rem; 
+            color: #1e293b; 
+            line-height: 1.8;
+        }
+        
+        /* Content Styling inside Editor */
+        .rich-content h1, .rich-content h2 { font-weight: 800; margin-bottom: 1rem; color: #0033AA; }
+        .rich-content p { margin-bottom: 1rem; }
+        .rich-content img { 
+            display: block; 
+            margin: 1.5rem auto; 
+            border: 2px solid transparent; 
+            transition: all 0.2s; 
+            cursor: pointer;
+        }
+        .rich-content img:hover { border-color: #0033AA; box-shadow: 0 0 0 4px rgba(0, 51, 170, 0.1); }
+        .rich-content img.selected { border-color: #0033AA; box-shadow: 0 0 0 4px rgba(0, 51, 170, 0.2); }
+        .rich-content ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .rich-content ol { list-style: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .rich-content blockquote { border-left: 4px solid #0033AA; padding-left: 1rem; color: #475569; font-style: italic; background: #EEF4FF; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+
+        /* Image Toolbar Floating */
+        .img-toolbar { 
+            position: absolute; 
+            background: #001F66; 
+            padding: 8px 12px; 
+            border-radius: 50px; 
+            display: flex; 
+            gap: 8px; 
+            z-index: 50; 
+            transform: translate(-50%, -130%); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .img-tool-btn { color: white; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.1); transition: all 0.2s; white-space: nowrap; }
+        .img-tool-btn:hover { background: #0033AA; }
+
+        /* Header Colored - UNIFIED TO BLUE #0033AA */
+        .header-section { color: white; border-radius: 1.5rem 1.5rem 0 0; padding: 1.25rem 1.5rem; position: relative; overflow: hidden; }
+        .header-section::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%); pointer-events: none; }
+
+        /* Table Styling with Sticky Header */
+        .table-container { max-height: 350px; overflow-y: auto; position: relative; }
+        .custom-table th { position: sticky; top: 0; z-index: 10; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #0033AA; letter-spacing: 0.05em; padding: 1rem 1.5rem; background: #EEF4FF; border-bottom: 2px solid #D9E6FF; box-shadow: 0 2px 4px rgba(0, 51, 170, 0.02); }
+        .custom-table td { padding: 1rem 1.5rem; font-size: 0.9rem; font-weight: 600; color: #334155; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .custom-table tr:last-child td { border-bottom: none; }
+        .custom-table tr:hover td { background: #F8FAFC; }
+
+        /* Badges & Buttons */
+        .badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(0, 51, 170, 0.05); }
+        
+        /* Unified Blue-themed Badges */
+        .badge-member { background: linear-gradient(to bottom, #f8fafc, #e2e8f0); color: #475569; border: 1px solid #cbd5e1; }
+        .badge-reseller { background: linear-gradient(to bottom, #D9E6FF, #BCD4FF); color: #0033AA; border: 1px solid #8EB6FF; }
+        .badge-vip { background: linear-gradient(135deg, #0033AA 0%, #002685 100%); color: #fff; border: 1px solid #001F66; }
+        .badge-vvip { background: linear-gradient(135deg, #001F66 0%, #001445 100%); color: #D9E6FF; border: 1px solid #001445; box-shadow: 0 0 10px rgba(0, 51, 170, 0.3); }
+
+        .action-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 10px; transition: all 0.2s; color: #64748b; background: white; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0, 51, 170, 0.03); }
+        .action-btn:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 51, 170, 0.1); }
+        
+        /* Blue-Themed Action Buttons */
+        .btn-edit:hover { color: #0033AA; border-color: #8EB6FF; background: #EEF4FF; }
+        .btn-delete:hover { color: #ef4444; border-color: #fca5a5; background: #fef2f2; }
+
+        /* Unified Gradient Class */
+        .grad-brand { background: linear-gradient(135deg, #0033AA 0%, #002685 100%); }
+        
+        /* Modal Transition */
+        .modal-enter-active, .modal-leave-active { transition: opacity 0.3s ease; }
+        .modal-enter-from, .modal-leave-to { opacity: 0; }
+        .modal-content-enter-active { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-content-enter-from { opacity: 0; transform: scale(0.9) translateY(20px); }
+        
+        /* Keyframes */
+        @keyframes pop { from { transform: translate(-50%, -100%) scale(0.8); opacity: 0; } to { transform: translate(-50%, -130%) scale(1); opacity: 1; } }
+
+    </style>
+</head>
+<body class="antialiased text-slate-800 font-sans selection:bg-brand-600 selection:text-white">
+
+<div id="app" class="flex h-screen w-full relative">
+
+    <transition enter-active-class="transition ease-out duration-300" enter-from-class="transform -translate-y-5 opacity-0" enter-to-class="transform translate-y-0 opacity-100" leave-active-class="transition ease-in duration-200" leave-from-class="transform translate-y-0 opacity-100" leave-to-class="transform -translate-y-5 opacity-0">
+        <div v-if="toast.show" class="fixed top-6 left-1/2 -translate-x-1/2 z-[130] flex items-center justify-center pointer-events-none">
+            <div class="bg-brand-900/90 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10 pointer-events-auto min-w-[300px]">
+                <div class="w-10 h-10 rounded-full bg-brand-500/20 flex items-center justify-center text-brand-200">
+                    <i class="ri-checkbox-circle-fill text-2xl"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm">Berhasil!</h4>
+                    <p class="text-xs text-brand-100">{{ toast.message }}</p>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <transition name="modal">
+        <div v-if="confirmDialog.show" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-[pop_0.3s_ease-out]">
+                <div class="p-8 text-center">
+                    <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 transition-colors"
+                        :class="confirmDialog.isDelete ? 'bg-red-50 text-red-500' : 'bg-brand-50 text-brand-600'">
+                        <i :class="confirmDialog.isDelete ? 'ri-alarm-warning-fill' : 'ri-question-fill'" class="text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-slate-800 mb-2">{{ confirmDialog.title }}</h3>
+                    <p class="text-sm text-slate-500 leading-relaxed mb-8">{{ confirmDialog.message }}</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button @click="confirmDialog.show = false" class="py-3 px-6 rounded-xl bg-slate-100 font-bold text-slate-600 hover:bg-slate-200 transition">Batal</button>
+                        <button @click="executeConfirmedAction" 
+                            class="py-3 px-6 rounded-xl font-bold text-white shadow-lg transition"
+                            :class="confirmDialog.isDelete ? 'bg-red-500 hover:bg-red-600 shadow-red-500/30' : 'bg-brand-600 hover:bg-brand-700 shadow-brand-500/30'">
+                            Ya, {{ confirmDialog.actionText }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </transition>
+
+    <transition name="modal">
+        <div v-if="formModal.show" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm" :class="formModal.type !== 'Informasi' ? 'p-4' : ''">
+            
+            <transition name="modal-content" appear>
+                <div class="bg-white overflow-hidden flex flex-col shadow-2xl transition-all duration-300"
+                    :class="formModal.type === 'Informasi' ? 'w-full h-full rounded-none' : 'w-full max-w-3xl rounded-[2rem] max-h-[90vh]'">
+                    
+                    <div class="flex justify-between items-center z-10" 
+                        :class="formModal.type === 'Informasi' ? 'px-8 py-4 bg-white border-b border-slate-200' : 'p-6 border-b border-slate-100 bg-slate-50'">
+                        
+                        <div v-if="formModal.type === 'Informasi'" class="flex items-center gap-4 w-full">
+                            <button @click="formModal.show = false" class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition"><i class="ri-arrow-left-line text-xl"></i></button>
+                            <input v-model="formData.title" type="text" placeholder="Masukkan Judul Artikel..." class="text-2xl font-black text-slate-800 bg-transparent border-none outline-none flex-grow placeholder:text-slate-300">
+                            <button @click="triggerSaveConfirmation" class="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-brand-500/30 flex items-center gap-2"><i class="ri-save-line"></i> Publikasi</button>
+                        </div>
+                        
+                        <div v-else>
+                            <h3 class="font-black text-xl text-slate-800">{{ formModal.isEdit ? 'Edit Data' : 'Tambah Data Baru' }}</h3>
+                            <p class="text-xs text-brand-600 font-bold uppercase tracking-wider mt-1">{{ formModal.type }} Manager</p>
+                        </div>
+                        
+                        <button v-if="formModal.type !== 'Informasi'" @click="formModal.show = false" class="w-8 h-8 rounded-full bg-white text-slate-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition"><i class="ri-close-line text-xl"></i></button>
+                    </div>
+                    
+                    <div :class="formModal.type === 'Informasi' ? 'flex-grow bg-[#f8fafc] overflow-hidden' : 'p-6 overflow-y-auto custom-scrollbar space-y-5'">
+                        
+                        <div v-if="formModal.type === 'Informasi'" class="rich-editor-wrapper">
+                            <div class="rich-toolbar">
+                                <button class="rich-btn" @click.prevent="execCmd('bold')" title="Bold"><i class="ri-bold"></i></button>
+                                <button class="rich-btn" @click.prevent="execCmd('italic')" title="Italic"><i class="ri-italic"></i></button>
+                                <button class="rich-btn" @click.prevent="execCmd('underline')" title="Underline"><i class="ri-underline"></i></button>
+                                <button class="rich-btn" @click.prevent="execCmd('strikeThrough')" title="Strikethrough"><i class="ri-strikethrough"></i></button>
+                                <div class="w-px h-6 bg-slate-200 mx-2"></div>
+                                <button class="rich-btn" @click.prevent="execCmd('justifyLeft')" title="Left"><i class="ri-align-left"></i></button>
+                                <button class="rich-btn" @click.prevent="execCmd('justifyCenter')" title="Center"><i class="ri-align-center"></i></button>
+                                <button class="rich-btn" @click.prevent="execCmd('justifyRight')" title="Right"><i class="ri-align-right"></i></button>
+                                <div class="w-px h-6 bg-slate-200 mx-2"></div>
+                                <button class="rich-btn" @click.prevent="execCmd('createLink')" title="Link URL"><i class="ri-link"></i></button>
+                                <button class="rich-btn" @click.prevent="triggerImageUpload" title="Upload Gambar (File)"><i class="ri-image-add-line"></i></button>
+                                <input type="file" ref="imageUpload" @change="handleImageUpload" class="hidden" accept="image/*">
+                                <div class="w-px h-6 bg-slate-200 mx-2"></div>
+                                <button class="rich-btn" @click.prevent="execCmd('insertUnorderedList')" title="List"><i class="ri-list-unordered"></i></button>
+                                <button class="rich-btn" @click.prevent="execCmd('formatBlock', 'H2')" title="Heading"><i class="ri-heading"></i></button>
+                            </div>
+
+                            <div class="rich-content-container custom-scrollbar" @click="handleEditorClick">
+                                <div contenteditable="true" class="rich-content" @input="updateRichContent" ref="richEditor" placeholder="Mulai menulis artikel..."></div>
+                                
+                                <div v-if="selectedImg" class="img-toolbar" :style="{ top: toolbarPos.top + 'px', left: toolbarPos.left + 'px' }">
+                                    <button class="img-tool-btn" @click="resizeImg('25%')">Small</button>
+                                    <button class="img-tool-btn" @click="resizeImg('50%')">Medium</button>
+                                    <button class="img-tool-btn" @click="resizeImg('75%')">Large</button>
+                                    <button class="img-tool-btn" @click="resizeImg('100%')">Full</button>
+                                    <div class="w-px h-3 bg-white/20 mx-1"></div>
+                                    <button class="img-tool-btn" @click="alignImg('left')"><i class="ri-align-left"></i></button>
+                                    <button class="img-tool-btn" @click="alignImg('center')"><i class="ri-align-center"></i></button>
+                                    <button class="img-tool-btn" @click="alignImg('right')"><i class="ri-align-right"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-else>
+                            <div v-if="formModal.type === 'Ulasan'">
+                                <div class="mb-4">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Pengguna</label>
+                                    <input v-model="formData.name" type="text" class="form-input" placeholder="Contoh: Andi Saputra">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Rating</label>
+                                    <select v-model="formData.stars" class="form-input">
+                                        <option value="5">⭐⭐⭐⭐⭐ (Sempurna - 5)</option>
+                                        <option value="4">⭐⭐⭐⭐ (Bagus - 4)</option>
+                                        <option value="3">⭐⭐⭐ (Cukup - 3)</option>
+                                        <option value="2">⭐⭐ (Kurang - 2)</option>
+                                        <option value="1">⭐ (Buruk - 1)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Komentar (Support Enter)</label>
+                                    <textarea v-model="formData.comment" rows="4" class="form-input" placeholder="Tulis ulasan disini..."></textarea>
+                                </div>
+                            </div>
+
+                            <div v-else-if="formModal.type === 'FAQ'">
+                                <div class="mb-4">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Pertanyaan</label>
+                                    <input v-model="formData.question" type="text" class="form-input">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Jawaban (Support Enter)</label>
+                                    <textarea v-model="formData.answer" rows="6" class="form-input" placeholder="Jawaban detail..."></textarea>
+                                </div>
+                            </div>
+                            
+                            <div v-else-if="formModal.type === 'File'">
+                                <div class="mb-4">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama File</label>
+                                    <input v-model="formData.name" type="text" class="form-input" placeholder="Contoh: Script Auto Post V2">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Link Download</label>
+                                    <input v-model="formData.link" type="text" class="form-input" placeholder="https://drive.google.com/...">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Level Akses</label>
+                                    <select v-model="formData.level" class="form-input">
+                                        <option value="Member">Member</option>
+                                        <option value="Reseller">Reseller</option>
+                                        <option value="Reseller VIP">Reseller VIP</option>
+                                        <option value="Reseller VVIP">Reseller VVIP</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div v-else-if="formModal.type === 'Media'">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nama Media</label>
+                                        <input v-model="formData.name" type="text" class="form-input" placeholder="Contoh: Detik.com">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Upload Logo</label>
+                                        <input type="file" class="form-input text-xs">
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">URL Logo (Alternatif)</label>
+                                    <input v-model="formData.image" type="text" class="form-input" placeholder="https://...">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Link Liputan URL</label>
+                                    <input v-model="formData.url" type="text" class="form-input" placeholder="https://berita.com/...">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div v-if="formModal.type !== 'Informasi'" class="p-6 border-t border-slate-100 bg-white sticky bottom-0">
+                        <button @click="triggerSaveConfirmation" class="w-full h-12 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold shadow-lg shadow-brand-500/30 transition active:scale-95 flex items-center justify-center gap-2">
+                            <i class="ri-save-3-fill"></i> Simpan Perubahan
+                        </button>
+                    </div>
+                </div>
+            </transition>
+        </div>
+    </transition>
+
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed lg:static inset-y-0 left-0 z-50 w-72 glass-panel transition-transform duration-300 lg:translate-x-0 flex flex-col flex-shrink-0">
+        <div class="h-28 flex items-center px-8 flex-shrink-0 border-b border-slate-100/50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-tr from-brand-600 to-brand-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/40">
+                    <i class="ri-rocket-2-fill text-xl animate-float"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Marspedia</h1>
+                    <span class="text-[10px] font-bold text-white bg-brand-600 px-2 py-0.5 rounded shadow-sm">SUPER ADMIN</span>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar flex flex-col pb-10">
+            <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 px-2 mt-2">System Core</p>
+            <a href="#" class="nav-item"><i class="ri-dashboard-line text-lg"></i> Dashboard</a>
+            <a href="#" class="nav-item"><i class="ri-settings-4-line text-lg"></i> System Setting</a>
+            
+            <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 px-2 mt-6">Content Manager</p>
+            <a href="#" class="nav-item nav-active"><i class="ri-folder-open-fill text-lg"></i> Content</a>
+            <a href="#" class="nav-item"><i class="ri-pages-line text-lg"></i> Halaman Statis</a>
+            <a href="#" class="nav-item"><i class="ri-image-line text-lg"></i> Banner & Promo</a>
+
+            <div class="mt-auto border-t border-slate-100 pt-4">
+                <a href="#" class="nav-item text-red-500 hover:text-red-600 hover:bg-red-50"><i class="ri-logout-box-line text-lg"></i> Sign Out</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen relative overflow-hidden w-full bg-[#F6F8FC]">
+        
+        <header class="p-4 md:px-8 md:py-6 flex flex-col gap-6 z-20 flex-shrink-0 bg-brand-600 shadow-xl shadow-brand-900/10 sticky top-0">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 bg-white/20 text-white rounded-xl hover:bg-white/30 transition backdrop-blur-sm"><i class="ri-menu-2-line"></i></button>
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+                            <i class="ri-folder-settings-fill text-white/80"></i> Content Management
+                        </h2>
+                        <p class="text-sm text-brand-100 font-medium mt-1">Kelola Ulasan, FAQ, File, Media & Informasi</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="hidden md:flex relative group">
+                        <i class="ri-search-2-line absolute left-5 top-1/2 -translate-y-1/2 text-brand-600 text-lg z-10"></i>
+                        <input type="text" v-model="searchQuery" placeholder="Cari data..." class="search-input h-14 w-80 shadow-lg shadow-black/10">
+                    </div>
+                </div>
+            </div>
+            <div class="md:hidden relative w-full">
+                <i class="ri-search-2-line absolute left-4 top-1/2 -translate-y-1/2 text-brand-600"></i>
+                <input type="text" v-model="searchQuery" placeholder="Cari konten..." class="search-input h-12 w-full text-sm">
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-4 md:px-8 pb-10 custom-scrollbar">
+            <div class="max-w-7xl mx-auto space-y-10 pt-8">
+
+                <section class="content-section">
+                    <div class="bg-white rounded-[2rem] shadow-card overflow-hidden">
+                        <div class="header-section grad-brand flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div class="flex items-center gap-4 z-10">
+                                <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white border border-white/20">
+                                    <i class="ri-star-smile-fill text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-black text-lg">Ulasan Pelanggan</h3>
+                                    <p class="text-xs text-brand-100 font-medium">Avatar Inisial & Komentar Multi-line</p>
+                                </div>
+                            </div>
+                            <button @click="openModal('Ulasan', 'add')" class="h-10 px-6 rounded-xl bg-white text-brand-600 text-xs font-bold hover:bg-brand-50 transition shadow-lg flex items-center gap-2 z-10">
+                                <i class="ri-add-line text-lg"></i> Tambah Ulasan
+                            </button>
+                        </div>
+
+                        <div class="table-container custom-scrollbar">
+                            <table class="w-full text-left custom-table">
+                                <thead>
+                                    <tr>
+                                        <th class="w-16 text-center">Inisial</th>
+                                        <th>Nama Pengguna</th>
+                                        <th>Rating</th>
+                                        <th>Ulasan / Komentar</th>
+                                        <th class="w-32 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="review in filteredReviews" :key="review.id" class="group">
+                                        <td class="text-center">
+                                        <div class="w-10 h-10 rounded-full bg-brand-600 text-white font-black flex items-center justify-center mx-auto shadow-lg shadow-brand-600/20 text-sm border-2 border-white">
+                                                {{ getInitials(review.name) }}
+                                        </div>
+                                        </td>
+                                        <td><div class="font-bold text-slate-700">{{ review.name }}</div></td>
+                                        <td>
+                                            <div class="flex text-yellow-400 text-sm">
+                                                <i v-for="n in 5" :key="n" :class="n <= review.stars ? 'ri-star-fill' : 'ri-star-line'"></i>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="flex items-start gap-2 max-w-xl">
+                                                <p class="text-slate-500 text-xs leading-relaxed whitespace-pre-wrap">{{ review.comment }}</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="flex items-center justify-center gap-2">
+                                                <button @click="openModal('Ulasan', 'edit', review)" class="action-btn btn-edit"><i class="ri-pencil-fill"></i></button>
+                                                <button @click="triggerDeleteConfirmation('Ulasan', review.id)" class="action-btn btn-delete"><i class="ri-delete-bin-5-line"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="content-section">
+                    <div class="bg-white rounded-[2rem] shadow-card overflow-hidden">
+                        <div class="header-section grad-brand flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div class="flex items-center gap-4 z-10">
+                                <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white border border-white/20">
+                                    <i class="ri-question-answer-fill text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-black text-lg">FAQ Manager</h3>
+                                    <p class="text-xs text-brand-100 font-medium">Jawaban Support Multi-line</p>
+                                </div>
+                            </div>
+                            <button @click="openModal('FAQ', 'add')" class="h-10 px-6 rounded-xl bg-white text-brand-600 text-xs font-bold hover:bg-brand-50 transition shadow-lg flex items-center gap-2 z-10">
+                                <i class="ri-add-line text-lg"></i> Tambah FAQ
+                            </button>
+                        </div>
+
+                        <div class="table-container custom-scrollbar">
+                            <table class="w-full text-left custom-table">
+                                <thead>
+                                    <tr>
+                                        <th class="w-12">#</th>
+                                        <th>Pertanyaan & Jawaban</th>
+                                        <th class="w-24 text-center">Status</th>
+                                        <th class="w-32 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(faq, index) in filteredFaqs" :key="faq.id">
+                                        <td class="text-slate-400 font-bold text-xs">{{ index + 1 }}</td>
+                                        <td>
+                                            <div class="font-bold text-slate-700 mb-2">{{ faq.question }}</div>
+                                            <div class="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap">{{ faq.answer }}</div>
+                                        </td>
+                                        <td class="text-center">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" v-model="faq.active" class="sr-only peer" @change="showToast('Status FAQ diubah')">
+                                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <div class="flex items-center justify-center gap-2">
+                                                <button @click="openModal('FAQ', 'edit', faq)" class="action-btn btn-edit"><i class="ri-pencil-fill"></i></button>
+                                                <button @click="triggerDeleteConfirmation('FAQ', faq.id)" class="action-btn btn-delete"><i class="ri-delete-bin-5-line"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                    <section class="content-section h-full">
+                        <div class="bg-white rounded-[2rem] shadow-card overflow-hidden h-full flex flex-col">
+                            <div class="header-section grad-brand flex justify-between items-center">
+                                <div class="flex items-center gap-4 z-10">
+                                    <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white border border-white/20">
+                                        <i class="ri-file-download-fill text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-black text-lg">Bonus File</h3>
+                                        <p class="text-xs text-brand-100 font-medium">Leveling Badge & Link</p>
+                                    </div>
+                                </div>
+                                <button @click="openModal('File', 'add')" class="action-btn bg-white/20 text-white border-transparent hover:bg-white/30 z-10"><i class="ri-add-line text-lg"></i></button>
+                            </div>
+                            
+                            <div class="table-container custom-scrollbar flex-1">
+                                <table class="w-full text-left custom-table">
+                                    <thead><tr><th>Nama File</th><th>Link Download</th><th class="text-center">Level</th><th class="text-center">Aksi</th></tr></thead>
+                                    <tbody>
+                                        <tr v-for="file in filteredFiles" :key="file.id">
+                                            <td class="font-bold text-slate-700 text-sm">{{ file.name }}</td>
+                                            <td>
+                                                <a :href="file.link" target="_blank" class="text-xs font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1 hover:underline">
+                                                    <i class="ri-link"></i> Buka Link
+                                                </a>
+                                            </td>
+                                            <td class="text-center">
+                                                <span :class="getBadgeClass(file.level)" class="badge">
+                                                    <i v-if="file.level.includes('VVIP')" class="ri-vip-crown-2-fill"></i>
+                                                    <i v-else-if="file.level.includes('VIP')" class="ri-vip-diamond-fill"></i>
+                                                    <i v-else class="ri-user-star-fill"></i>
+                                                    {{ file.level }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="flex items-center justify-center gap-1">
+                                                    <button @click="openModal('File', 'edit', file)" class="action-btn btn-edit text-xs"><i class="ri-pencil-fill"></i></button>
+                                                    <button @click="triggerDeleteConfirmation('File', file.id)" class="action-btn btn-delete text-xs"><i class="ri-delete-bin-line"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="content-section h-full">
+                        <div class="bg-white rounded-[2rem] shadow-card overflow-hidden h-full flex flex-col">
+                            <div class="header-section grad-brand flex justify-between items-center">
+                                <div class="flex items-center gap-4 z-10">
+                                    <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white border border-white/20">
+                                        <i class="ri-newspaper-fill text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-black text-lg">Media Liputan</h3>
+                                        <p class="text-xs text-brand-100 font-medium">Logo + Nama + Link</p>
+                                    </div>
+                                </div>
+                                <button @click="openModal('Media', 'add')" class="action-btn bg-white/20 text-white border-transparent hover:bg-white/30 z-10"><i class="ri-add-line text-lg"></i></button>
+                            </div>
+                            
+                            <div class="table-container custom-scrollbar flex-1">
+                                <table class="w-full text-left custom-table">
+                                    <thead><tr><th class="w-16">Logo</th><th>Nama Media</th><th class="text-center">URL Link</th><th class="text-center">Aksi</th></tr></thead>
+                                    <tbody>
+                                        <tr v-for="media in filteredMedias" :key="media.id">
+                                            <td><img :src="media.image" class="h-8 w-auto object-contain bg-white rounded p-0.5 border border-slate-100"></td>
+                                            <td class="font-bold text-slate-700">{{ media.name }}</td>
+                                            <td class="text-center">
+                                                <a :href="media.url" target="_blank" class="text-xs text-brand-600 hover:underline truncate max-w-[100px] inline-block">{{ media.url }}</a>
+                                            </td>
+                                            <td>
+                                                <div class="flex items-center justify-center gap-1">
+                                                    <button @click="openModal('Media', 'edit', media)" class="action-btn btn-edit text-xs"><i class="ri-pencil-fill"></i></button>
+                                                    <button @click="triggerDeleteConfirmation('Media', media.id)" class="action-btn btn-delete text-xs"><i class="ri-delete-bin-line"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="content-section">
+                    <div class="bg-white rounded-[2rem] shadow-card overflow-hidden">
+                        <div class="header-section grad-brand flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div class="flex items-center gap-4 z-10">
+                                <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white border border-white/20">
+                                    <i class="ri-information-fill text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-black text-lg">Informasi Dashboard</h3>
+                                    <p class="text-xs text-brand-100 font-medium">Halaman Statis (Terms, About, dll)</p>
+                                </div>
+                            </div>
+                            <button @click="openModal('Informasi', 'add')" class="h-10 px-6 rounded-xl bg-white text-brand-600 text-xs font-bold hover:bg-brand-50 transition shadow-lg flex items-center gap-2 z-10">
+                                <i class="ri-add-line text-lg"></i> Tambah Informasi
+                            </button>
+                        </div>
+                        
+                        <div class="table-container custom-scrollbar">
+                            <table class="w-full text-left custom-table">
+                                <thead>
+                                    <tr>
+                                        <th class="w-12">No</th>
+                                        <th class="w-1/4">Judul</th>
+                                        <th>Deskripsi (Preview)</th>
+                                        <th class="w-24 text-center">ON/OFF</th>
+                                        <th class="w-32 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(info, index) in filteredInfos" :key="info.id">
+                                        <td class="font-bold text-slate-400 text-xs">{{ index + 1 }}</td>
+                                        <td>
+                                            <div class="font-bold text-slate-800 text-sm">{{ info.title }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="text-xs text-slate-500 line-clamp-2 leading-relaxed" v-html="info.desc"></div>
+                                        </td>
+                                        <td class="text-center">
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" v-model="info.active" class="sr-only peer" @change="showToast('Status Informasi diubah')">
+                                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:bg-brand-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <div class="flex items-center justify-center gap-2">
+                                                <button @click="openModal('Informasi', 'edit', info)" class="action-btn btn-edit"><i class="ri-pencil-fill"></i></button>
+                                                <button @click="triggerDeleteConfirmation('Informasi', info.id)" class="action-btn btn-delete"><i class="ri-delete-bin-5-line"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="pt-8 pb-12">
+                    <button @click="triggerSaveConfirmation('All')" class="w-full bg-brand-600 text-white py-5 rounded-2xl font-black text-lg shadow-2xl shadow-brand-500/30 hover:bg-brand-700 transition transform hover:-translate-y-1 active:scale-[0.99] flex items-center justify-center gap-3">
+                        <i class="ri-save-3-fill text-2xl"></i> SIMPAN SEMUA PERUBAHAN
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                sidebarOpen: false,
+                searchQuery: '',
+                toast: { show: false, message: '' },
+                
+                // Confirm Dialog State
+                confirmDialog: { show: false, action: null, isDelete: false, title: '', message: '', actionText: '' },
+                
+                // Form Modal State
+                formModal: { show: false, type: '', isEdit: false, id: null },
+                formData: {},
+                
+                // Image Toolbar Logic
+                selectedImg: null,
+                toolbarPos: { top: 0, left: 0 },
+
+                // Data Content
+                reviews: [
+                    { id: 1, name: 'Andi Saputra', stars: 5, comment: 'Pelayanan sangat cepat.\nTopup diamond langsung masuk detik itu juga.\nMantap!' },
+                    { id: 2, name: 'Siti Aminah', stars: 4, comment: 'Harga bersaing, tapi CS agak lama bales chat.\nOverall oke.' },
+                    { id: 3, name: 'Budi Gaming', stars: 5, comment: 'Rekomendasi banget buat reseller.\nUntung gede bosku!' },
+                    { id: 4, name: 'Rian Hidayat', stars: 5, comment: 'Website fast response.' },
+                    { id: 5, name: 'Dewi Sartika', stars: 3, comment: 'Kadang maintenance lama.' },
+                    { id: 6, name: 'Joko Widodo', stars: 5, comment: 'Sangat membantu UMKM.' }
+                ],
+                faqs: [
+                    { id: 1, question: 'Bagaimana cara deposit saldo?', answer: '1. Masuk Menu Deposit\n2. Pilih Metode (QRIS/VA)\n3. Bayar sesuai nominal.', active: true },
+                    { id: 2, question: 'Berapa lama proses transaksi?', answer: 'Transaksi diproses otomatis 24 jam dalam hitungan detik.', active: true },
+                    { id: 3, question: 'Apakah ada API dokumentasi?', answer: 'Ya, tersedia untuk member level VIP ke atas.\nSilakan cek menu Developer.', active: false },
+                    { id: 4, question: 'Lupa Password?', answer: 'Gunakan fitur lupa password di halaman login.', active: true },
+                    { id: 5, question: 'Apakah aman?', answer: 'Sangat aman terenkripsi SSL.', active: true },
+                    { id: 6, question: 'Jam operasional CS?', answer: '08:00 - 22:00 WIB.', active: true }
+                ],
+                files: [
+                    { id: 1, name: 'Panduan Integrasi API v2.pdf', link: 'https://example.com/api.pdf', level: 'Reseller VVIP' },
+                    { id: 2, name: 'Template Promosi Instagram.zip', link: 'https://example.com/template.zip', level: 'Reseller' },
+                    { id: 3, name: 'Banner Website.png', link: 'https://example.com/banner.png', level: 'Member' },
+                    { id: 4, name: 'Trik Marketing 2026.pdf', link: '#', level: 'Reseller VIP' },
+                    { id: 5, name: 'List Harga Excel.xlsx', link: '#', level: 'Member' },
+                    { id: 6, name: 'Bot Telegram Source Code', link: '#', level: 'Reseller VVIP' }
+                ],
+                medias: [
+                    { id: 1, name: 'Detik.com', url: 'https://detik.com/marspedia', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Detikcom_logo.svg/1200px-Detikcom_logo.svg.png' },
+                    { id: 2, name: 'Kompas', url: 'https://kompas.com/review', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Kompas_Gramedia_Group_Logo_2017.png/1200px-Kompas_Gramedia_Group_Logo_2017.png' }
+                ],
+                infos: [
+                    { id: 1, title: 'Syarat & Ketentuan', desc: '<b>1. Pendaftaran</b><br>User wajib mendaftar dengan data valid.<br><br><b>2. Transaksi</b><br>Transaksi yang sudah sukses tidak dapat dibatalkan.', active: true },
+                    { id: 2, title: 'Tentang Kami', desc: 'Marspedia adalah platform topup games termurah se-Indonesia berdiri sejak 2024.', active: true }
+                ]
+            }
+        },
+        computed: {
+            filteredReviews() { return this.reviews.filter(r => r.name.toLowerCase().includes(this.searchQuery.toLowerCase())); },
+            filteredFaqs() { return this.faqs.filter(f => f.question.toLowerCase().includes(this.searchQuery.toLowerCase())); },
+            filteredFiles() { return this.files.filter(f => f.name.toLowerCase().includes(this.searchQuery.toLowerCase())); },
+            filteredMedias() { return this.medias.filter(m => m.name.toLowerCase().includes(this.searchQuery.toLowerCase())); },
+            filteredInfos() { return this.infos.filter(i => i.title.toLowerCase().includes(this.searchQuery.toLowerCase())); }
+        },
+        methods: {
+            showToast(msg) {
+                this.toast.message = msg;
+                this.toast.show = true;
+                setTimeout(() => { this.toast.show = false }, 3000);
+            },
+            getInitials(name) {
+                return name.match(/(\b\S)?/g).join("").match(/(^\S|\S$)?/g).join("").toUpperCase();
+            },
+            getBadgeClass(level) {
+                if(level === 'Reseller VVIP') return 'badge-vvip';
+                if(level === 'Reseller VIP') return 'badge-vip';
+                if(level === 'Reseller') return 'badge-reseller';
+                return 'badge-member';
+            },
+
+            // Rich Editor Methods
+            execCmd(command, value = null) {
+                if(command === 'createLink') {
+                    const url = prompt('Masukkan URL Link:', 'https://');
+                    if(url) document.execCommand(command, false, url);
+                } else {
+                    document.execCommand(command, false, value);
+                }
+                if(this.$refs.richEditor) this.formData.desc = this.$refs.richEditor.innerHTML;
+            },
+            triggerImageUpload() { this.$refs.imageUpload.click(); },
+            handleImageUpload(e) {
+                const file = e.target.files[0];
+                if(file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        if(this.$refs.richEditor) this.$refs.richEditor.focus();
+                        document.execCommand('insertImage', false, e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+                e.target.value = '';
+            },
+            updateRichContent(event) { this.formData.desc = event.target.innerHTML; },
+
+            // Image Resize & Toolbar Logic
+            handleEditorClick(e) {
+                if (e.target.tagName === 'IMG') {
+                    this.selectedImg = e.target;
+                    // Reset others
+                    const imgs = this.$refs.richEditor.querySelectorAll('img');
+                    imgs.forEach(img => img.classList.remove('selected'));
+                    
+                    e.target.classList.add('selected');
+                    // Calculate Position
+                    const rect = e.target.getBoundingClientRect();
+                    const containerRect = this.$refs.richEditor.getBoundingClientRect();
+                    
+                    // Simple relative positioning
+                    this.toolbarPos = {
+                        top: e.target.offsetTop,
+                        left: e.target.offsetLeft + (e.target.offsetWidth / 2)
+                    };
+                } else {
+                    if (this.selectedImg) {
+                        this.selectedImg.classList.remove('selected');
+                        this.selectedImg = null;
+                    }
+                }
+            },
+            resizeImg(size) {
+                if (this.selectedImg) {
+                    if(size === '100%') this.selectedImg.style.width = '100%';
+                    else if(size === '75%') this.selectedImg.style.width = '75%';
+                    else if(size === '50%') this.selectedImg.style.width = '50%';
+                    else if(size === '25%') this.selectedImg.style.width = '25%';
+                    else this.selectedImg.style.width = 'auto'; // Original
+                }
+            },
+            alignImg(align) {
+                if(this.selectedImg) {
+                    this.selectedImg.style.display = 'block';
+                    if(align === 'center') { this.selectedImg.style.margin = '0 auto'; }
+                    if(align === 'left') { this.selectedImg.style.margin = '0 auto 0 0'; }
+                    if(align === 'right') { this.selectedImg.style.margin = '0 0 0 auto'; }
+                }
+            },
+
+            // Confirmation Logic
+            triggerDeleteConfirmation(type, id) {
+                this.confirmDialog = {
+                    show: true,
+                    isDelete: true,
+                    title: type === 'All' ? 'Hapus Semua Log?' : 'Konfirmasi Hapus',
+                    message: type === 'All' ? 'Tindakan ini akan menghapus seluruh data!' : 'Data yang dihapus tidak dapat dikembalikan. Lanjutkan?',
+                    actionText: 'Hapus',
+                    action: () => this.executeDelete(type, id)
+                };
+            },
+            triggerSaveConfirmation(scope = 'Single') {
+                this.confirmDialog = {
+                    show: true,
+                    isDelete: false,
+                    title: 'Simpan Perubahan?',
+                    message: 'Pastikan data yang Anda masukkan sudah benar sebelum disimpan ke sistem.',
+                    actionText: 'Simpan',
+                    action: () => (scope === 'All' ? this.saveAll() : this.submitForm())
+                };
+            },
+            executeConfirmedAction() {
+                this.confirmDialog.action();
+                this.confirmDialog.show = false;
+            },
+            executeDelete(type, id) {
+                if (type === 'Ulasan') this.reviews = this.reviews.filter(item => item.id !== id);
+                if (type === 'FAQ') this.faqs = this.faqs.filter(item => item.id !== id);
+                if (type === 'File') this.files = this.files.filter(item => item.id !== id);
+                if (type === 'Media') this.medias = this.medias.filter(item => item.id !== id);
+                if (type === 'Informasi') this.infos = this.infos.filter(item => item.id !== id);
+                if (type === 'All') this.showToast('Semua database telah dibersihkan!');
+                if (type !== 'All') this.showToast('Data berhasil dihapus dari sistem.');
+            },
+            saveAll() { this.showToast('Semua perubahan berhasil disimpan ke Database Utama.'); },
+            submitForm() {
+                const type = this.formModal.type;
+                const isEdit = this.formModal.isEdit;
+                const newId = Date.now();
+                
+                if (isEdit) {
+                    if(type === 'Ulasan') { const idx = this.reviews.findIndex(x => x.id === this.formModal.id); this.reviews[idx] = { ...this.reviews[idx], ...this.formData }; }
+                    if(type === 'FAQ') { const idx = this.faqs.findIndex(x => x.id === this.formModal.id); this.faqs[idx] = { ...this.faqs[idx], ...this.formData }; }
+                    if(type === 'File') { const idx = this.files.findIndex(x => x.id === this.formModal.id); this.files[idx] = { ...this.files[idx], ...this.formData }; }
+                    if(type === 'Media') { const idx = this.medias.findIndex(x => x.id === this.formModal.id); this.medias[idx] = { ...this.medias[idx], ...this.formData }; }
+                    if(type === 'Informasi') { const idx = this.infos.findIndex(x => x.id === this.formModal.id); this.infos[idx] = { ...this.infos[idx], ...this.formData }; }
+                } else {
+                    if(type === 'Ulasan') this.reviews.unshift({ id: newId, ...this.formData });
+                    if(type === 'FAQ') this.faqs.unshift({ id: newId, active: true, ...this.formData });
+                    if(type === 'File') this.files.unshift({ id: newId, ...this.formData });
+                    if(type === 'Media') this.medias.unshift({ id: newId, ...this.formData });
+                    if(type === 'Informasi') this.infos.unshift({ id: newId, active: true, ...this.formData });
+                }
+
+                this.formModal.show = false;
+                this.showToast(`Data ${type} berhasil ${isEdit ? 'diperbarui' : 'ditambahkan'}!`);
+            },
+            openModal(type, mode, data = null) {
+                this.formModal.type = type;
+                this.formModal.isEdit = (mode === 'edit');
+                this.formModal.show = true;
+                if (mode === 'edit' && data) this.formData = { ...data };
+                else {
+                    this.formData = {};
+                    if(type === 'Ulasan') this.formData = { name: '', stars: 5, comment: '' };
+                    if(type === 'FAQ') this.formData = { question: '', answer: '' };
+                    if(type === 'File') this.formData = { name: '', link: '', level: 'Member' };
+                    if(type === 'Media') this.formData = { name: '', image: '', url: '' };
+                    if(type === 'Informasi') this.formData = { title: '', desc: '', active: false };
+                }
+                if(type === 'Informasi') {
+                    this.$nextTick(() => { if(this.$refs.richEditor) this.$refs.richEditor.innerHTML = this.formData.desc || ''; });
+                }
+            }
+        },
+        mounted() {
+            gsap.from("header", { y: -50, opacity: 0, duration: 0.8, ease: "power3.out" });
+            gsap.from(".content-section", { y: 30, opacity: 0, duration: 0.6, stagger: 0.15, ease: "power3.out", delay: 0.2 });
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

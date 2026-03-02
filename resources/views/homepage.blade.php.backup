@@ -1,0 +1,1174 @@
+@extends('layouts.app')
+
+@section('title', 'Homepage - ' . config('app.name'))
+
+@section('content')
+<div id="app-container">
+    <!-- Header (Fixed) -->
+    <div class="header">
+        <div class="header-top">
+            <div class="user-info">
+                <h1>{{ config('app.name') }}</h1>
+                <p>Top Up Game Cepat & Murah</p>
+            </div>
+            <div class="action-icons">
+                <a href="{{ route('track.order') }}" class="auth-btn-mobile touch-effect">
+                    <i class="fas fa-history"></i>
+                    <span>Riwayat</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="search-row">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" id="searchInput" placeholder="Cari game favorit kamu..." autocomplete="off">
+            </div>
+            <div class="filter-btn touch-effect" onclick="document.querySelector('.category-scroll').scrollIntoView({behavior: 'smooth', block: 'nearest'})">
+                <i class="fas fa-filter"></i>
+            </div>
+        </div>
+
+        <!-- Category Pills -->
+        <div class="category-wrapper">
+            <div class="category-scroll">
+                <div class="cat-pill active touch-effect" data-filter="all">Semua</div>
+                <div class="cat-pill touch-effect" data-filter="popular">
+                    <i class="fas fa-fire" style="margin-right: 4px;"></i> Populer
+                </div>
+                @php
+                    $uniqueCategories = collect($categories ?? [])->pluck('category')->unique()->filter()->values()->all();
+                @endphp
+                @foreach($uniqueCategories as $cat)
+                    <div class="cat-pill touch-effect" data-filter="{{ $cat }}">{{ $cat }}</div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main>
+        <!-- All Products Section -->
+        <section class="section-content" id="all-products-section">
+            <div class="section-header">
+                <h2 class="section-title">Semua Game</h2>
+                <span class="game-count" style="font-size: 14px; color: var(--text-sub);">{{ count($categories ?? []) }} games</span>
+            </div>
+
+            @php
+                // Group games by category
+                $gamesByCategory = collect($categories ?? [])->groupBy('category');
+            @endphp
+
+            @forelse($gamesByCategory as $categoryName => $games)
+                <!-- Category Section -->
+                <div class="category-section" data-category="{{ $categoryName }}">
+                    <div class="category-header">
+                        <h3 class="category-name">
+                            <i class="fas fa-gamepad"></i>
+                            {{ $categoryName ?: 'Lainnya' }}
+                        </h3>
+                        <span class="category-count">{{ count($games) }} games</span>
+                    </div>
+
+                    <div class="game-grid">
+                        @foreach($games as $game)
+                            <a href="{{ route('category', $game['slug']) }}"
+                               class="game-card touch-effect"
+                               data-category="{{ $game['category'] ?? '' }}"
+                               data-popular="{{ ($game['is_popular'] ?? false) ? '1' : '0' }}"
+                               data-name="{{ strtolower($game['name']) }}">
+                                <div class="game-icon-wrap">
+                                    <img src="{{ $game['image'] }}"
+                                         alt="{{ $game['name'] }}"
+                                         loading="lazy"
+                                         onerror="this.src='/images/default-game.png'">
+                                </div>
+                                <div class="game-title">{{ $game['name'] }}</div>
+                                @if(!empty($game['discount']) && $game['discount'] > 0)
+                                    <div style="font-size: 9px; color: #EF4444; font-weight: 600; margin-top: 2px;">-{{ $game['discount'] }}%</div>
+                                @endif
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+
+                @if(!$loop->last)
+                    <!-- Category Separator -->
+                    <div class="category-separator"></div>
+                @endif
+            @empty
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+                    <i class="fas fa-gamepad" style="font-size: 48px; color: #E5E5EA; margin-bottom: 16px;"></i>
+                    <p style="font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 8px;">Tidak ada game tersedia</p>
+                    <small style="font-size: 13px; color: var(--text-sub); display: block; margin-bottom: 20px;">Silakan coba lagi nanti</small>
+                    <button onclick="window.location.reload()" style="padding: 12px 24px; background: var(--brand-primary); color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;">
+                        <i class="fas fa-sync-alt"></i> Muat Ulang
+                    </button>
+                </div>
+            @endforelse
+        </section>
+
+        <!-- Media Section -->
+        <section class="media-section">
+            <div class="media-title">Dipercaya Oleh</div>
+            <div class="media-logos">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Facebook_f_logo_%282019%29.svg/1200px-Facebook_f_logo_%282019%29.svg.png" alt="Facebook" class="media-logo-item">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/2048px-Instagram_icon.png" alt="Instagram" class="media-logo-item">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/2044px-WhatsApp.svg.png" alt="WhatsApp" class="media-logo-item">
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section class="about-section">
+            <div class="about-card touch-effect">
+                <div class="about-content">
+                    <div class="about-logo">
+                        <img src="{{ asset('images/logo.png') }}" alt="{{ config('app.name') }}" onerror="this.src='https://via.placeholder.com/160x160?text=Logo'">
+                    </div>
+                    <div class="about-text">
+                        <h3>{{ config('app.name') }}</h3>
+                        <p>Platform top up game terpercaya dengan harga terjangkau dan proses cepat. Kami melayani berbagai game populer dengan sistem pembayaran yang aman.</p>
+                        <div class="social-row">
+                            <a href="#" class="social-link touch-effect"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="social-link touch-effect"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="social-link touch-effect"><i class="fab fa-whatsapp"></i></a>
+                            <a href="#" class="social-link touch-effect"><i class="fab fa-telegram"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="faq-wrapper">
+            <div class="section-header" style="padding-bottom: 20px;">
+                <h2 class="section-title">FAQ</h2>
+            </div>
+            <div class="faq-item">
+                <div class="faq-header touch-effect" onclick="toggleFAQ(this)">
+                    <span>Bagaimana cara melakukan top up?</span>
+                    <i class="fas fa-chevron-down" style="transition: transform 0.3s;"></i>
+                </div>
+                <div class="faq-body">
+                    Pilih game yang ingin kamu top up, masukkan User ID, pilih nominal diamond/item, pilih metode pembayaran, dan selesaikan pembayaran. Diamond akan langsung masuk ke akun kamu.
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-header touch-effect" onclick="toggleFAQ(this)">
+                    <span>Berapa lama proses pengiriman?</span>
+                    <i class="fas fa-chevron-down" style="transition: transform 0.3s;"></i>
+                </div>
+                <div class="faq-body">
+                    Proses pengiriman dilakukan secara otomatis dan biasanya hanya membutuhkan waktu 1-5 menit setelah pembayaran berhasil.
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-header touch-effect" onclick="toggleFAQ(this)">
+                    <span>Metode pembayaran apa saja yang tersedia?</span>
+                    <i class="fas fa-chevron-down" style="transition: transform 0.3s;"></i>
+                </div>
+                <div class="faq-body">
+                    Kami menerima berbagai metode pembayaran seperti QRIS, E-Wallet (GoPay, OVO, DANA, ShopeePay), Transfer Bank, dan Virtual Account.
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer-section">
+            <div class="footer-copyright">&copy; {{ date('Y') }} {{ config('app.name') }}. All Rights Reserved.</div>
+            <div class="footer-links">
+                <a href="#">Terms of Service</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Contact Us</a>
+            </div>
+        </footer>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="{{ route('home') }}" class="nav-item active touch-effect">
+            <i class="fas fa-home"></i>
+            <span>Beranda</span>
+        </a>
+        <a href="#" class="nav-item touch-effect">
+            <i class="fas fa-gift"></i>
+            <span>Promo</span>
+        </a>
+        <div class="nav-center-wrapper">
+            <a href="{{ route('track.order') }}" class="nav-center-btn touch-effect">
+                <i class="fas fa-receipt"></i>
+            </a>
+        </div>
+        <a href="#" class="nav-item touch-effect">
+            <i class="fas fa-headset"></i>
+            <span>Bantuan</span>
+        </a>
+        <a href="#" class="nav-item touch-effect">
+            <i class="fas fa-user"></i>
+            <span>Akun</span>
+        </a>
+    </nav>
+
+    <!-- Scroll to Top Button -->
+    <button id="scroll-top-btn" class="touch-effect" style="display: none;">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+</div>
+
+@push('styles')
+<style>
+/* Variables & Theme */
+:root {
+    --brand-primary: #005EB8;
+    --brand-secondary: #004A94;
+    --brand-accent: #00C6FB;
+    --ios-bg: #F2F2F7;
+    --text-main: #1C1C1E;
+    --text-sub: #8E8E93;
+    --radius-icon: 22px;
+    --radius-card: 20px;
+    --app-width: 480px;
+    --header-height: 225px;
+    --safe-area-bottom: 34px;
+    --section-spacing: 50px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
+
+body {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #EEF1F5;
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+h1, h2, h3 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.03em;
+}
+
+#app-container {
+    width: 100%;
+    max-width: var(--app-width);
+    background-color: var(--ios-bg);
+    min-height: 100vh;
+    position: relative;
+    box-shadow: 0 0 50px rgba(0,0,0,0.1);
+    padding-top: var(--header-height);
+    padding-bottom: calc(90px + var(--safe-area-bottom));
+    overflow-x: hidden;
+    transition: max-width 0.3s ease;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 0 0 rgba(0, 94, 184, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 94, 184, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 94, 184, 0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.touch-effect {
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.touch-effect:active {
+    transform: scale(0.95);
+    opacity: 0.9;
+}
+
+/* Header (Fixed) */
+.header {
+    background: var(--brand-primary);
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--app-width);
+    z-index: 1000;
+    padding: 20px 20px 10px 20px;
+    border-bottom-left-radius: 28px;
+    border-bottom-right-radius: 28px;
+    box-shadow: 0 10px 40px rgba(0, 94, 184, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-info h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin-bottom: 2px;
+}
+
+.user-info p {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.action-icons {
+    display: flex;
+    gap: 12px;
+}
+
+.auth-btn-mobile {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Search & Filter */
+.search-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.search-container {
+    position: relative;
+    flex: 1;
+}
+
+.search-input {
+    width: 100%;
+    padding: 14px 16px 14px 44px;
+    border-radius: 14px;
+    border: none;
+    background: #FFFFFF;
+    color: #000;
+    font-size: 15px;
+    font-weight: 400;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--brand-primary);
+    font-size: 16px;
+}
+
+.filter-btn {
+    width: 48px;
+    height: 48px;
+    background: #FFFFFF;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brand-primary);
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* Category Pills */
+.category-wrapper {
+    padding: 0;
+    width: 100%;
+}
+
+.category-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 2px 8px 2px;
+    scrollbar-width: none;
+}
+
+.category-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.cat-pill {
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    transition: all 0.2s;
+    cursor: pointer;
+    flex-shrink: 0;
+    user-select: none;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+}
+
+.cat-pill.active {
+    background: #FFFFFF;
+    color: var(--brand-primary);
+    box-shadow: none;
+    border: none;
+    transform: scale(1.02);
+    font-weight: 700;
+}
+
+.cat-pill.active::before {
+    content: '\f00c';
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    margin-right: 6px;
+    font-size: 11px;
+}
+
+/* Section */
+.section-header {
+    padding: 0 20px 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #000;
+    letter-spacing: -0.02em;
+}
+
+.section-content {
+    margin-bottom: var(--section-spacing);
+    animation: fadeIn 0.3s ease;
+}
+
+/* Category Section */
+.category-section {
+    margin-bottom: 30px;
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px 16px 20px;
+    margin-top: 10px;
+}
+
+.category-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.category-name i {
+    color: var(--brand-primary);
+    font-size: 16px;
+}
+
+.category-count {
+    font-size: 13px;
+    color: var(--text-sub);
+    font-weight: 500;
+}
+
+.category-separator {
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.08) 50%, transparent);
+    margin: 40px 20px;
+    position: relative;
+}
+
+.category-separator::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 4px;
+    background: var(--brand-primary);
+    border-radius: 2px;
+    opacity: 0.3;
+}
+
+/* Game Grid */
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 36px 12px;
+    padding: 0 20px;
+}
+
+.game-card {
+    background: transparent;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    text-decoration: none;
+}
+
+.game-icon-wrap {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 12px auto;
+    border-radius: var(--radius-icon);
+    overflow: hidden;
+    background: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(0,0,0,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+    border: 2px solid transparent;
+}
+
+.game-icon-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s;
+}
+
+.game-title {
+    font-size: 11px;
+    font-weight: 500;
+    color: #000000;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 4px;
+    letter-spacing: -0.01em;
+    transition: color 0.2s;
+}
+
+.game-card.hidden {
+    display: none;
+}
+
+/* Media Section */
+.media-section {
+    padding: 0 20px;
+    margin-bottom: 40px;
+    text-align: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+.media-title {
+    font-size: 14px;
+    color: #94A3B8;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.media-logos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px 8px;
+    align-items: center;
+    justify-items: center;
+    width: 100%;
+}
+
+.media-logo-item {
+    height: 25px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    filter: grayscale(100%);
+    opacity: 0.5;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.media-logo-item:hover {
+    filter: none;
+    opacity: 1;
+}
+
+/* About Section */
+.about-section {
+    padding: 0 20px;
+    margin-bottom: var(--section-spacing);
+}
+
+.about-card {
+    background: linear-gradient(135deg, #005EB8 0%, #003366 100%);
+    border-radius: 24px;
+    padding: 30px 20px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 94, 184, 0.25);
+    text-align: center;
+}
+
+.about-card::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 150px;
+    height: 150px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+}
+
+.about-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.about-logo {
+    width: 160px;
+    height: 160px;
+    border-radius: 35px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.about-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.about-text h3 {
+    font-size: 20px;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.about-text p {
+    font-size: 13px;
+    opacity: 0.85;
+    line-height: 1.5;
+    color: #F2F2F7;
+    margin-bottom: 20px;
+}
+
+.social-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.social-link {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 16px;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s;
+}
+
+.social-link:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+}
+
+/* FAQ Section */
+.faq-wrapper {
+    padding: 0 20px;
+    margin-bottom: var(--section-spacing);
+}
+
+.faq-item {
+    background: #FFFFFF;
+    margin-bottom: 14px;
+    border-radius: 16px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    border: 1px solid rgba(0,0,0,0.02);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.faq-item.active {
+    box-shadow: 0 10px 25px rgba(0, 94, 184, 0.1);
+    border-color: rgba(0, 94, 184, 0.1);
+}
+
+.faq-header {
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1C1C1E;
+    cursor: pointer;
+    background: #FFFFFF;
+    transition: background 0.1s;
+}
+
+.faq-header:active {
+    background: #F8F9FA;
+}
+
+.faq-body {
+    padding: 24px;
+    padding-top: 10px;
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.7;
+    display: none;
+    background: #FFFFFF;
+    border-top: 1px dashed rgba(0,0,0,0.05);
+}
+
+.faq-item.active .faq-body {
+    display: block;
+}
+
+.faq-item.active .faq-header i {
+    transform: rotate(180deg);
+    color: var(--brand-primary);
+}
+
+/* Footer */
+.footer-section {
+    padding: 30px 20px 40px 20px;
+    text-align: center;
+    color: #94A3B8;
+    font-size: 14px;
+    line-height: 1.6;
+    background: transparent;
+}
+
+.footer-copyright {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #64748B;
+    font-size: 14px;
+}
+
+.footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    font-size: 13px;
+}
+
+.footer-links a {
+    color: var(--brand-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: var(--app-width);
+    height: calc(65px + var(--safe-area-bottom));
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 0.5px solid rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding-top: 12px;
+    z-index: 999;
+}
+
+.bottom-nav::after {
+    content: '';
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    height: 5px;
+    background: #000;
+    border-radius: 10px;
+    opacity: 0.2;
+}
+
+.nav-item {
+    flex: 1;
+    text-align: center;
+    color: #999999;
+    font-size: 10px;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.nav-item i {
+    font-size: 24px;
+    margin-bottom: 2px;
+    transition: transform 0.2s;
+}
+
+.nav-item:active i {
+    transform: scale(0.9);
+}
+
+.nav-item span {
+    font-weight: 500;
+    letter-spacing: -0.2px;
+}
+
+.nav-item.active {
+    color: var(--brand-primary);
+}
+
+.nav-item.active i {
+    transform: translateY(-2px) scale(1.1);
+}
+
+.nav-center-wrapper {
+    position: relative;
+    top: -25px;
+}
+
+.nav-center-btn {
+    width: 60px;
+    height: 60px;
+    background: var(--brand-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(0, 94, 184, 0.4);
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    transition: transform 0.1s;
+    border: 4px solid var(--ios-bg);
+    animation: pulse-glow 2s infinite;
+    text-decoration: none;
+}
+
+.nav-center-btn:active {
+    transform: scale(0.9);
+}
+
+/* Scroll to Top */
+#scroll-top-btn {
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: var(--brand-primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 94, 184, 0.3);
+    z-index: 998;
+}
+
+/* Responsive */
+@media (max-width: 360px) {
+    .game-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px 8px;
+    }
+    .header {
+        padding: 16px 16px 10px 16px;
+    }
+}
+
+@media (min-width: 1024px) {
+    :root {
+        --app-width: 1200px;
+        --header-height: 180px;
+    }
+
+    .game-grid {
+        grid-template-columns: repeat(8, 1fr);
+        gap: 40px 16px;
+    }
+
+    .game-icon-wrap {
+        width: 100px;
+        height: 100px;
+    }
+
+    .game-title {
+        font-size: 13px;
+    }
+
+    .header {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 40px;
+    }
+
+    .header-top {
+        flex: 1;
+    }
+
+    .search-row {
+        flex: 2;
+        max-width: 600px;
+    }
+
+    .category-wrapper {
+        flex: 3;
+        max-width: 800px;
+    }
+}
+</style>
+@endpush
+
+@push('scripts')
+<script>
+// Search functionality
+const searchInput = document.getElementById('searchInput');
+const gameCards = document.querySelectorAll('.game-card');
+const gameCount = document.querySelector('.game-count');
+const categorySections = document.querySelectorAll('.category-section');
+const categorySeparators = document.querySelectorAll('.category-separator');
+
+searchInput.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    let visibleCount = 0;
+
+    // Show all category sections during search
+    categorySections.forEach(section => {
+        section.style.display = 'block';
+    });
+    categorySeparators.forEach(sep => {
+        sep.style.display = 'block';
+    });
+
+    gameCards.forEach(card => {
+        const name = card.dataset.name || '';
+        if (name.includes(query)) {
+            card.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+
+    // Hide empty category sections
+    categorySections.forEach(section => {
+        const visibleCards = section.querySelectorAll('.game-card:not(.hidden)');
+        if (visibleCards.length === 0) {
+            section.style.display = 'none';
+        }
+    });
+
+    gameCount.textContent = visibleCount + ' games';
+});
+
+// Category filter
+const catPills = document.querySelectorAll('.cat-pill');
+catPills.forEach(pill => {
+    pill.addEventListener('click', function() {
+        // Remove active from all
+        catPills.forEach(p => p.classList.remove('active'));
+        // Add active to clicked
+        this.classList.add('active');
+
+        const filter = this.dataset.filter;
+        let visibleCount = 0;
+
+        if (filter === 'all') {
+            // Show all sections and cards
+            categorySections.forEach(section => {
+                section.style.display = 'block';
+            });
+            categorySeparators.forEach(sep => {
+                sep.style.display = 'block';
+            });
+            gameCards.forEach(card => {
+                card.classList.remove('hidden');
+                visibleCount++;
+            });
+        } else if (filter === 'popular') {
+            // Show only popular games across all categories
+            categorySections.forEach(section => {
+                section.style.display = 'block';
+            });
+            categorySeparators.forEach(sep => {
+                sep.style.display = 'block';
+            });
+
+            gameCards.forEach(card => {
+                if (card.dataset.popular === '1') {
+                    card.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            // Hide empty category sections
+            categorySections.forEach(section => {
+                const visibleCards = section.querySelectorAll('.game-card:not(.hidden)');
+                if (visibleCards.length === 0) {
+                    section.style.display = 'none';
+                }
+            });
+        } else {
+            // Show only the selected category section
+            categorySections.forEach(section => {
+                if (section.dataset.category === filter) {
+                    section.style.display = 'block';
+                    // Show all games in this category
+                    const cards = section.querySelectorAll('.game-card');
+                    cards.forEach(card => {
+                        card.classList.remove('hidden');
+                        visibleCount++;
+                    });
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+
+            // Hide all separators when filtering by category
+            categorySeparators.forEach(sep => {
+                sep.style.display = 'none';
+            });
+        }
+
+        gameCount.textContent = visibleCount + ' games';
+
+        // Clear search when filtering
+        searchInput.value = '';
+    });
+});
+
+// FAQ toggle
+function toggleFAQ(header) {
+    const item = header.parentElement;
+    const isActive = item.classList.contains('active');
+
+    // Close all FAQs
+    document.querySelectorAll('.faq-item').forEach(faq => {
+        faq.classList.remove('active');
+    });
+
+    // Open clicked FAQ if it wasn't active
+    if (!isActive) {
+        item.classList.add('active');
+    }
+}
+
+// Scroll to top button
+const scrollTopBtn = document.getElementById('scroll-top-btn');
+window.addEventListener('scroll', function() {
+    if (window.scrollY > 300) {
+        scrollTopBtn.style.display = 'block';
+    } else {
+        scrollTopBtn.style.display = 'none';
+    }
+});
+
+scrollTopBtn.addEventListener('click', function() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+});
+
+// Smooth scroll for category pills
+const categoryScroll = document.querySelector('.category-scroll');
+let isDown = false;
+let startX;
+let scrollLeft;
+
+categoryScroll.addEventListener('mousedown', (e) => {
+    isDown = true;
+    categoryScroll.style.cursor = 'grabbing';
+    startX = e.pageX - categoryScroll.offsetLeft;
+    scrollLeft = categoryScroll.scrollLeft;
+});
+
+categoryScroll.addEventListener('mouseleave', () => {
+    isDown = false;
+    categoryScroll.style.cursor = 'grab';
+});
+
+categoryScroll.addEventListener('mouseup', () => {
+    isDown = false;
+    categoryScroll.style.cursor = 'grab';
+});
+
+categoryScroll.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - categoryScroll.offsetLeft;
+    const walk = (x - startX) * 2;
+    categoryScroll.scrollLeft = scrollLeft - walk;
+});
+</script>
+@endpush
+@endsection

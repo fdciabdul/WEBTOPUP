@@ -10,7 +10,7 @@ class ProductController extends Controller
     public function show($slug)
     {
         $product = Product::where('slug', $slug)
-            ->with('category')
+            ->with(['category', 'activeVariants'])
             ->active()
             ->firstOrFail();
 
@@ -27,8 +27,10 @@ class ProductController extends Controller
 
         $userLevel = auth()->check() ? auth()->user()->level : 'visitor';
         $price = $product->getPriceByLevel($userLevel);
+        $variants = $product->activeVariants;
+        $whatsappUrl = \App\Models\Setting::get('whatsapp_url', 'https://wa.me/6281234567890');
 
-        return view('product-detail', compact('product', 'relatedProducts', 'price', 'userLevel'));
+        return view('product-detail', compact('product', 'relatedProducts', 'price', 'userLevel', 'variants', 'whatsappUrl'));
     }
 
     public function search(Request $request)

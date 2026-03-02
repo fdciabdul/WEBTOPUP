@@ -16,6 +16,8 @@ class Product extends Model
         'name',
         'slug',
         'description',
+        'icon',
+        'variant_mode', // 'simple' or 'nested'
         'provider',
         'provider_code',
         'price_visitor',
@@ -30,7 +32,10 @@ class Product extends Model
         'status',
         'total_sales',
         'is_featured',
+        'is_best_seller',
         'meta_data',
+        'input_fields',
+        'notes',
     ];
 
     protected $casts = [
@@ -45,12 +50,28 @@ class Product extends Model
         'max_order' => 'integer',
         'total_sales' => 'integer',
         'is_featured' => 'boolean',
+        'is_best_seller' => 'boolean',
         'meta_data' => 'array',
+        'input_fields' => 'array',
+        'notes' => 'array',
     ];
 
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class)->orderBy('group_name')->orderBy('sort_order');
+    }
+
+    public function activeVariants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class)
+            ->where('is_active', true)
+            ->orderBy('group_name')
+            ->orderBy('sort_order');
     }
 
     public function transactions(): HasMany
@@ -86,6 +107,11 @@ class Product extends Model
         return $query->where('is_featured', true);
     }
 
+    public function scopeBestSeller($query)
+    {
+        return $query->where('is_best_seller', true);
+    }
+
     public function isInStock(): bool
     {
         return $this->is_unlimited_stock || $this->stock > 0;
@@ -97,5 +123,63 @@ class Product extends Model
             $this->decrement('stock', $quantity);
         }
         $this->increment('total_sales', $quantity);
+    }
+
+    public function hasVariants(): bool
+    {
+        return $this->variants()->exists();
+    }
+
+    public function getVariantGroups(): array
+    {
+        if ($this->variant_mode !== 'nested') {
+            return [];
+        }
+
+        return $this->variants()
+            ->whereNotNull('group_name')
+            ->distinct()
+            ->pluck('group_name')
+            ->toArray();
+    }
+
+    public function getVariantsByGroup(): array
+    {
+        $variants = $this->activeVariants;
+
+        if ($this->variant_mode === 'nested') {
+            return $variants->groupBy('group_name')->toArray();
+        }
+
+        return ['default' => $variants->toArray()];
+    }
+
+    public function getLowestPrice(): float
+    {
+        if ($this->hasVariants()) {
+            return $this->variants()->min('price_visitor') ?? 0;
+        }
+        return $this->price_visitor;
+    }
+
+    public function getPriceRange(): array
+    {
+        if ($this->hasVariants()) {
+            $min = $this->variants()->min('price_visitor') ?? 0;
+            $max = $this->variants()->max('price_visitor') ?? 0;
+            return ['min' => $min, 'max' => $max];
+        }
+        return ['min' => $this->price_visitor, 'max' => $this->price_visitor];
+    }
+
+    public function getIconUrlAttribute(): ?string
+    {
+        if ($this->icon) {
+            if (str_starts_with($this->icon, 'http')) {
+                return $this->icon;
+            }
+            return asset('storage/' . $this->icon);
+        }
+        return null;
     }
 }

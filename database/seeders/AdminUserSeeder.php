@@ -12,7 +12,7 @@ class AdminUserSeeder extends Seeder
     {
         User::create([
             'name' => 'Administrator',
-            'email' => 'admin@webtopup.com',
+            'email' => 'admin@admin.com',
             'phone' => '081234567890',
             'password' => Hash::make('admin123'),
             'role' => 'admin',
